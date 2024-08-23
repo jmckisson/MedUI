@@ -1,0 +1,114 @@
+[
+       {
+              "name": "North",
+              "isActive": "yes",
+              "command": "n",
+              "script": "",
+              "keys": "keypad+up",
+              "isFolder": "no"
+       },
+       {
+              "name": "South",
+              "isActive": "yes",
+              "command": "south",
+              "script": "",
+              "keys": "keypad+down",
+              "isFolder": "no"
+       },
+       {
+              "name": "East",
+              "isActive": "yes",
+              "command": "east",
+              "script": "",
+              "keys": "keypad+right",
+              "isFolder": "no"
+       },
+       {
+              "name": "West",
+              "isActive": "yes",
+              "command": "west",
+              "script": "",
+              "keys": "keypad+left",
+              "isFolder": "no"
+       },
+       {
+              "name": "Up",
+              "isActive": "yes",
+              "command": "up",
+              "script": "",
+              "keys": "keypad+home",
+              "isFolder": "no"
+       },
+       {
+              "name": "Down",
+              "isActive": "yes",
+              "command": "down",
+              "script": "",
+              "keys": "keypad+end",
+              "isFolder": "no"
+       },
+       {
+              "name": "Scan",
+              "isActive": "yes",
+              "command": "scan",
+              "script": "",
+              "keys": "keypad+clear",
+              "isFolder": "no"
+       },
+       {
+              "name": "EthNorth",
+              "isActive": "yes",
+              "command": "c eth n",
+              "script": "",
+              "keys": "ctrl+keypad+up",
+              "isFolder": "no"
+       },
+       {
+              "name": "EthSouth",
+              "isActive": "yes",
+              "command": "c eth s",
+              "script": "",
+              "keys": "ctrl+keypad+down",
+              "isFolder": "no"
+       },
+       {
+              "name": "EthEast",
+              "isActive": "yes",
+              "command": "c eth e",
+              "script": "",
+              "keys": "ctrl+keypad+right",
+              "isFolder": "no"
+       },
+       {
+              "name": "EthWest",
+              "isActive": "yes",
+              "command": "c eth w",
+              "script": "",
+              "keys": "ctrl+keypad+left",
+              "isFolder": "no"
+       },
+       {
+              "name": "EthUp",
+              "isActive": "yes",
+              "command": "c eth up",
+              "script": "",
+              "keys": "ctrl+keypad+home",
+              "isFolder": "no"
+       },
+       {
+              "name": "EthDown",
+              "isActive": "yes",
+              "command": "c eth down",
+              "script": "",
+              "keys": "ctrl+keypad+end",
+              "isFolder": "no"
+       },
+       {
+              "name": "SancMe",
+              "isActive": "yes",
+              "command": "c s me",
+              "script": "",
+              "keys": "F3",
+              "isFolder": "no"
+       }
+]

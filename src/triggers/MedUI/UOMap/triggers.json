@@ -1,0 +1,22 @@
+[
+       {
+              "name": "Get X Y Z",
+              "isActive": "yes",
+              "isFolder": "no",
+              "multiline": "no",
+              "multilineDelta": "0",
+              "matchall": "no",
+              "filter": "no",
+              "fireLength": "0",
+              "highlight": "no",
+              "highlightFG": "#ff0000",
+              "highlightBG": "#ffff00",
+              "patterns": [
+                     {
+                            "pattern": "X (?\u003cxcord\u003e\\w+) Y (?\u003cycord\u003e\\w+) Depth (?\u003czcord\u003e\\w+) Facing (?\u003cdirection\u003e\\w+)",
+                            "type": "regex"
+                     }
+              ],
+              "script": ""
+       }
+]

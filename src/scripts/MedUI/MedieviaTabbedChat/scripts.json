@@ -1,0 +1,14 @@
+[
+       {
+              "name": "MedChat",
+              "isActive": "yes",
+              "script": "",
+              "isFolder": "no"
+       },
+       {
+              "name": "HelpFile",
+              "isActive": "no",
+              "script": "",
+              "isFolder": "no"
+       }
+]

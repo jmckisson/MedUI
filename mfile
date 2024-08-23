@@ -1,0 +1,10 @@
+{
+       "package": "MedUI",
+       "title": "User Interface for Medievia",
+       "description": "",
+       "version": "",
+       "author": "Kymbahl, Kronos",
+       "icon": "",
+       "dependencies": "",
+       "outputFile": false
+}
