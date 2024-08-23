@@ -2,9 +2,9 @@
        "package": "MedUI",
        "title": "User Interface for Medievia",
        "description": "",
-       "version": "",
+       "version": "1.6.3",
        "author": "Kymbahl, Kronos",
        "icon": "",
-       "dependencies": "",
-       "outputFile": false
+       "dependencies": "MDK",
+       "outputFile": true
 }
