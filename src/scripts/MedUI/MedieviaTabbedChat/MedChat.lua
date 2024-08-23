@@ -38,8 +38,6 @@ function medieviaTabbedChat_InitMedChat()
       "Chat",
       "MMCP",
     },
-    --mapTabName = "Map",
-    --mapTab = true,
     activeTabCSS = stylesheet,
     fontSize=8,
     inactiveTabCSS = istylesheet,
