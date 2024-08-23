@@ -5,3 +5,4 @@ build/
 # Ignore any file starting with "muddle" in the project root directory
 /muddle*
 
+muddle.sh
