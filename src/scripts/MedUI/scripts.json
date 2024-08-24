@@ -2,7 +2,31 @@
        {
               "name": "UOMap",
               "isActive": "yes",
-              "script": "",
               "isFolder": "yes"
+       },
+       {
+              "name": "MedieviaTabbedChat",
+              "isActive": "yes",
+              "isFolder": "yes"
+       },
+       {
+              "name": "CSSMan",
+              "isActive": "yes",
+              "isFolder": "no"
+       },
+       {
+              "name": "MedPrompt",
+              "isActive": "yes",
+              "isFolder": "no"
+       },
+       {
+              "name": "Main",
+              "isActive": "yes",
+              "isFolder": "no"
+       },
+       {
+              "name": "Updater",
+              "isActive": "yes",
+              "isFolder": "no"
        }
 ]
