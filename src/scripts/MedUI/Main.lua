@@ -377,9 +377,9 @@ end
 
 --Create Containers--
 left_buff_container = Geyser.Container:new({
-  name = "left_buff_container",    -- give it a unique name here
-  x="1%", y="88%",                   -- have it start at the top-left corner of mudlet
-  width = "25%", height="5%", -- with a width of 200, and a height of the full screen, hence 100%
+  name = "left_buff_container",
+  x="1%", y="88%",
+  width = "25%", height="5%",
 })
 
 player_buffs_container = Geyser.Container:new({
@@ -443,6 +443,7 @@ end
 --Does the actual work of checking the table for each buff and positioning it
 function medBuffsNBars_buildEffects()
   --med_showBuffTable()
+
   local counter = 0
   
   local sortedBuffTable = medBuffsNBars_sortedBuffTable()
@@ -451,8 +452,7 @@ function medBuffsNBars_buildEffects()
     MedBuffsNBars.dynamic_x_int = 5 + (28*counter)
     MedBuffsNBars.dynamic_x_str = tostring(MedBuffsNBars.dynamic_x_int).."px"
     --echo('\n'..v[1].."::"..tostring(v[2]).."::"..v[3].."::"..v[4]..'\n')
-    if(v[2])
-    then
+    if(v[2]) then
       --echo("\nTEST"..v[1].."\n")
       v[5]:move(MedBuffsNBars.dynamic_x_int, 5)
       showWindow(v[3])
@@ -472,7 +472,10 @@ end
 --Clears and the builds the buffs
 function medBuffsNBars_updateEffects()
   medBuffsNBars_clearEffects()
-  medBuffsNBars_buildEffects()
+
+  if MedUI.options.enableGauges then
+    medBuffsNBars_buildEffects()
+  end
 end
 
 --Used with testing to make sure icons are displaying, turns them all on
