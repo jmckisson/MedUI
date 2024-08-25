@@ -9,7 +9,7 @@ MedUI = MedUI or {
 }
 GUI = GUI or {}
 
-setFont("main", "Medievia Sans Mono")
+setFont("main", "Medievia Mudlet Sans Mono")
 setFontSize("main", 13)
 
 setServerEncoding("MEDIEVIA")
@@ -54,13 +54,12 @@ MedUI.MedMap.Mapper = Geyser.MiniConsole:new({
   MedUI.MedMap.MapperAdjCont
 )
 
-MedUI.MedMap.Mapper:setFont("Medievia Sans Mono")
+MedUI.MedMap.Mapper:setFont("Medievia Mudlet Sans Mono")
 
 function MedUI.MedMap.mapStart()
   MedUI.MedMap.Mapper:clear()
   selectCurrentLine()
-  --local length = string.len(selectString(getCurrentLine(), 1))
-  local length = #getCurrentLine()
+  local length = #ansi2string(getCurrentLine())
 
   if length < 80 then
     MedUI.MedMap.Mapper:setFontSize(18)
@@ -378,8 +377,8 @@ end
 --Create Containers--
 left_buff_container = Geyser.Container:new({
   name = "left_buff_container",
-  x="1%", y="88%",
-  width = "25%", height="5%",
+  x="1%", y="90%",
+  width = "25%", height="35",
 })
 
 player_buffs_container = Geyser.Container:new({
@@ -510,28 +509,26 @@ end
 -- Provides a way to resync buffs when first logging on.
 -- It can also fix buffs that may have fallen off but not been caught by trigger for whatever reason.
 function medBuffsNBars_allBuffsOff()
-
   for k, v in pairs(MedBuffsNBars.buffIconTable) do
     v[2] = false
-
   end
-
 end
 
 function MedUI.enableGauges()
   MedBuffsNBars.iconLocation = "/MedUI"
-  setBorderBottom(95)
   
   if MedBuffsNBars.Bottom then
     MedBuffsNBars.Bottom:show()
   else
-  
     --Builds the icons for buffs the first time
     medBuffsNBars_initializeBuffTable() -- Table_Spell_Effects
     medBuffsNBars_initializeEffects() --SpellEffects
     medBuffsNBars_clearEffects()
     medBuffsNBars_initializeBarGauges()
   end
+
+  local totalHeight = math.ceil(tonumber(left_buff_container:get_height()) + tonumber(MedBuffsNBars.Bottom:get_height()))
+  setBorderBottom(totalHeight)
   
 end
 
@@ -548,6 +545,7 @@ function MedUI.disableGauges()
   end
 end
 
+-- Update gauge values from data parsed from a prompt
 function MedUI.barsPrompt(promptData)
   MedBuffsNBars.Health:setValue(promptData.hp, promptData.maxHp)
   MedBuffsNBars.Mana:setValue(promptData.mana, promptData.maxMana)
@@ -561,6 +559,7 @@ function MedUI.barsPrompt(promptData)
 end
 
 function MedBuffsNBars.eventHandler(event, ...)
+  -- evtPromptData event sent from MedPrompt script
   if event == "evtPromptData" and MedUI.options.enableGauges then
     MedUI.barsPrompt(arg[1])
   end
@@ -572,7 +571,6 @@ MedBuffsNBars.registeredEvents = {
 ---------------------------------------------------------------------------------
 ---- End Buffs and Bars Code ----------------------------------------------------
 ---------------------------------------------------------------------------------
-
 
 function MedUI.config(arg)
 
@@ -630,9 +628,7 @@ function MedUI.config(arg)
   cecho(str)
   
   MedUI.reconfigure()
-  
   MedUI.saveOptions()
-  
 end
 
 function MedUI.reconfigure()
@@ -642,17 +638,10 @@ function MedUI.reconfigure()
   else
     MedUI.disableGauges()
   end
-  
 end
 
 function MedUI.loadOptions()
-  local charName = "none"
-
-  if MedUI.charName then
-    charName = string.lower(MedUI.charName)
-  elseif getCharacterName() then
-    charName = string.lower(getCharacterName())
-  end
+  local charName = string.lower(getProfileName())
   
   local loadTable = {}
   local tablePath = getMudletHomeDir().."/medui_"..charName..".lua"
@@ -663,7 +652,9 @@ function MedUI.loadOptions()
   MedUI.options = table.deepcopy(loadTable.options)
   
   MedUI.options = MedUI.options or {
-    enableGauges = true
+    enableGauges = true,
+    keepInlineMap = true,
+    enableTimestamps = true
   }
 
   cecho("\n<DeepSkyBlue> MedUI: loaded options for <yellow>" .. charName)
@@ -671,13 +662,7 @@ function MedUI.loadOptions()
 end
 
 function MedUI.saveOptions()
-  local charName = "none"
-
-  if MedUI.charName then
-    charName = string.lower(MedUI.charName)
-  elseif getCharacterName() then
-    charName = string.lower(getCharacterName())
-  end
+  local charName = string.lower(getProfileName())
   
   local saveTable = {
     options = table.deepcopy(MedUI.options)
@@ -707,6 +692,11 @@ function MedUI.eventHandler(event, ...)
 
   end
 end
+
+--[[
+  On script load, kill any existing event handlers and tempAliases, then set them up again
+  Reload options for the loaded profile and reconfigure the UI
+--]]
 
 if MedUI.registeredEvents then
   for _,id in ipairs(MedUI.registeredEvents) do
@@ -742,6 +732,6 @@ end
 
 MedUI.timestampAlias = tempAlias("^medui timestamp$", [[MedUI.config(3)]])
 
-MedUI.charName = getCharacterName() or "none"
+MedUI.charName = string.lower(getProfileName())
 MedUI.loadOptions()
 MedUI.reconfigure()

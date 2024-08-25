@@ -1,6 +1,7 @@
 --[[
   Changelog:
     1.6.3 - Fix prompt regex for prompts containing blind, plague, poison, etc
+            Use profile name for options persistence
     1.6.2 - Add option to toggle timestamps in the MedChat window
     1.6.1 - Fixed buffs not hiding when gauges are disabled
             Trim whitespace from MMCP messages to prevent misaligned timestamps
