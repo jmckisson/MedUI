@@ -252,6 +252,8 @@ function MedPrompt.generatePromptRegex(input)
       end)
     table.insert(MedPrompt.pkTrigIds, tridId)
   end
+
+  MedPrompt.setupComplete = true
     
   return MedPrompt.promptPattern
 end
