@@ -1,5 +1,6 @@
 --[[
   Changelog:
+    1.6.4 - Fix self-updater
     1.6.3 - Fix prompt regex for prompts containing blind, plague, poison, etc
             Use profile name for options persistence
     1.6.2 - Add option to toggle timestamps in the MedChat window
@@ -10,7 +11,8 @@
 --]]
 
 MedUIUpdater = MedUIUpdater or {
-  version = "1.6.3"
+  -- Make sure this version number exists in the versions.lua or the "versions behind" counting will fail!
+  version = "1.6.4"
 }
 
 --[[ 
@@ -47,16 +49,22 @@ local profilePath = getMudletHomeDir()
 profilePath = profilePath:gsub("\\","/")
 
 
+--[[
+  Compares our currently installed version against the latest version in the downloaded medui_versions.lua
+  file. If we're out of date, notify the user and set up an update alias. We may also force a check by
+  passing in true which will tell the user/debugger/me that they are a number of versions ahead of the
+  published package.
+--]]
 local function check_version(forced)
   MedUIUpdater.downloading = false
-  local path = profilePath .. "/medui downloads/versions.lua"
+  local path = profilePath .. "/medui downloads/medui_versions.lua"
   local versions = {}
   table.load(path, versions)
   local pos = table.index_of(versions, MedUIUpdater.version) or 0
   
   local versionResult = compareVersions(MedUIUpdater.version, versions[#versions])
   
-  if compareResult == -1 then
+  if versionResult == -1 then
     
     if MedUIUpdater.updateAlias then
       killAlias(MedUIUpdater.updateAlias)
@@ -68,29 +76,38 @@ local function check_version(forced)
       MedUIUpdater.version, #versions - pos, (#versions - pos) > 1 and "s" or "", versions[#versions]))
     cecho("\n<DeepSkyBlue>To update now, please type: <yellow>medui update<reset>")
     
-  elseif forced and compareResult == 1 then
+  elseif forced and versionResult == 1 then
     cecho(string.format("\n<DeepSkyBlue>Your MedUI (<yellow>%s<DeepSkyBlue>) is currently ahead of the latest (<yellow>%s<DeepSkyBlue>)!",
       MedUIUpdater.version, versions[#versions]))
+  end
+
+  if MedUIUpdater.update_timer then
+    MedUIUpdater.update_timer = nil
   end
   
   MedUIUpdater.update_timer = tempTimer(3600, [[MedUIUpdater.checkVersion()]])
 end
 
-
+--[[
+  Initiate download of the latest published medui_versions file
+--]]
 function MedUIUpdater.checkVersion()
   if MedUIUpdater.update_timer then
     killTimer(MedUIUpdater.update_timer)
     MedUIUpdater.update_timer = nil
   end
   if not MedUIUpdater.update_waiting and MedUIUpdater.configs.download_path ~= "" then
-    local path, file = profilePath .. "/medui downloads", "/versions.lua"
+    local path, file = profilePath .. "/medui downloads", "/medui_versions.lua"
     MedUIUpdater.downloading = true
     downloadFile(path .. file, MedUIUpdater.configs.download_path .. file)
     MedUIUpdater.update_waiting = true
   end
 end
 
-
+--[[
+  Updates MedUI by uninstalling the currently installed package and installing the
+  recently downloaded one
+--]]
 local function update_version()
   MedUIUpdater.downloading = false
   local path = profilePath .. "/medui downloads/MedUI.mpackage"
@@ -112,7 +129,9 @@ local function update_version()
   cecho("\n<DeepSkyBlue>MedUI Script updated successfully.")
 end
 
-
+--[[
+  Initiate download of the latest published MedUI package
+--]]
 function MedUIUpdater.updateVersion()
   local path, file = profilePath .. "/medui downloads", "/MedUI.mpackage"
   MedUIUpdater.downloading = true
@@ -150,11 +169,11 @@ function MedUIUpdater.eventHandler(event, ...)
       killAnonymousEventHandler(id)
     end
     
-  elseif event == "sysDownloadDone" and downloading then
+  elseif event == "sysDownloadDone" and MedUIUpdater.downloading then
     local file = arg[1]
     
-    if string.ends(file, "/versions.lua") then
-      check_version()
+    if string.ends(file, "/medui_versions.lua") then
+      check_version(false)
     elseif string.ends(file, "/MedUI.mpackage") then
       update_version()
     end
