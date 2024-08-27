@@ -1,5 +1,6 @@
 --[[
   Changelog:
+    1.6.5 - Fix missing Repeat alias
     1.6.4 - Fix self-updater
     1.6.3 - Fix prompt regex for prompts containing blind, plague, poison, etc
             Use profile name for options persistence
@@ -12,7 +13,7 @@
 
 MedUIUpdater = MedUIUpdater or {
   -- Make sure this version number exists in the versions.lua or the "versions behind" counting will fail!
-  version = "1.6.4"
+  version = "1.6.5"
 }
 
 --[[ 

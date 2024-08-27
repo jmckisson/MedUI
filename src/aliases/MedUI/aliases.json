@@ -4,5 +4,10 @@
               "isActive": "yes",
               "script": "",
               "isFolder": "yes"
+       },
+       {
+              "name": "Repeat",
+              "isActive": "yes",
+              "isFolder": "no"
        }
 ]
