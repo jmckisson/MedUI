@@ -1,10 +1,5 @@
 [
        {
-              "name": "UOMap",
-              "isActive": "yes",
-              "isFolder": "yes"
-       },
-       {
               "name": "MedieviaTabbedChat",
               "isActive": "yes",
               "isFolder": "yes"
