@@ -1,5 +1,6 @@
 --[[
   Changelog:
+    1.6.6 - Fix missing Repeat alias pattern
     1.6.5 - Fix missing Repeat alias
     1.6.4 - Fix self-updater
     1.6.3 - Fix prompt regex for prompts containing blind, plague, poison, etc
