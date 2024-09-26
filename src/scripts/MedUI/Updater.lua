@@ -1,5 +1,6 @@
 --[[
   Changelog:
+    1.7.1 - Add font to resources
     1.7.0 - Add Medievia Mapper additions for Mudlet generic_mapper
     1.6.6 - Fix missing Repeat alias pattern
     1.6.5 - Fix missing Repeat alias
