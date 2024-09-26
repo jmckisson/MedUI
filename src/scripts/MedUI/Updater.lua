@@ -1,5 +1,6 @@
 --[[
   Changelog:
+    1.7.0 - Add Medievia Mapper additions for Mudlet generic_mapper
     1.6.6 - Fix missing Repeat alias pattern
     1.6.5 - Fix missing Repeat alias
     1.6.4 - Fix self-updater
@@ -14,7 +15,7 @@
 
 MedUIUpdater = MedUIUpdater or {
   -- Make sure this version number exists in the versions.lua or the "versions behind" counting will fail!
-  version = "1.6.5"
+  version = "1.7.0"
 }
 
 --[[ 

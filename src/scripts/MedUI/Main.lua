@@ -18,6 +18,17 @@ setConfig("controlCharacterHandling", "oem")
 local w,h = getMainWindowSize()
 setBorderRight(w/3.3)
 
+-- Disable the generic_mapper "English Exits Trigger" to allow the Medievia mapper to function properly
+disableTrigger("English Exits Trigger")
+
+-- Add A Medievia prompt test pattern to the mapper test patterns
+local test_pattern = "^%b()<(.-)>"
+if map then
+  if not table.index_of(map.defaults.prompt_test_patterns, test_pattern) then
+    table.insert(map.defaults.prompt_test_patterns, "^%b()<(.-)>")
+  end
+end
+
 
 GUI.BoxCSS = CSSMan.new([[
   background-color: rgba(0,0,0,100);
