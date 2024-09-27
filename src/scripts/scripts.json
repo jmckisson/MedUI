@@ -4,5 +4,10 @@
               "isActive": "yes",
               "script": "",
               "isFolder": "yes"
+       },
+       {
+              "name": "Medievia Mapper",
+              "isActive": "yes",
+              "isFolder": "yes"
        }
 ]

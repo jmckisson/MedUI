@@ -1,1 +1,12 @@
-null
+[
+    {
+           "name": "Medievia Mapper",
+           "isActive": "yes",
+           "isFolder": "yes"
+    },
+    {
+        "name": "MedUI",
+        "isActive": "yes",
+        "isFolder": "yes"
+    }
+]

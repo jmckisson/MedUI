@@ -1,5 +1,6 @@
 --[[
   Changelog:
+    1.7.2 - Add mapper additions to Muddler project properly
     1.7.1 - Add font to resources
     1.7.0 - Add Medievia Mapper additions for Mudlet generic_mapper
     1.6.6 - Fix missing Repeat alias pattern
@@ -16,7 +17,7 @@
 
 MedUIUpdater = MedUIUpdater or {
   -- Make sure this version number exists in the versions.lua or the "versions behind" counting will fail!
-  version = "1.7.0"
+  version = "1.7.2"
 }
 
 --[[ 

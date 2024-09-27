@@ -1,0 +1,81 @@
+[
+    {
+           "name": "Medievia Failed Move Trigger",
+           "isActive": "yes",
+           "isFolder": "no",
+           "multiline": "no",
+           "matchall": "no",
+           "filter": "no",
+           "fireLength": "0",
+           "highlight": "no",
+           "highlightFG": "#ff0000",
+           "highlightBG": "#ffff00",
+           "patterns": [
+                  {
+                         "pattern": "Alas, you cannot go that way...",
+                         "type": "exactMatch"
+                  },
+                  {
+                         "pattern": "You try to move during the quake and fall down...",
+                         "type": "exactMatch"
+                  },
+                  {
+                         "pattern": "With a shriek of indignation, the ladies who guard the door push you back.",
+                         "type": "exactMatch"
+                  },
+                  {
+                         "pattern": "You stop and pant loudly, sucking in air!",
+                         "type": "exactMatch"
+                  },
+                  {
+                         "pattern": "A strange force blocks your way.",
+                         "type": "exactMatch"
+                  },
+                  {
+                         "pattern": "Your high level keeps you from entering.",
+                         "type": "exactMatch"
+                  },
+                  {
+                         "pattern": "This area is currently under construction. Please check back soon!",
+                         "type": "exactMatch"
+                  },
+                  {
+                         "pattern": "Only Avatars may enter this sanctum.",
+                         "type": "exactMatch"
+                  }
+           ],
+           "script": "raiseEvent(\"onMoveFail\")"
+    },
+    {
+        "name": "Medievia Multi-Line Exits Trigger",
+        "isActive": "yes",
+        "isFolder": "no",
+        "multiline": "no",
+        "matchall": "no",
+        "filter": "no",
+        "fireLength": "1",
+        "highlight": "no",
+        "highlightFG": "#ff0000",
+        "highlightBG": "#ffff00",
+        "patterns": [
+                {
+                        "pattern": "Obvious exits:",
+                        "type": "exactMatch"
+                }
+        ],
+        "script": "map.prompt.exits = \"\"",
+        "children": [
+            {
+                "name": "Medievia Exit Line Trigger",
+                "isActive": "yes",
+                "isFolder": "no",
+                "patterns": [
+                    {
+                        "pattern": "^(\\w+)\\s*(?:\\[\\d+\\])?\\s*-\\s*(.*)",
+                        "type": "regex"
+                    }
+                ]
+            }
+        ]
+    }
+]
