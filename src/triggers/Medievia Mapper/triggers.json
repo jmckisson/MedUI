@@ -66,9 +66,10 @@
         "script": "map.prompt.exits = \"\"",
         "children": [
             {
-                "name": "Medievia Exit Line Trigger",
+                "name": "MedieviaExitLineTrigger",
                 "isActive": "yes",
                 "isFolder": "no",
+                "script": "",
                 "patterns": [
                     {
                         "pattern": "^(\\w+)\\s*(?:\\[\\d+\\])?\\s*-\\s*(.*)",
