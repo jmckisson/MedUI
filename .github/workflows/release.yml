@@ -2,7 +2,7 @@ name: Build project using muddler and upload artifact
 
 on:
   push:
-    branches: [ master ]
+    branches: '**'
 
 jobs:
   build:
@@ -42,8 +42,16 @@ jobs:
           muddlerVersion: LATEST # optional, default is LATEST
           # What directory to run muddler in.
           #workingDir: # optional, default is ${{ github.workspace }}
+          
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-package
+          path: build/${{ env.mfile_package }}.mpackage
 
-      - uses: ncipollo/release-action@v1.14.0
+      - name: Create Release
+        if: github.ref == 'refs/head/master'
+        uses: ncipollo/release-action@v1.14.0
         # see https://github.com/marketplace/actions/create-release
         with:
           artifacts: "build/${{env.mfile_package}}.mpackage,version.txt"
