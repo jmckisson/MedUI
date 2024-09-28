@@ -19,8 +19,8 @@ jobs:
             '{event_type: "package-update", client_payload: {repo_url: $repo_url, branch: $tag}}')
 
           # Trigger the dispatch event using curl
-          echo "curl -X POST \
-            -H 'Accept: application/vnd.github.v3+json' \
-            -H 'Authorization: token $GITHUB_TOKEN' \
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token $GITHUB_TOKEN" \
             https://api.github.com/repos/jmckisson/MedUI/dispatches \
-            -d '$PAYLOAD'"
+            -d "$PAYLOAD"
