@@ -1,9 +1,7 @@
 name: Notify Mudlet Package Repo on Tagged Commit
 
 on:
-  push:
-    tags:
-      - '*'  # Trigger on any new tag pushed
+  workflow_dispatch:
 
 jobs:
   notify:
