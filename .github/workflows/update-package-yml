@@ -1,0 +1,37 @@
+name: Update Package
+
+on:
+  repository_dispatch:  # Triggered by an external event
+    types: [package-update]  # Custom event type
+
+jobs:
+  update-package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout `mudlet-package-repo`
+        uses: actions/checkout@v4
+
+      - name: Set Up Repository URL
+        # Set the third-party repository URL and branch based on inputs/environment
+        run: |
+          echo "REPO_URL=${{ github.event.client_payload.repo_url }}" >> $GITHUB_ENV
+          echo "REPO_BRANCH=${{ github.event.client_payload.branch || 'master' }}" >> $GITHUB_ENV
+
+      - name: Pull latest changes from third-party package
+        run: |
+          # Check if REPO_URL is set
+          if [ -z "$REPO_URL" ]; then
+            echo "Error: REPO_URL is not set. Cannot pull from the third-party repository."
+            exit 1
+          fi
+
+          # Add the third-party repo as a remote and fetch the latest changes
+          echo "git remote add third-party $REPO_URL"
+          echo "git fetch third-party $REPO_BRANCH"
+
+          # Merge the updates into the current branch
+          echo "git merge third-party/$REPO_BRANCH"
+
+          # Push changes to the mudlet-package-repo
+          echo "git push origin master"
