@@ -18,10 +18,5 @@
               "name": "Main",
               "isActive": "yes",
               "isFolder": "no"
-       },
-       {
-              "name": "Updater",
-              "isActive": "yes",
-              "isFolder": "no"
        }
 ]

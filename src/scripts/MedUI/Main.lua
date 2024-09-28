@@ -1,3 +1,21 @@
+--[[
+  Changelog:
+    1.7.3 - Remove updater code - using MPKG now
+    1.7.2 - Add mapper additions to Muddler project properly
+    1.7.1 - Add font to resources
+    1.7.0 - Add Medievia Mapper additions for Mudlet generic_mapper
+    1.6.6 - Fix missing Repeat alias pattern
+    1.6.5 - Fix missing Repeat alias
+    1.6.4 - Fix self-updater
+    1.6.3 - Fix prompt regex for prompts containing blind, plague, poison, etc
+            Use profile name for options persistence
+    1.6.2 - Add option to toggle timestamps in the MedChat window
+    1.6.1 - Fixed buffs not hiding when gauges are disabled
+            Trim whitespace from MMCP messages to prevent misaligned timestamps
+    1.6.0 - Added Changelog
+            Add option to keep the inline map in 'medui' command
+--]]
+
 MedUI = MedUI or {
   MedChat = {},
   MedMap = {},
