@@ -26,6 +26,9 @@ jobs:
             exit 1
           fi
 
+          git checkout -b test-branch
+          git push origin test-branch
+
           # Add the third-party repo as a remote and fetch the latest changes
           echo "git remote add third-party $REPO_URL"
           echo "git fetch third-party $REPO_BRANCH"
