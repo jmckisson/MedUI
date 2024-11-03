@@ -1,5 +1,6 @@
 --[[
   Changelog:
+    1.7.6 - Size and place Map and Chat windows
     1.7.5 - Check for and install MDK requirement for MedChat
     1.7.4 - Fix login triggers
     1.7.3 - Remove updater code - using MPKG now
@@ -64,8 +65,8 @@ GUI.BoxCSS = CSSMan.new([[
 -- create an adjustable container for more flexibility
 MedUI.MedMap.MapperAdjCont = Adjustable.Container:new({
   name = "Medieiva Map",
-  x = "40%", y = "5%",
-  width = 600,
+  x = w - getBorderRight(), y = 0,
+  width = getBorderRight(),
   height = "50%",
   lockStyle = "border",
   adjLabelstyle = "background-color:darkred; border: 0; padding: 1px;",

@@ -8,10 +8,13 @@ function medieviaTabbedChat_InitMedChat()
   local istylesheet = [[background-color: rgb(60,0,0,255); border-width: 1px; border-style: solid; border-color: gold; border-radius: 10px;]]
   --local medchatstylesheet = [[background-color: rgb(255,255,255,255); border-width: 1px; border-style: solid; border-color: gold; border-radius: 10px;]]
   -- create an adjustable container for more flexibility
+
+  local mainWindowWidth, mainWindowHeight = getMainWindowSize()
+
   MedChat.Left = MedChat.Left or Adjustable.Container:new({
     name = "Medievia Chat",
-    x = "67%", y = "50%",
-    width = "23%",
+    x = mainWindowWidth - getBorderRight(), y = "50%",
+    width = getBorderRight(),
     height = "50%",
     lockStyle = "border",
     adjLabelstyle = "background-color:darkred; border: 0; padding: 1px;",
