@@ -86,8 +86,9 @@ MedUI.MedMap.Mapper = Geyser.MiniConsole:new({
   },
   MedUI.MedMap.MapperAdjCont
 )
-
 MedUI.MedMap.Mapper:setFont("Medievia Mudlet Sans Mono")
+MedUI.MedMap.Mapper:show()
+MedUI.MedMap.MapperAdjCont:lockContainer("light")
 
 function MedUI.MedMap.mapStart()
   MedUI.MedMap.Mapper:clear()

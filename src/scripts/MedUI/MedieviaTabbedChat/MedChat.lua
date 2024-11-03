@@ -21,8 +21,7 @@ function medieviaTabbedChat_InitMedChat()
     autoLoad = true,
     autoSave = true,
   })
-  MedChat.Left:lockContainer("light")
-
+  
 
   MedChat.runEMCO = MedChat.runEMCO or EMCO:new({
     x = "0",
@@ -47,7 +46,7 @@ function medieviaTabbedChat_InitMedChat()
   }, MedChat.Left)
 
   MedChat.Left:show()
-
+  MedChat.Left:lockContainer("light")
 end
 
 function MedChat.appendToChatPanel(channel)
