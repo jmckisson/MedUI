@@ -258,7 +258,7 @@ function MedPrompt.generatePromptRegex(input)
   return MedPrompt.promptPattern
 end
 
---[[
+
 function MedPrompt.killLoginTriggers()
   if MedPrompt.loginTrigIds then
     for k, v in pairs(MedPrompt.loginTrigIds) do
@@ -269,27 +269,30 @@ function MedPrompt.killLoginTriggers()
 end
 
 MedPrompt.killLoginTriggers()
---]]
 
 
 function MedPrompt.doConnectionSetup()
   send("prompt")
-  MedPrompt.setupComplete = true
-  --MedPrompt.killLoginTriggers()
+  --MedPrompt.setupComplete = true
+  MedPrompt.killLoginTriggers()
 end
 
---local trigId = tempRegexTrigger("^Reconnecting", [[MedPrompt.doConnectionSetup]], 1)
---table.insert(MedPrompt.loginTrigIds, trigId)
+local trigId = tempRegexTrigger("^Reconnecting", [[MedPrompt.doConnectionSetup]], 1)
+table.insert(MedPrompt.loginTrigIds, trigId)
 
---trigId = tempRegexTrigger("^You are the (.*) person to connect", [[MedPrompt.doConnectionSetup]], 1)
---table.insert(MedPrompt.loginTrigIds, trigId)
+trigId = tempRegexTrigger("^You are the (.*) person to connect", [[MedPrompt.doConnectionSetup]], 1)
+table.insert(MedPrompt.loginTrigIds, trigId)
 
+--[[
 function MedPrompt.eventHandler(event, ...)
   if event == "sysInstallPackage" and arg[1] == "MedUI" and not MedPrompt.setupComplete then
     MedPrompt.doConnectionSetup()
   end
 end
+--]]
 
-MedPrompt.registeredEvents = {
-  registerAnonymousEventHandler("sysInstallPackage", "MedPrompt.eventHandler")
-}
+--registerNamedEventHandler("Medievia", "MedUISetup", "sysInstallPackage", "MedPrompt.eventHandler")
+
+--MedPrompt.registeredEvents = {
+--  registerAnonymousEventHandler("sysInstallPackage", "MedPrompt.eventHandler")
+--}
