@@ -1,5 +1,6 @@
 --[[
   Changelog:
+    1.7.7 - Embed EMCO chat module instead of requiring as dependency
     1.7.6 - Size and place Map and Chat windows
     1.7.5 - Check for and install MDK requirement for MedChat
     1.7.4 - Fix login triggers

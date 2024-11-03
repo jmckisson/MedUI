@@ -1,5 +1,17 @@
 [
        {
+              "name": "emco",
+              "isActive": "yes",
+              "script": "",
+              "isFolder": "no"
+       },
+       {
+              "name": "LICENSE-MDK",
+              "isActive": "no",
+              "script": "",
+              "isFolder": "no"
+       },
+       {
               "name": "MedUI",
               "isActive": "yes",
               "script": "",

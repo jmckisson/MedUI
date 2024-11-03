@@ -3,7 +3,7 @@ MedChat = MedChat or {}
 function medieviaTabbedChat_InitMedChat()
   -- create some variable space so we don't pollute global variables
  
-  local EMCO = require("MDK.emco")
+  local EMCO = require("MedUI.emco")
   local stylesheet = [[background-color: rgb(0,255,255,255); border-width: 1px; border-style: solid; border-color: gold; border-radius: 10px;]]
   local istylesheet = [[background-color: rgb(60,0,0,255); border-width: 1px; border-style: solid; border-color: gold; border-radius: 10px;]]
   --local medchatstylesheet = [[background-color: rgb(255,255,255,255); border-width: 1px; border-style: solid; border-color: gold; border-radius: 10px;]]
@@ -84,10 +84,5 @@ MedChat.registeredEvents = {
   registerAnonymousEventHandler("sysMMCPMessage", "MedChat.eventHandler")
 }
 
--- handle installing MDK requirement
-if not table.contains(getPackages(), "MDK") then
-  installPackage("https://github.com/demonnic/MDK/releases/download/v2.10.0/MDK.mpackage")
-  tempTimer(5, function() medieviaTabbedChat_InitMedChat() end)
-else
-  medieviaTabbedChat_InitMedChat()
-end
+medieviaTabbedChat_InitMedChat()
+
