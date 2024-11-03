@@ -43,6 +43,8 @@ function medieviaTabbedChat_InitMedChat()
     inactiveTabCSS = istylesheet,
   }, MedChat.Left)
 
+  MedChat.Left:show()
+
 end
 
 function MedChat.appendToChatPanel(channel)
@@ -80,6 +82,10 @@ MedChat.registeredEvents = {
   registerAnonymousEventHandler("sysMMCPMessage", "MedChat.eventHandler")
 }
 
-medieviaTabbedChat_InitMedChat()
-
-MedChat.Left:show()
+-- handle installing MDK requirement
+if not table.contains(getPackages(), "MDK") then
+  installPackage("https://github.com/demonnic/MDK/releases/download/v2.10.0/MDK.mpackage")
+  tempTimer(5, function() medieviaTabbedChat_InitMedChat() end)
+else
+  medieviaTabbedChat_InitMedChat()
+end

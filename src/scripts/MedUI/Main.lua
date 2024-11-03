@@ -1,5 +1,6 @@
 --[[
   Changelog:
+    1.7.5 - Check for and install MDK requirement for MedChat
     1.7.4 - Fix login triggers
     1.7.3 - Remove updater code - using MPKG now
     1.7.2 - Add mapper additions to Muddler project properly
