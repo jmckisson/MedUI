@@ -1,5 +1,6 @@
 --[[
   Changelog:
+    1.7.4 - Fix login triggers
     1.7.3 - Remove updater code - using MPKG now
     1.7.2 - Add mapper additions to Muddler project properly
     1.7.1 - Add font to resources
@@ -17,6 +18,7 @@
 --]]
 
 MedUI = MedUI or {
+  version = "__VERSION__",
   MedChat = {},
   MedMap = {},
   options = {
@@ -620,7 +622,7 @@ function MedUI.config(arg)
 
   decho(ansi2decho(logo))
   
-  cecho("<DeepSkyBlue>MedUI by <firebrick>Kymbahl <DeepSkyBlue>& <gold>Kronos<DeepSkyBlue>, version: <orange>" .. MedUIUpdater.version .. "\n")
+  cecho("<DeepSkyBlue>MedUI by <firebrick>Kymbahl <DeepSkyBlue>& <gold>Kronos<DeepSkyBlue>, version: <orange>" .. MedUI.version .. "\n")
   
   local optionsList = {
     {description = "Enable Gauges", optionKey = "enableGauges", helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui gauges<white>' to toggle"},
