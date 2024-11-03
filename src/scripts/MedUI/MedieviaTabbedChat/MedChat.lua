@@ -81,3 +81,5 @@ MedChat.registeredEvents = {
 }
 
 medieviaTabbedChat_InitMedChat()
+
+MedChat.Left:show()
