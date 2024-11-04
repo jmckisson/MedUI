@@ -1,10 +1,5 @@
 [
        {
-              "name": "MedieviaTabbedChat",
-              "isActive": "yes",
-              "isFolder": "yes"
-       },
-       {
               "name": "CSSMan",
               "isActive": "yes",
               "isFolder": "no"
@@ -18,5 +13,10 @@
               "name": "Main",
               "isActive": "yes",
               "isFolder": "no"
+       },
+       {
+              "name": "MedieviaTabbedChat",
+              "isActive": "yes",
+              "isFolder": "yes"
        }
 ]
