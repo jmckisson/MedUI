@@ -1,5 +1,10 @@
 [
        {
+              "name": "HelpFile",
+              "isActive": "no",
+              "isFolder": "no"
+       },
+       {
               "name": "CSSMan",
               "isActive": "yes",
               "isFolder": "no"
@@ -15,8 +20,8 @@
               "isFolder": "no"
        },
        {
-              "name": "MedieviaTabbedChat",
+              "name": "MedChat",
               "isActive": "yes",
-              "isFolder": "yes"
+              "isFolder": "no"
        }
 ]
