@@ -12,7 +12,7 @@ function medieviaTabbedChat_InitMedChat()
   local mainWindowWidth, mainWindowHeight = getMainWindowSize()
 
   if MedChat.Left and MedChat.Left:get_width() == 0 then
-    cecho("\n<yellow>Found existing MedChat.Left with 0 width, setting to nil and reinitializing...\n")
+    --cecho("\n<yellow>Found existing MedChat.Left with 0 width, setting to nil and reinitializing...\n")
     MedChat.Left = nil
     MedChat.runEMCO = nil
   end
@@ -94,12 +94,5 @@ end
 
 registerNamedEventHandler("MedUI", "MedChat", "sysMMCPMessage", "MedChat.eventHandler")
 
--- Somehow it is possible for the right border to not yet be initialized
--- check for this and delay initialization of the chat window
-if getBorderRight() == 0 then
-  cecho("\n<orange>BorderRight is 0, delaying init of MedChat\n")
-  tempTimer(.5, function() medieviaTabbedChat_InitMedChat() end)
-else
-  cecho("\n<green>BorderRight is " .. getBorderRight() .. " initializing MedChat\n")
-  medieviaTabbedChat_InitMedChat()
-end
+medieviaTabbedChat_InitMedChat()
+
