@@ -91,7 +91,9 @@ registerNamedEventHandler("MedUI", "MedChat", "sysMMCPMessage", "MedChat.eventHa
 -- Somehow it is possible for the right border to not yet be initialized
 -- check for this and delay initialization of the chat window
 if getBorderRight() == 0 then
+  cecho("\n<orange>BorderRight is 0, delaying init of MedChat\n")
   tempTimer(.5, function() medieviaTabbedChat_InitMedChat() end)
 else
+  cecho("\n<green>BorderRight is " .. getBorderRight() .. " initializing MedChat\n")
   medieviaTabbedChat_InitMedChat()
 end
