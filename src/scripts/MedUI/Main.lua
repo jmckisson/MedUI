@@ -71,8 +71,8 @@ end
 -- create an adjustable container for more flexibility
 MedUI.MedMap.MapperAdjCont = Adjustable.Container:new({
   name = "Medieiva Map",
-  x = w - getBorderRight(), y = 0,
-  width = getBorderRight(),
+  x = "-30.303%", y = 0,
+  width = "30.303%",
   height = "50%",
   lockStyle = "border",
   adjLabelstyle = "background-color:darkred; border: 0; padding: 1px;",
@@ -93,7 +93,8 @@ MedUI.MedMap.Mapper = Geyser.MiniConsole:new({
   MedUI.MedMap.MapperAdjCont
 )
 MedUI.MedMap.Mapper:setFont("Medievia Mudlet Sans Mono")
-MedUI.MedMap.Mapper:show()
+MedUI.MedMap.MapperAdjCont:connectToBorder("right")
+MedUI.MedMap.MapperAdjCont:show()
 MedUI.MedMap.MapperAdjCont:lockContainer("light")
 
 function MedUI.MedMap.mapStart()

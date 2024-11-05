@@ -9,8 +9,6 @@ function medieviaTabbedChat_InitMedChat()
   --local medchatstylesheet = [[background-color: rgb(255,255,255,255); border-width: 1px; border-style: solid; border-color: gold; border-radius: 10px;]]
   -- create an adjustable container for more flexibility
 
-  local mainWindowWidth, mainWindowHeight = getMainWindowSize()
-
   if MedChat.Left and MedChat.Left:get_width() == 0 then
     --cecho("\n<yellow>Found existing MedChat.Left with 0 width, setting to nil and reinitializing...\n")
     MedChat.Left = nil
@@ -19,8 +17,8 @@ function medieviaTabbedChat_InitMedChat()
 
   MedChat.Left = MedChat.Left or Adjustable.Container:new({
     name = "Medievia Chat",
-    x = mainWindowWidth - getBorderRight(), y = "50%",
-    width = getBorderRight(),
+    x = "-30.303%", y = "50%",  -- compensate for the border being width/3.3
+    width = "30.303%",
     height = "50%",
     lockStyle = "border",
     adjLabelstyle = "background-color:darkred; border: 0; padding: 1px;",
@@ -51,6 +49,7 @@ function medieviaTabbedChat_InitMedChat()
     inactiveTabCSS = istylesheet,
   }, MedChat.Left)
 
+  MedChat.Left:connectToBorder("right")
   MedChat.Left:show()
   MedChat.Left:lockContainer("light")
 end
