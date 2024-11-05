@@ -73,16 +73,25 @@ function MedChat.eventHandler(event, ...)
     MedChat.runEMCO:decho("MMCP", ansi2decho(trimmedStr) .. "\n", false)
     
   elseif event == "sysUninstallPackage" and arg[1] == "MedUI" then
+    --[[
     for _,id in ipairs(MedChat.registeredEvents) do
       killAnonymousEventHandler(id)
     end
-
+    ]]
+    stopNamedEventHandler("MedUI", "MedChat")
   end
 end
 
-MedChat.registeredEvents = {
-  registerAnonymousEventHandler("sysMMCPMessage", "MedChat.eventHandler")
-}
+--MedChat.registeredEvents = {
+--  registerAnonymousEventHandler("sysMMCPMessage", "MedChat.eventHandler")
+--}
 
-medieviaTabbedChat_InitMedChat()
+registerNamedEventHandler("MedUI", "MedChat", "sysMMCPMessage", "MedChat.eventHandler")
 
+-- Somehow it is possible for the right border to not yet be initialized
+-- check for this and delay initialization of the chat window
+if getBorderRight() == 0 then
+  tempTimer(.5, function() medieviaTabbedChat_InitMedChat() end)
+else
+  medieviaTabbedChat_InitMedChat()
+end
