@@ -62,6 +62,11 @@ GUI.BoxCSS = CSSMan.new([[
   margin: 10px;
 ]])
 
+-- nullify the map window if it it somehow loaded with a 0 width
+if MedUI.MedMap.MapperAdjCont and MedUI.MedMap.MapperAdjCont:get_width() == 0 then
+  MedUI.MedMap.MapperAdjCont = nil
+  MedUI.MedMap.Mapper = nil
+end
 
 -- create an adjustable container for more flexibility
 MedUI.MedMap.MapperAdjCont = Adjustable.Container:new({
@@ -81,7 +86,7 @@ MedUI.MedMap.Mapper = Geyser.MiniConsole:new({
     x= 0, y= 0,
     autoWrap = false,
     color = "black",
-    scrollBar = true,
+    scrollBar = false,
     fontSize = 9,
     width="100%", height="100%",
   },
@@ -600,9 +605,14 @@ function MedBuffsNBars.eventHandler(event, ...)
   end
 end
 
+--[[
 MedBuffsNBars.registeredEvents = {
   registerAnonymousEventHandler("evtPromptData", "MedBuffsNBars.eventHandler")
 }
+]]
+
+registerNamedEventHandler("MedUI", "MedBuffsNBars", "evtPromptData", "MedBuffsNBars.eventHandler")
+
 ---------------------------------------------------------------------------------
 ---- End Buffs and Bars Code ----------------------------------------------------
 ---------------------------------------------------------------------------------
@@ -721,9 +731,12 @@ function MedUI.eventHandler(event, ...)
     end
     
   elseif event == "sysUninstallPackage" and arg[1] == "MedUI" then
-    for _,id in ipairs(MedUI.registeredEvents) do
-      killAnonymousEventHandler(id)
-    end
+    --for _,id in ipairs(MedUI.registeredEvents) do
+    --  killAnonymousEventHandler(id)
+    --end
+    stopNamedEventHandler("MedUI", "MedUIResize")
+    stopNamedEventHandler("MedUI", "MedUIUninstall")
+    stopNamedEventHandler("MedUI", "MedBuffsNBars")
 
   end
 end
@@ -733,15 +746,20 @@ end
   Reload options for the loaded profile and reconfigure the UI
 --]]
 
+--[[
 if MedUI.registeredEvents then
   for _,id in ipairs(MedUI.registeredEvents) do
     killAnonymousEventHandler(id)
   end
 end
+]]
 
-MedUI.registeredEvents = {
-  registerAnonymousEventHandler("sysWindowResizeEvent", "MedUI.eventHandler")
-}
+--MedUI.registeredEvents = {
+--  registerAnonymousEventHandler("sysWindowResizeEvent", "MedUI.eventHandler")
+--}
+
+registerNamedEventHandler("MedUI", "MedUIResize", "sysWindowResizeEvent", "MedUI.eventHandler")
+registerNamedEventHandler("MedUI", "MedUIUninstall", "sysUninstallPackage", "MedUI.eventHandler")
 
 if MedUI.configAlias then
   killAlias(MedUI.configAlias)
