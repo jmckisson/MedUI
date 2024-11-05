@@ -11,6 +11,12 @@ function medieviaTabbedChat_InitMedChat()
 
   local mainWindowWidth, mainWindowHeight = getMainWindowSize()
 
+  if MedChat.Left and MedChat.Left:get_width() == 0 then
+    cecho("\n<yellow>Found existing MedChat.Left with 0 width, setting to nil and reinitializing...\n")
+    MedChat.Left = nil
+    MedChat.runEMCO = nil
+  end
+
   MedChat.Left = MedChat.Left or Adjustable.Container:new({
     name = "Medievia Chat",
     x = mainWindowWidth - getBorderRight(), y = "50%",
