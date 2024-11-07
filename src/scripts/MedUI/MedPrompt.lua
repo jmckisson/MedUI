@@ -225,7 +225,7 @@ function MedPrompt.generatePromptRegex(input)
   end
   
   if not string.find(MedPrompt.promptPattern, "<pk>") then
-    cecho("\n<red>WARNING: PK type not found in your prompt, falling back to standard triggers")
+    --cecho("\n<red>WARNING: PK type not found in your prompt, falling back to standard triggers")
     if MedPrompt.pkTrigIds then
       for k, v in pairs(MedPrompt.pkTrigIds) do
         killTrigger(v)
