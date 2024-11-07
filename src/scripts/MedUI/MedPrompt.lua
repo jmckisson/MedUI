@@ -286,17 +286,3 @@ table.insert(MedPrompt.loginTrigIds, trigId)
 
 trigId = tempTrigger("Norb the Minotaur telepaths you, 'You are in the zone", [[MedPrompt.doConnectionSetup()]], 1)
 table.insert(MedPrompt.loginTrigIds, trigId)
-
---[[
-function MedPrompt.eventHandler(event, ...)
-  if event == "sysInstallPackage" and arg[1] == "MedUI" and not MedPrompt.setupComplete then
-    MedPrompt.doConnectionSetup()
-  end
-end
---]]
-
---registerNamedEventHandler("Medievia", "MedUISetup", "sysInstallPackage", "MedPrompt.eventHandler")
-
---MedPrompt.registeredEvents = {
---  registerAnonymousEventHandler("sysInstallPackage", "MedPrompt.eventHandler")
---}
