@@ -154,7 +154,7 @@ function MedPrompt.generatePromptRegex(input)
   }
   
   if input == "none" then
-    input = "#b<#x&h#bhp #x&m#bm #x&v#b&umv #x&b#b&ubr #x&Rr#b> &W"
+    input = "#b<#x&h#bhp #x&m#bm #x&v#b&umv #x&b#b&ubr#b>"
   end
 
   local cleanedInput = input
@@ -281,6 +281,9 @@ local trigId = tempRegexTrigger("^Reconnecting", [[MedPrompt.doConnectionSetup]]
 table.insert(MedPrompt.loginTrigIds, trigId)
 
 trigId = tempRegexTrigger("^You are the (.*) person to connect", [[MedPrompt.doConnectionSetup]], 1)
+table.insert(MedPrompt.loginTrigIds, trigId)
+
+trigId = tempTrigger("Norb the Minotaur telepaths you, 'You are in the zone", [[MedPrompt.doConnectionSetup]], 1)
 table.insert(MedPrompt.loginTrigIds, trigId)
 
 --[[
