@@ -278,13 +278,13 @@ function MedPrompt.doConnectionSetup()
   loadMap(getMudletHomeDir().."/MedUI/MedieviaMap.dat")
 end
 
-local trigId = tempRegexTrigger("^Reconnecting", [[MedPrompt.doConnectionSetup]], 1)
+local trigId = tempRegexTrigger("^Reconnecting", [[MedPrompt.doConnectionSetup()]], 1)
 table.insert(MedPrompt.loginTrigIds, trigId)
 
-trigId = tempRegexTrigger("^You are the (.*) person to connect", [[MedPrompt.doConnectionSetup]], 1)
+trigId = tempRegexTrigger("^You are the (.*) person to connect", [[MedPrompt.doConnectionSetup()]], 1)
 table.insert(MedPrompt.loginTrigIds, trigId)
 
-trigId = tempTrigger("Norb the Minotaur telepaths you, 'You are in the zone", [[MedPrompt.doConnectionSetup]], 1)
+trigId = tempTrigger("Norb the Minotaur telepaths you, 'You are in the zone", [[MedPrompt.doConnectionSetup()]], 1)
 table.insert(MedPrompt.loginTrigIds, trigId)
 
 --[[
