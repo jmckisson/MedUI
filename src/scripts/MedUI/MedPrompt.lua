@@ -275,6 +275,7 @@ function MedPrompt.doConnectionSetup()
   send("prompt")
   --MedPrompt.setupComplete = true
   MedPrompt.killLoginTriggers()
+  loadMap(getMudletHomeDir().."/MedUI/MedieviaMap.dat")
 end
 
 local trigId = tempRegexTrigger("^Reconnecting", [[MedPrompt.doConnectionSetup]], 1)
