@@ -42,7 +42,6 @@ function medieviaTabbedChat_InitMedChat()
       "Clan", 
       "Town",
       "Chat",
-      "MMCP",
     },
     activeTabCSS = stylesheet,
     fontSize=8,
@@ -52,6 +51,12 @@ function medieviaTabbedChat_InitMedChat()
   MedChat.Left:connectToBorder("right")
   MedChat.Left:show()
   MedChat.Left:lockContainer("light")
+end
+
+if chatCall then
+  if not table.index_of(MedChat.runEMCO.consoles, "MMCP") then
+    MedChat.runEMCO:addTab("MMCP", #MedChat.runEMCO.consoles + 1)
+  end
 end
 
 function MedChat.appendToChatPanel(channel)
