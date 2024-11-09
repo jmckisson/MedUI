@@ -195,18 +195,29 @@ function MedPrompt.generatePromptRegex(input)
     print("prompt pattern='"..MedPrompt.promptPattern.."'")
   end
   
+  MedPrompt.setupPromptTriggers()
+
+  MedPrompt.setupComplete = true
+
+  MedUI.options.promptPattern = MedPrompt.promptPattern
+  MedUI.saveOptions()
+  return MedPrompt.promptPattern
+end
+
+
+function MedPrompt.setupPromptTriggers()
   if MedPrompt.promptTriggerId then
     killTrigger(MedPrompt.promptTriggerId)
   end
-  
+
   MedPrompt.promptTriggerId = tempRegexTrigger(MedPrompt.promptPattern, function() MedPrompt.gotPromptLine(matches) end)
-  
+
   if not string.find(MedPrompt.promptPattern, "<maxhp>") then
     -- set up stats trigger so we can find maxhp and maxmana
     if MedPrompt.statsTriggerId then
       killTrigger(MedPrompt.statsTriggerId)
     end
-    
+
     MedPrompt.statsTriggerId = tempRegexTrigger(MedPrompt.statsPattern, function()
 
       if matches.maxhp then
@@ -215,15 +226,15 @@ function MedPrompt.generatePromptRegex(input)
       if matches.maxmana then
         MedPrompt.maxMana = tonumber(matches.maxmana)
       end
-      
+
       if matches.maxmvs then
         MedPrompt.maxMvs = tonumber(matches.maxmvs)
       end
     end)
-    
+ 
     send("stat")
   end
-  
+
   if not string.find(MedPrompt.promptPattern, "<pk>") then
     --cecho("\n<red>WARNING: PK type not found in your prompt, falling back to standard triggers")
     if MedPrompt.pkTrigIds then
@@ -235,29 +246,23 @@ function MedPrompt.generatePromptRegex(input)
     local trigId = tempRegexTrigger("^WARNING! You HAVE ENTERED a CHAOTIC PLAYER KILLING area", function()
       raiseEvent("evtMedPKChange", "CPK")
     end)
-    table.insert(MedPrompt.pkTrigIds, tridId)
+    table.insert(MedPrompt.pkTrigIds, trigId)
     trigId = tempRegexTrigger("^WARNING! You HAVE LEFT a CHAOTIC PLAYER KILLING AREA and ENTERED a GRAVE NEUTRAL",
       function()
         raiseEvent("evtMedPKChange", "GNPK")
       end)
-    table.insert(MedPrompt.pkTrigIds, tridId)
+    table.insert(MedPrompt.pkTrigIds, trigId)
     trigId = tempRegexTrigger("^WARNING! You HAVE LEFT a CHAOTIC PLAYER KILLING AREA and ENTERED a NEUTRAL",
       function()
         raiseEvent("evtMedPKChange", "NPK")
       end)
-    table.insert(MedPrompt.pkTrigIds, tridId)
+    table.insert(MedPrompt.pkTrigIds, trigId)
     trigId = tempRegexTrigger("^NOTICE: You are leaving a PLAYER KILLING area\.",
       function()
         raiseEvent("evtMedPKChange", "LPK")
       end)
-    table.insert(MedPrompt.pkTrigIds, tridId)
+    table.insert(MedPrompt.pkTrigIds, trigId)
   end
-
-  MedPrompt.setupComplete = true
-
-  MedUI.options.promptPattern = MedPrompt.promptPattern
-  MedUI.saveOptions()
-  return MedPrompt.promptPattern
 end
 
 

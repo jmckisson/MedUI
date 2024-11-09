@@ -704,6 +704,12 @@ function MedUI.loadOptions()
     enableTimestamps = true
   }
 
+  -- reinitialize prompt triggers from saved data
+  if MedUI.options.promptPattern then
+    MedPrompt.promptPattern = MedPrompt.options.promptPattern
+    MedPrompt.setupPromptTriggers()
+  end
+
   cecho("\n<DeepSkyBlue> MedUI: loaded options for <yellow>" .. charName)
   MedUI.charName = charName
 end
@@ -743,23 +749,6 @@ function MedUI.eventHandler(event, ...)
   end
 end
 
---[[
-  On script load, kill any existing event handlers and tempAliases, then set them up again
-  Reload options for the loaded profile and reconfigure the UI
---]]
-
---[[
-if MedUI.registeredEvents then
-  for _,id in ipairs(MedUI.registeredEvents) do
-    killAnonymousEventHandler(id)
-  end
-end
-]]
-
---MedUI.registeredEvents = {
---  registerAnonymousEventHandler("sysWindowResizeEvent", "MedUI.eventHandler")
---}
-
 registerNamedEventHandler("MedUI", "MedUIResize", "sysWindowResizeEvent", "MedUI.eventHandler")
 registerNamedEventHandler("MedUI", "MedUIUninstall", "sysUninstallPackage", "MedUI.eventHandler")
 
@@ -788,5 +777,7 @@ end
 MedUI.timestampAlias = tempAlias("^medui timestamp$", [[MedUI.config(3)]])
 
 MedUI.charName = string.lower(getProfileName())
-MedUI.loadOptions()
-MedUI.reconfigure()
+tempTimer(.5, function()
+  MedUI.loadOptions()
+  MedUI.reconfigure()
+end)
