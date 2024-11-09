@@ -27,7 +27,7 @@ MedUI = MedUI or {
   MedMap = {},
   options = {
     enableGauges = true,
-    keepInlineMap = true,
+    keepInlineMap = false,
     enableTimestamps = true
   }
 }
@@ -694,7 +694,7 @@ function MedUI.loadOptions()
 
   MedUI.options = MedUI.options or {
     enableGauges = true,
-    keepInlineMap = true,
+    keepInlineMap = false,
     enableTimestamps = true
   }
 
