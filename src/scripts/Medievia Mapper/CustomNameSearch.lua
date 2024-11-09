@@ -39,6 +39,10 @@ mudlet.custom_name_search = function (lines)
     return room_name
 end
 
-if map and map.configs and not map.configs.custom_name_search then
+-- map.configs may not exist at this point despite the generic_mapper script loading first
+if not map or not map.configs then
+    tempTimer(.5, function() map.configs.custom_name_search = true end)
+else
     map.configs.custom_name_search = true
 end
+
