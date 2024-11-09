@@ -33,27 +33,6 @@ MedUI = MedUI or {
 }
 GUI = GUI or {}
 
-setFont("main", "Medievia Mudlet Sans Mono")
-setFontSize("main", 13)
-
-setServerEncoding("MEDIEVIA")
-setConfig("controlCharacterHandling", "oem")
-
-local w,h = getMainWindowSize()
-setBorderRight(w/3.3)
-
--- Disable the generic_mapper "English Exits Trigger" to allow the Medievia mapper to function properly
-disableTrigger("English Exits Trigger")
-
--- Add A Medievia prompt test pattern to the mapper test patterns
-local test_pattern = "^%b()<(.-)>"
-if map then
-  if not table.index_of(map.defaults.prompt_test_patterns, test_pattern) then
-    table.insert(map.defaults.prompt_test_patterns, "^%b()<(.-)>")
-  end
-end
-
-
 GUI.BoxCSS = CSSMan.new([[
   background-color: rgba(0,0,0,100);
   border-style: solid;
@@ -607,12 +586,6 @@ function MedBuffsNBars.eventHandler(event, ...)
   end
 end
 
---[[
-MedBuffsNBars.registeredEvents = {
-  registerAnonymousEventHandler("evtPromptData", "MedBuffsNBars.eventHandler")
-}
-]]
-
 registerNamedEventHandler("MedUI", "MedBuffsNBars", "evtPromptData", "MedBuffsNBars.eventHandler")
 
 ---------------------------------------------------------------------------------
@@ -680,24 +653,45 @@ end
 
 function MedUI.reconfigure()
 
+  setFont("main", "Medievia Mudlet Sans Mono")
+  setFontSize("main", 13)
+
+  setServerEncoding("MEDIEVIA")
+  setConfig("controlCharacterHandling", "oem")
+
+  local w,h = getMainWindowSize()
+  setBorderRight(w/3.3)
+
+  -- Disable the generic_mapper "English Exits Trigger" to allow the Medievia mapper to function properly
+  disableTrigger("English Exits Trigger")
+
+  -- Add A Medievia prompt test pattern to the mapper test patterns
+  local test_pattern = "^%b()<(.-)>"
+  if map then
+    if not table.index_of(map.defaults.prompt_test_patterns, test_pattern) then
+      table.insert(map.defaults.prompt_test_patterns, "^%b()<(.-)>")
+    end
+  end
+
   if MedUI.options.enableGauges then
     MedUI.enableGauges()
   else
     MedUI.disableGauges()
   end
+
 end
 
 function MedUI.loadOptions()
   local charName = string.lower(getProfileName())
-  
+
   local loadTable = {}
   local tablePath = getMudletHomeDir().."/medui_"..charName..".lua"
   if io.exists(tablePath) then
     table.load(tablePath, loadTable)
   end
-  
+
   MedUI.options = table.deepcopy(loadTable.options)
-  
+
   MedUI.options = MedUI.options or {
     enableGauges = true,
     keepInlineMap = true,
@@ -706,7 +700,7 @@ function MedUI.loadOptions()
 
   -- reinitialize prompt triggers from saved data
   if MedUI.options.promptPattern then
-    echo("\nSetting promptPattern from save table\n")
+    --echo("\nSetting promptPattern from save table\n")
     MedPrompt.promptPattern = MedUI.options.promptPattern
     MedPrompt.setupPromptTriggers()
   end
@@ -717,16 +711,16 @@ end
 
 function MedUI.saveOptions()
   local charName = string.lower(getProfileName())
-  
+
   if not MedUI.options.promptPattern and MedPrompt.promptPattern and MedPrompt.promptPattern ~= "" then
-    echo("\nAdding promptPattern to save table\n")
+    --echo("\nAdding promptPattern to save table\n")
     MedUI.options.promptPattern = MedPrompt.promptPattern
   end
 
   local saveTable = {
     options = table.deepcopy(MedUI.options)
   }
-  
+
   table.save(getMudletHomeDir().."/medui_"..charName..".lua", saveTable)
 
   cecho("\n<DeepSkyBlue> MedUI: saved options for <yellow>" .. charName)
@@ -738,17 +732,16 @@ function MedUI.eventHandler(event, ...)
 
   if event == "sysWindowResizeEvent" then
     local x, y, windowName = arg[1], arg[2], arg[3]
-    
+
     if windowName == "main" then      
       local w,h = getMainWindowSize()
       setBorderRight(w/3.3)
     end
-    
+
   elseif event == "sysUninstallPackage" and arg[1] == "MedUI" then
     stopNamedEventHandler("MedUI", "MedUIResize")
     stopNamedEventHandler("MedUI", "MedUIUninstall")
     stopNamedEventHandler("MedUI", "MedBuffsNBars")
-
   end
 end
 
