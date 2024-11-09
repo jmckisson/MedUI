@@ -706,6 +706,7 @@ function MedUI.loadOptions()
 
   -- reinitialize prompt triggers from saved data
   if MedUI.options.promptPattern then
+    echo("\nSetting promptPattern from save table\n")
     MedPrompt.promptPattern = MedPrompt.options.promptPattern
     MedPrompt.setupPromptTriggers()
   end
@@ -717,6 +718,11 @@ end
 function MedUI.saveOptions()
   local charName = string.lower(getProfileName())
   
+  if not MedUI.options.promptPattern and MedPrompt.promptPattern and MedPrompt.promptPattern ~= "" then
+    echo("\nAdding promptPattern to save table\n")
+    MedUI.options.promptPattern = MedPrompt.promptPattern
+  end
+
   local saveTable = {
     options = table.deepcopy(MedUI.options)
   }
@@ -739,9 +745,6 @@ function MedUI.eventHandler(event, ...)
     end
     
   elseif event == "sysUninstallPackage" and arg[1] == "MedUI" then
-    --for _,id in ipairs(MedUI.registeredEvents) do
-    --  killAnonymousEventHandler(id)
-    --end
     stopNamedEventHandler("MedUI", "MedUIResize")
     stopNamedEventHandler("MedUI", "MedUIUninstall")
     stopNamedEventHandler("MedUI", "MedBuffsNBars")
