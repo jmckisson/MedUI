@@ -651,33 +651,37 @@ function MedUI.config(arg)
   MedUI.saveOptions()
 end
 
+function MedUI.setMudletOptions()
+    setFont("main", "Medievia Mudlet Sans Mono")
+    setFontSize("main", 13)
+
+    setServerEncoding("MEDIEVIA")
+    setConfig("controlCharacterHandling", "oem")
+
+    local w,h = getMainWindowSize()
+    setBorderRight(w/3.3)
+
+    -- Disable the generic_mapper "English Exits Trigger" to allow the Medievia mapper to function properly
+    disableTrigger("English Exits Trigger")
+
+    -- Add A Medievia prompt test pattern to the mapper test patterns
+    local test_pattern = "^%b()<(.-)>"
+    if map then
+      if not table.index_of(map.defaults.prompt_test_patterns, test_pattern) then
+        table.insert(map.defaults.prompt_test_patterns, "^%b()<(.-)>")
+      end
+    end
+end
+
 function MedUI.reconfigure()
 
-  setFont("main", "Medievia Mudlet Sans Mono")
-  setFontSize("main", 13)
+    MedUI.setMudletOptions()
 
-  setServerEncoding("MEDIEVIA")
-  setConfig("controlCharacterHandling", "oem")
-
-  local w,h = getMainWindowSize()
-  setBorderRight(w/3.3)
-
-  -- Disable the generic_mapper "English Exits Trigger" to allow the Medievia mapper to function properly
-  disableTrigger("English Exits Trigger")
-
-  -- Add A Medievia prompt test pattern to the mapper test patterns
-  local test_pattern = "^%b()<(.-)>"
-  if map then
-    if not table.index_of(map.defaults.prompt_test_patterns, test_pattern) then
-      table.insert(map.defaults.prompt_test_patterns, "^%b()<(.-)>")
+    if MedUI.options.enableGauges then
+        MedUI.enableGauges()
+    else
+        MedUI.disableGauges()
     end
-  end
-
-  if MedUI.options.enableGauges then
-    MedUI.enableGauges()
-  else
-    MedUI.disableGauges()
-  end
 
 end
 
@@ -730,22 +734,27 @@ end
 
 function MedUI.eventHandler(event, ...)
 
-  if event == "sysWindowResizeEvent" then
-    local x, y, windowName = arg[1], arg[2], arg[3]
+    if event == "sysWindowResizeEvent" then
+        local x, y, windowName = arg[1], arg[2], arg[3]
 
-    if windowName == "main" then      
-      local w,h = getMainWindowSize()
-      setBorderRight(w/3.3)
+        if windowName == "main" then      
+        local w,h = getMainWindowSize()
+        setBorderRight(w/3.3)
+        end
+
+    elseif event == "sysInstallPackage" and arg[1] == "MedUI" then
+        MedUI.setMudletOptions()
+
+    elseif event == "sysUninstallPackage" and arg[1] == "MedUI" then
+        stopNamedEventHandler("MedUI", "MedUIResize")
+        stopNamedEventHandler("MedUI", "MedUIInstall")
+        stopNamedEventHandler("MedUI", "MedUIUninstall")
+        stopNamedEventHandler("MedUI", "MedBuffsNBars")
     end
-
-  elseif event == "sysUninstallPackage" and arg[1] == "MedUI" then
-    stopNamedEventHandler("MedUI", "MedUIResize")
-    stopNamedEventHandler("MedUI", "MedUIUninstall")
-    stopNamedEventHandler("MedUI", "MedBuffsNBars")
-  end
 end
 
 registerNamedEventHandler("MedUI", "MedUIResize", "sysWindowResizeEvent", "MedUI.eventHandler")
+registerNamedEventHandler("MedUI", "MedUIInstall", "sysInstallPackage", "MedUI.eventHandler")
 registerNamedEventHandler("MedUI", "MedUIUninstall", "sysUninstallPackage", "MedUI.eventHandler")
 
 if MedUI.configAlias then
