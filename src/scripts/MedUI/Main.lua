@@ -707,7 +707,7 @@ function MedUI.loadOptions()
   -- reinitialize prompt triggers from saved data
   if MedUI.options.promptPattern then
     echo("\nSetting promptPattern from save table\n")
-    MedPrompt.promptPattern = MedPrompt.options.promptPattern
+    MedPrompt.promptPattern = MedUI.options.promptPattern
     MedPrompt.setupPromptTriggers()
   end
 
