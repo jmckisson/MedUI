@@ -254,7 +254,9 @@ function MedPrompt.generatePromptRegex(input)
   end
 
   MedPrompt.setupComplete = true
-    
+
+  MedUI.options.promptPattern = MedPrompt.promptPattern
+  MedUI.saveOptions()
   return MedPrompt.promptPattern
 end
 
