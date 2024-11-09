@@ -40,9 +40,15 @@ mudlet.custom_name_search = function (lines)
 end
 
 -- map.configs may not exist at this point despite the generic_mapper script loading first
-if not map or not map.configs then
-    tempTimer(.5, function() map.configs.custom_name_search = true end)
+if not map then
+    tempTimer(.5, function()
+        if map then
+            map.setConfigs("custom_name_search", true)
+        else
+            cecho("\n<yellow>[MedUI] There was an error setting up the Mudlet Mapper, the Mudlet Mapper may not work properly\n")
+        end
+    end)
 else
-    map.configs.custom_name_search = true
+    map.setConfigs("custom_name_search", true)
 end
 
