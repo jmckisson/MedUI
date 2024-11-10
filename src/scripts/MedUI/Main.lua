@@ -782,7 +782,7 @@ end
 MedUI.timestampAlias = tempAlias("^medui timestamp$", [[MedUI.config(3)]])
 
 MedUI.charName = string.lower(getProfileName())
-tempTimer(.5, function()
-  MedUI.loadOptions()
-  MedUI.reconfigure()
-end)
+--tempTimer(.5, function()
+--  MedUI.loadOptions()
+--  MedUI.reconfigure()
+--end)

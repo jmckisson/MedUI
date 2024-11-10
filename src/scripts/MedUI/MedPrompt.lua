@@ -177,7 +177,7 @@ function MedPrompt.generatePromptRegex(input)
 
   for _, tag in ipairs(tags) do
     local tagName = specialTags[tag].name
-              
+         
     local pattern = tag:gsub("([%^%$%(%)%%%.%[%]%*%+%-%?])", "%%%1") .. "(%w*)"
 
     cleanedInput = cleanedInput:gsub(pattern, function(following)
@@ -188,13 +188,13 @@ function MedPrompt.generatePromptRegex(input)
     end)
 
   end
-    
+
   --prepend formation prompt to escaped input
   MedPrompt.promptPattern = "(?:<\\[\\s*(?<pct>\\d+)%\\](?<heal>\\w+)>)*?(?:\\[\\w+\\])*?"..cleanedInput
   if MedPrompt.debugEnabled then
     print("prompt pattern='"..MedPrompt.promptPattern.."'")
   end
-  
+
   MedPrompt.setupPromptTriggers()
 
   MedPrompt.setupComplete = true
@@ -231,8 +231,9 @@ function MedPrompt.setupPromptTriggers()
         MedPrompt.maxMvs = tonumber(matches.maxmvs)
       end
     end)
- 
+
     send("stat")
+
   end
 
   if not string.find(MedPrompt.promptPattern, "<pk>") then
@@ -279,6 +280,12 @@ MedPrompt.killLoginTriggers()
 
 
 function MedPrompt.doConnectionSetup()
+
+  tempTimer(.5, function()
+    MedUI.loadOptions()
+    MedUI.reconfigure()
+  end)
+
   send("prompt")
   --MedPrompt.setupComplete = true
   MedPrompt.killLoginTriggers()
