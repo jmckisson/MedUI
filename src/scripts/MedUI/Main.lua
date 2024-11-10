@@ -742,11 +742,19 @@ function MedUI.eventHandler(event, ...)
         setBorderRight(w/3.3)
         end
 
+    elseif event == "sysLoadEvent" then
+      MedUI.setMudletOptions()
+      tempTimer(.5, function()
+        MedUI.loadOptions()
+        MedUI.reconfigure()
+      end)
+
     elseif event == "sysInstallPackage" and arg[1] == "MedUI" then
         MedUI.setMudletOptions()
 
     elseif event == "sysUninstallPackage" and arg[1] == "MedUI" then
         stopNamedEventHandler("MedUI", "MedUIResize")
+        stopNamedEventHandler("MedUI", "MedUILoad")
         stopNamedEventHandler("MedUI", "MedUIInstall")
         stopNamedEventHandler("MedUI", "MedUIUninstall")
         stopNamedEventHandler("MedUI", "MedBuffsNBars")
@@ -754,6 +762,7 @@ function MedUI.eventHandler(event, ...)
 end
 
 registerNamedEventHandler("MedUI", "MedUIResize", "sysWindowResizeEvent", "MedUI.eventHandler")
+registerNamedEventHandler("MedUI", "MedUILoad", "sysLoadEvent", "MedUI.eventHandler")
 registerNamedEventHandler("MedUI", "MedUIInstall", "sysInstallPackage", "MedUI.eventHandler")
 registerNamedEventHandler("MedUI", "MedUIUninstall", "sysUninstallPackage", "MedUI.eventHandler")
 
