@@ -744,10 +744,11 @@ function MedUI.eventHandler(event, ...)
 
     elseif event == "sysLoadEvent" then
       MedUI.setMudletOptions()
-      tempTimer(.5, function()
-        MedUI.loadOptions()
-        MedUI.reconfigure()
-      end)
+      -- user is probably not logged in yet, don't load options
+      --tempTimer(.5, function()
+      --  MedUI.loadOptions()
+      --  MedUI.reconfigure()
+      --end)
 
     elseif event == "sysInstallPackage" and arg[1] == "MedUI" then
         MedUI.setMudletOptions()
