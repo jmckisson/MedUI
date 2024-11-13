@@ -738,20 +738,15 @@ function MedUI.eventHandler(event, ...)
         local x, y, windowName = arg[1], arg[2], arg[3]
 
         if windowName == "main" then      
-        local w,h = getMainWindowSize()
-        setBorderRight(w/3.3)
+          local w,h = getMainWindowSize()
+          setBorderRight(w/3.3)
         end
 
     elseif event == "sysLoadEvent" then
       MedUI.setMudletOptions()
-      -- user is probably not logged in yet, don't load options
-      --tempTimer(.5, function()
-      --  MedUI.loadOptions()
-      --  MedUI.reconfigure()
-      --end)
 
     elseif event == "sysInstallPackage" and arg[1] == "MedUI" then
-        MedUI.setMudletOptions()
+      MedUI.setMudletOptions()
 
     elseif event == "sysUninstallPackage" and arg[1] == "MedUI" then
         stopNamedEventHandler("MedUI", "MedUIResize")
@@ -792,7 +787,3 @@ end
 MedUI.timestampAlias = tempAlias("^medui timestamp$", [[MedUI.config(3)]])
 
 MedUI.charName = string.lower(getProfileName())
---tempTimer(.5, function()
---  MedUI.loadOptions()
---  MedUI.reconfigure()
---end)
