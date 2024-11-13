@@ -39,16 +39,52 @@ mudlet.custom_name_search = function (lines)
     return room_name
 end
 
--- map.configs may not exist at this point despite the generic_mapper script loading first
-if not map then
-    tempTimer(.5, function()
-        if map then
-            map.setConfigs("custom_name_search", true)
-        else
-            cecho("\n<yellow>[MedUI] There was an error setting up the Mudlet Mapper, the Mudlet Mapper may not work properly\n")
+
+local function killCustomMapEventHandlers()
+    if MedUI.mapCustomEventHandlers then
+        for k, v in pairs(MedUI.mapCustomEventHandlers) do
+            killAnonymousEventHandler(v)
         end
-    end)
-else
-    map.setConfigs("custom_name_search", true)
+    end
+
+    MedUI.mapCustomEventHandlers = {}
 end
+
+
+local function setCustomNameConfig()
+    -- map.configs may not exist at this point as its config() is called for a sysLoadEvent or sysInstall
+    if not map then
+        tempTimer(.5, function()
+            if map and map.configs and not map.configs.custom_name_search then
+                map.setConfigs("custom_name_search", true)
+                killCustomMapEventHandlers()
+            --else
+                --cecho("\n<yellow>[MedUI] There was an error setting up the Mudlet Mapper, the Mudlet Mapper may not work properly\n")
+            end
+        end)
+    else
+        if map.configs and not map.configs.custom_name_search then
+            map.setConfigs("custom_name_search", true)
+            killCustomMapEventHandlers()
+        end
+    end
+
+end
+
+killCustomMapEventHandlers()
+
+
+table.insert(MedUI.mapCustomEventHandlers, "sysLoadEvent", function()
+    setCustomNameConfig()
+end)
+
+table.insert(MedUI.mapCustomEventHandlers, "sysInstall", function(event, name)
+    if name == "generic_mapper" then
+        setCustomNameConfig()
+    end
+end)
+
+
+
+
 
