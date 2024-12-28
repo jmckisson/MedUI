@@ -566,27 +566,38 @@ function MedUI.disableGauges()
   end
 end
 
--- Update gauge values from data parsed from a prompt
-function MedUI.barsPrompt(promptData)
-  MedBuffsNBars.Health:setValue(promptData.hp, promptData.maxHp)
-  MedBuffsNBars.Mana:setValue(promptData.mana, promptData.maxMana)
-  MedBuffsNBars.Endurance:setValue(promptData.mvs, promptData.maxMvs)
-  MedBuffsNBars.Willpower:setValue(promptData.br, 100)
-  
-  gauge_hpdisplay_label:echo("<center><p style='font-size:18px; color = white'><b>".. promptData.hp .."<b></p></center>")
-  gauge_manadisplay_label:echo("<center><p style='font-size:18px; color = white'><b>".. promptData.mana .."<b></p></center>")
-  gauge_mvdisplay_label:echo("<center><p style='font-size:18px; color = white'><b>".. promptData.mvs .."<b></p></center>")
-  gauge_brdisplay_label:echo("<center><p style='font-size:18px; color = white'><b>".. promptData.br .."<b></p></center>")
-end
-
-function MedBuffsNBars.eventHandler(event, ...)
-  -- evtPromptData event sent from MedPrompt script
-  if event == "evtPromptData" and MedUI.options.enableGauges then
-    MedUI.barsPrompt(arg[1])
+-- Update gauge values from data parsed from GMCP
+function MedUI.updateVitals()
+  if not MedUI.options.enableGauged then
+    return
   end
+
+  local vitals = gmcp.Char.Vitals
+
+  if vitals.hp and vitals.maxHp then
+    MedBuffsNBars.Health:setValue(vitals.hp, vitals.maxHp)
+    gauge_hpdisplay_label:echo("<center><p style='font-size:18px; color = white'><b>".. vitals.hp .."<b></p></center>")
+  end
+
+  if vitals.mana and vitals.maxMana then
+    MedBuffsNBars.Mana:setValue(vitals.mana, vitals.maxMana)
+    gauge_manadisplay_label:echo("<center><p style='font-size:18px; color = white'><b>".. vitals.mana .."<b></p></center>")
+  end
+
+  if vitals.mv and vitals.maxMv then
+    MedBuffsNBars.Endurance:setValue(vitals.mv, vitals.maxMv)
+    gauge_mvdisplay_label:echo("<center><p style='font-size:18px; color = white'><b>".. vitals.mv .."<b></p></center>")
+  end
+
+  if vitals.br then
+    MedBuffsNBars.Willpower:setValue(vitals.br, 100)
+    gauge_brdisplay_label:echo("<center><p style='font-size:18px; color = white'><b>".. vitals.br .."<b></p></center>")
+  end
+
 end
 
-registerNamedEventHandler("MedUI", "MedBuffsNBars", "evtPromptData", "MedBuffsNBars.eventHandler")
+registerNamedEventHandler("MedUI", "MedBuffsNBars", "gmcp.char.Vitals", "MedUI.updateVitals")
+
 
 ---------------------------------------------------------------------------------
 ---- End Buffs and Bars Code ----------------------------------------------------
