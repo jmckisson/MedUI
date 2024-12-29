@@ -17,10 +17,7 @@
        {
               "name": "Main",
               "isActive": "yes",
-              "isFolder": "no",
-              "eventHandlerList": [
-                     "gmcp.Char.Vitals"
-              ]
+              "isFolder": "no"
        },
        {
               "name": "MedChat",
