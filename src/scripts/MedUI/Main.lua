@@ -571,7 +571,7 @@ end
 
 -- Update gauge values from data parsed from GMCP
 function MedUI.updateVitals()
-  if not MedUI.options.enableGauged then
+  if not MedUI.options.enableGauges then
     return
   end
 
@@ -599,7 +599,7 @@ function MedUI.updateVitals()
 
 end
 
-registerNamedEventHandler("MedUI", "MedBuffsNBars", "gmcp.char.Vitals", "MedUI.updateVitals")
+registerNamedEventHandler("MedUI", "MedBuffsNBars", "gmcp.Char.Vitals", "MedUI.updateVitals")
 
 
 ---------------------------------------------------------------------------------
@@ -683,7 +683,7 @@ function MedUI.config(arg)
         i,
         option.description,
         value,
-        string.rep(" ", 6 - string.len(tostring(value))),
+        string.rep(" ", 8 - string.len(tostring(value))),
         string.format(option.helpKey, i))
     end
   end
