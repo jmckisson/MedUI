@@ -65,6 +65,7 @@ function MedPrompt.doConnectionSetup()
   tempTimer(.5, function()
     MedUI.loadOptions()
     MedUI.reconfigure()
+    tempTimer(.5, [[MedUI.updateVitals()]])
   end)
 
   MedPrompt.killLoginTriggers()
