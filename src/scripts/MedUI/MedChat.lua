@@ -2,7 +2,7 @@ MedChat = MedChat or {}
 
 function medieviaTabbedChat_InitMedChat()
   -- create some variable space so we don't pollute global variables
- 
+
   local EMCO = require("MedUI.emco")
   local stylesheet = [[background-color: rgb(0,255,255,255); border-width: 1px; border-style: solid; border-color: gold; border-radius: 10px;]]
   local istylesheet = [[background-color: rgb(60,0,0,255); border-width: 1px; border-style: solid; border-color: gold; border-radius: 10px;]]
@@ -25,7 +25,7 @@ function medieviaTabbedChat_InitMedChat()
     autoLoad = true,
     autoSave = true,
   })
-  
+
 
   MedChat.runEMCO = MedChat.runEMCO or EMCO:new({
     x = "0",
@@ -51,13 +51,15 @@ function medieviaTabbedChat_InitMedChat()
   MedChat.Left:connectToBorder("right")
   MedChat.Left:show()
   MedChat.Left:lockContainer("light")
-end
 
-if chatCall then
-  if not table.index_of(MedChat.runEMCO.consoles, "MMCP") then
-    MedChat.runEMCO:addTab("MMCP", #MedChat.runEMCO.consoles + 1)
+  -- Initialize MMCP tab if our client supports MMCP (MudMaster Chat Protocol)
+  if chatCall then
+    if not table.index_of(MedChat.runEMCO.consoles, "MMCP") then
+      MedChat.runEMCO:addTab("MMCP", #MedChat.runEMCO.consoles + 1)
+    end
   end
 end
+
 
 function MedChat.appendToChatPanel(channel)
   selectCurrentLine()
@@ -75,13 +77,13 @@ function MedChat.eventHandler(event, ...)
 
   if event == "sysMMCPMessage" then
     local trimmedStr = arg[1]:match("^%s*(.-)%s*$")
-    
+
     if MedUI.options.enableTimestamps then
       MedChat.runEMCO:cecho("MMCP", "<white>["..getTime(true, "HH:mm:ss") .."] ")
     end
-    
+
     MedChat.runEMCO:decho("MMCP", ansi2decho(trimmedStr) .. "\n", false)
-    
+
   elseif event == "sysUninstallPackage" and arg[1] == "MedUI" then
     --[[
     for _,id in ipairs(MedChat.registeredEvents) do
