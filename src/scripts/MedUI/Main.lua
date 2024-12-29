@@ -549,6 +549,7 @@ function MedUI.enableGauges()
     medBuffsNBars_initializeEffects() --SpellEffects
     medBuffsNBars_clearEffects()
     medBuffsNBars_initializeBarGauges()
+    registerNamedEventHandler("MedUI", "MedBuffsNBars", "gmcp.Char.Vitals", "MedUI.updateVitals")
   end
 
   local totalHeight = math.ceil(tonumber(left_buff_container:get_height()) + tonumber(MedBuffsNBars.Bottom:get_height()))
@@ -575,6 +576,11 @@ function MedUI.updateVitals()
     return
   end
 
+  if not MedBuffsNBars.Health then
+    -- 
+    return
+  end
+
   local vitals = gmcp.Char.Vitals
 
   if vitals.hp and vitals.maxHp then
@@ -598,8 +604,6 @@ function MedUI.updateVitals()
   end
 
 end
-
-registerNamedEventHandler("MedUI", "MedBuffsNBars", "gmcp.Char.Vitals", "MedUI.updateVitals")
 
 
 ---------------------------------------------------------------------------------
