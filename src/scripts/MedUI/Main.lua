@@ -635,7 +635,7 @@ function MedUI.config(arg)
       specialAction = function() MedUI.MedMap.Mapper:setFontSize(tonumber(MedUI.options.mapFontSize) or 9) end, 
       helpKey = "<white>'<yellow>medui %d <size><white>' or '<yellow>medui mapFontSize <size><white>' to adjust"},
     {description = "Chat Font Size", optionKey = "chatFontSize", type = "value",
-      specialAction = function() MedChat.runEMCO:setFontSize(tonumber(MedUI.options.chatFontSize) or 8) end,
+      specialAction = function() --[[MedChat.runEMCO:setFontSize(tonumber(MedUI.options.chatFontSize) or 8)--]] end,
       helpKey = "<white>'<yellow>medui %d <size><white>' or '<yellow>medui chatFontSize <size><white>' to adjust"}
   }
 
@@ -747,24 +747,12 @@ function MedUI.loadOptions()
     chatFontSize = 8
   }
 
-  -- reinitialize prompt triggers from saved data
-  if MedUI.options.promptPattern then
-    --echo("\nSetting promptPattern from save table\n")
-    MedPrompt.promptPattern = MedUI.options.promptPattern
-    MedPrompt.setupPromptTriggers()
-  end
-
   cecho("\n<DeepSkyBlue> MedUI: loaded options for <yellow>" .. charName)
   MedUI.charName = charName
 end
 
 function MedUI.saveOptions()
   local charName = string.lower(getProfileName())
-
-  if not MedUI.options.promptPattern and MedPrompt.promptPattern and MedPrompt.promptPattern ~= "" then
-    --echo("\nAdding promptPattern to save table\n")
-    MedUI.options.promptPattern = MedPrompt.promptPattern
-  end
 
   local saveTable = {
     options = table.deepcopy(MedUI.options)
@@ -830,5 +818,17 @@ if MedUI.timestampAlias then
 end
 
 MedUI.timestampAlias = tempAlias("^medui timestamp$", [[MedUI.config(3)]])
+
+if MedUI.mapFontAlias then
+  killAlias(MedUI.mapFontAlias)
+end
+
+MedUI.mapFontAlias = tempAlias("^medui mapFontSize (\\d+)$", [[MedUI.config("4 " .. matches[2])]])
+
+if MedUI.chatFontAlias then
+  killAlias(MedUI.chatFontAlias)
+end
+
+MedUI.chatFontAlias = tempAlias("^medui chatFontSize (\\d+)$", [[MedUI.config("5 " .. matches[2])]])
 
 MedUI.charName = string.lower(getProfileName())
