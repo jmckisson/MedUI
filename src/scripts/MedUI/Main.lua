@@ -635,7 +635,7 @@ function MedUI.config(arg)
       specialAction = function() MedUI.MedMap.Mapper:setFontSize(tonumber(MedUI.options.mapFontSize) or 9) end, 
       helpKey = "<white>'<yellow>medui %d <size><white>' or '<yellow>medui mapFontSize <size><white>' to adjust"},
     {description = "Chat Font Size", optionKey = "chatFontSize", type = "value",
-      specialAction = function() --[[MedChat.runEMCO:setFontSize(tonumber(MedUI.options.chatFontSize) or 8)--]] end,
+      specialAction = function() MedChat.runEMCO:setFontSize(tonumber(MedUI.options.chatFontSize) or 8) end,
       helpKey = "<white>'<yellow>medui %d <size><white>' or '<yellow>medui chatFontSize <size><white>' to adjust"}
   }
 
