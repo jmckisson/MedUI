@@ -1,5 +1,6 @@
 --[[
   Changelog:
+    1.8.0 - Use GMCP variables for gauges, remove prompt parsing
     1.7.8 - Fix beginner prompt, add correct map for Medievia and Haven, fix map/chat window placement
     1.7.7 - Embed EMCO chat module instead of requiring as dependency
     1.7.6 - Size and place Map and Chat windows
@@ -28,7 +29,9 @@ MedUI = MedUI or {
   options = {
     enableGauges = true,
     keepInlineMap = false,
-    enableTimestamps = true
+    enableTimestamps = true,
+    mapFontSize = 9,
+    chatFontSize = 8
   }
 }
 GUI = GUI or {}
@@ -67,7 +70,7 @@ MedUI.MedMap.Mapper = Geyser.MiniConsole:new({
     autoWrap = false,
     color = "black",
     scrollBar = false,
-    fontSize = 9,
+    fontSize = tonumber(MedUI.options.mapFontSize) or 9,
     width="100%", height="100%",
   },
   MedUI.MedMap.MapperAdjCont
@@ -83,11 +86,11 @@ function MedUI.MedMap.mapStart()
   local length = #ansi2string(getCurrentLine())
 
   if length < 80 then
-    MedUI.MedMap.Mapper:setFontSize(18)
+    MedUI.MedMap.Mapper:setFontSize((tonumber(MedUI.options.mapFontSize) + 9) or 18)
   elseif length < 200 then
-    MedUI.MedMap.Mapper:setFontSize(12)
+    MedUI.MedMap.Mapper:setFontSize((tonumber(MedUI.options.mapFontSize) + 3) or 12)
   else
-    MedUI.MedMap.Mapper:setFontSize(9)
+    MedUI.MedMap.Mapper:setFontSize(tonumber(MedUI.options.mapFontSize) or 9)
   end
   copy()
   MedUI.MedMap.Mapper:appendBuffer()
@@ -621,43 +624,72 @@ function MedUI.config(arg)
   logo = logo .. "\27[49;38;2;0;0;0m▀▀▀▀▀▀▀▀▀\27[49;38;2;1;0;0m▀\27[49;38;2;0;0;0m▀▀▀▀▀▀▀▀\27[49;38;2;104;0;0m▀\27[49;38;2;122;0;0m▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀\27[49;38;2;40;0;0m▀\27[49;38;2;0;0;0m▀▀▀▀▀▀▀▀▀▀▀▀▀▀\27[49;38;2;21;0;0m▀\27[49;38;2;120;0;0m▀\27[49;38;2;122;0;0m▀▀▀▀▀▀▀▀\27[49;38;2;115;0;0m▀\27[49;38;2;26;0;0m▀\27[49;38;2;0;0;0m▀▀▀▀▀▀▀▀▀\27[m\n"
 
   decho(ansi2decho(logo))
-  
+
   cecho("<DeepSkyBlue>MedUI by <firebrick>Kymbahl <DeepSkyBlue>& <gold>Kronos<DeepSkyBlue>, version: <orange>" .. MedUI.version .. "\n")
-  
+
   local optionsList = {
-    {description = "Enable Gauges", optionKey = "enableGauges", helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui gauges<white>' to toggle"},
-    {description = "Keep Inline Map", optionKey = "keepInlineMap", helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui inlinemap<white>' to toggle"},
-    {description = "Enable Timestamps", optionKey = "enableTimestamps", helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui timestamp<white>' to toggle"}
+    {description = "Enable Gauges", optionKey = "enableGauges", type = "toggle", helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui gauges<white>' to toggle"},
+    {description = "Keep Inline Map", optionKey = "keepInlineMap", type = "toggle", helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui inlinemap<white>' to toggle"},
+    {description = "Enable Timestamps", optionKey = "enableTimestamps", type = "toggle", helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui timestamp<white>' to toggle"},
+    {description = "Map Font Size", optionKey = "mapFontSize", type = "value",
+      specialAction = function() MedUI.MedMap.Mapper:setFontSize(tonumber(MedUI.options.mapFontSize) or 9) end, 
+      helpKey = "<white>'<yellow>medui %d <size><white>' or '<yellow>medui mapFontSize <size><white>' to adjust"},
+    {description = "Chat Font Size", optionKey = "chatFontSize", type = "value",
+      specialAction = function() MedChat.runEMCO:setFontSize(tonumber(MedUI.options.chatFontSize) or 8) end,
+      helpKey = "<white>'<yellow>medui %d <size><white>' or '<yellow>medui chatFontSize <size><white>' to adjust"}
   }
-  
-  local argNum = tonumber(arg)
+
+  local args = {}
+  for a in arg:gmatch("%S+") do table.insert(args, a) end
+
+  local argNum = tonumber(args[1])
   if argNum and optionsList[argNum] then
     local selectedOption = optionsList[argNum]
-    -- Toggle the option
-    MedUI.options[selectedOption.optionKey] = not MedUI.options[selectedOption.optionKey]
+
+    if selectedOption.type == "toggle" then
+      -- Toggle the option
+      MedUI.options[selectedOption.optionKey] = not MedUI.options[selectedOption.optionKey]
+    else
+      if args[2] then
+        MedUI.options[selectedOption.optionKey] = args[2]
+      end
+
+    end
     -- Execute any special action if defined
     if selectedOption.specialAction then
-      selectedOption.specialAction(self)
+      selectedOption.specialAction()
     end
   end
-  
+
   local YES = "<green>YES"
   local NO = "<red>NO"
 
 	local str = "\n<DeepSkyBlue>Options:"
   for i, option in ipairs(optionsList) do
-    local status = MedUI.options[option.optionKey] and YES or NO
-    str = string.format("%s\n<DeepSkyBlue>%2d] %-26s: %s     %s%s",
-      str,
-      i,
-      option.description,
-      status,
-      (status == NO and " " or ""), -- Need extra space here because apparently strlen is broken with color tags
-      string.format(option.helpKey, i))
+
+    if option.type == "toggle" then
+      local status = MedUI.options[option.optionKey] and YES or NO
+      str = string.format("%s\n<DeepSkyBlue>%2d] %-26s: %s     %s%s",
+        str,
+        i,
+        option.description,
+        status,
+        (status == NO and " " or ""), -- Need extra space here because apparently strlen is broken with color tags
+        string.format(option.helpKey, i))
+    else
+      local value = MedUI.options[option.optionKey]
+      str = string.format("%s\n<DeepSkyBlue>%2d] %-26s: %s%s%s",
+        str,
+        i,
+        option.description,
+        value,
+        string.rep(" ", 6 - string.len(tostring(value))),
+        string.format(option.helpKey, i))
+    end
   end
   str = string.format("%s\n", str)
   cecho(str)
-  
+
   MedUI.reconfigure()
   MedUI.saveOptions()
 end
@@ -710,7 +742,9 @@ function MedUI.loadOptions()
   MedUI.options = MedUI.options or {
     enableGauges = true,
     keepInlineMap = false,
-    enableTimestamps = true
+    enableTimestamps = true,
+    mapFontSize = 9,
+    chatFontSize = 8
   }
 
   -- reinitialize prompt triggers from saved data

@@ -44,7 +44,7 @@ function medieviaTabbedChat_InitMedChat()
       "Chat",
     },
     activeTabCSS = stylesheet,
-    fontSize=8,
+    fontSize=tonumber(MedUI.options.chatFontSize) or 8,
     inactiveTabCSS = istylesheet,
   }, MedChat.Left)
 
