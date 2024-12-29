@@ -722,6 +722,7 @@ function MedUI.reconfigure()
 
     if MedUI.options.enableGauges then
         MedUI.enableGauges()
+        MedUI.updateVitals()
     else
         MedUI.disableGauges()
     end
