@@ -584,6 +584,7 @@ function MedUI.updateVitals()
 
   if not gmcp.Char then
     MedUI.disableGauges()
+    return
   end
 
   local vitals = gmcp.Char.Vitals
