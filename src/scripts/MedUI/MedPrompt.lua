@@ -70,6 +70,7 @@ function MedPrompt.doConnectionSetup()
 
   MedPrompt.killLoginTriggers()
   loadMap(getMudletHomeDir().."/MedUI/MedieviaMap.dat")
+  closeMapWidget()
 
   MedPrompt.setupComplete = true
 end
