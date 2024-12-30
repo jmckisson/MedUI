@@ -26,13 +26,13 @@ MedUI = MedUI or {
   version = "__VERSION__",
   MedChat = {},
   MedMap = {},
+  oldBorderBottom = getBorderBottom(),
   options = {
     enableGauges = true,
     keepInlineMap = false,
     enableTimestamps = true,
     mapFontSize = 9,
-    chatFontSize = 8,
-    oldBorderBottom = getBorderBottom()
+    chatFontSize = 8
   }
 }
 GUI = GUI or {}
@@ -754,8 +754,7 @@ function MedUI.loadOptions()
     keepInlineMap = false,
     enableTimestamps = true,
     mapFontSize = 9,
-    chatFontSize = 8,
-    oldBorderBottom = getBorderBottom()
+    chatFontSize = 8
   }
 
   cecho("\n<DeepSkyBlue> MedUI: loaded options for <yellow>" .. charName)
