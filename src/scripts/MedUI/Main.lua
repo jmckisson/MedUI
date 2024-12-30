@@ -125,7 +125,7 @@ function MedUI.MedMap.mapEnd(roomName)
     CR.lastRoom = CR.myRoom
     if gmcp.Room then
       CR.myRoom = gmcp.Room.Info.name
-    else if roomName then
+    elseif roomName then
       CR.myRoom = roomName
     end
   end
