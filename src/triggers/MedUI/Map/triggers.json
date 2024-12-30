@@ -15,6 +15,10 @@
                      {
                             "pattern": "┌──",
                             "type": "startOfLine"
+                     },
+                     {
+                            "pattern": "+--",
+                            "type": "startOfLine"
                      }
               ],
               "script": "",
@@ -34,6 +38,10 @@
                             "patterns": [
                                    {
                                           "pattern": "│",
+                                          "type": "startOfLine"
+                                   },
+                                   {
+                                          "pattern": "|",
                                           "type": "startOfLine"
                                    }
                             ],
@@ -59,6 +67,14 @@
                                    {
                                           "pattern": "└─",
                                           "type": "startOfLine"
+                                   },
+                                   {
+                                          "pattern": "+-",
+                                          "type": "startOfLine"
+                                   },
+                                   {
+                                          "pattern": "-[(.*)]-",
+                                          "type": "regex"
                                    }
                             ],
                             "script": ""
