@@ -17,8 +17,8 @@
                             "type": "startOfLine"
                      },
                      {
-                            "pattern": "+--",
-                            "type": "startOfLine"
+                            "pattern": "^\\+--+\\+$",
+                            "type": "regex"
                      }
               ],
               "script": "",
@@ -41,8 +41,8 @@
                                           "type": "startOfLine"
                                    },
                                    {
-                                          "pattern": "|",
-                                          "type": "startOfLine"
+                                          "pattern": "^(\\|.*\\|)$",
+                                          "type": "regex"
                                    }
                             ],
                             "script": ""
@@ -69,11 +69,11 @@
                                           "type": "startOfLine"
                                    },
                                    {
-                                          "pattern": "+-",
-                                          "type": "startOfLine"
+                                          "pattern": "^\\+--+\\+$",
+                                          "type": "regex"
                                    },
                                    {
-                                          "pattern": "-[(.*)]-",
+                                          "pattern": "^\\+-+\\[(.*)\\]--+\\+$",
                                           "type": "regex"
                                    }
                             ],
