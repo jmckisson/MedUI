@@ -436,16 +436,20 @@ end
 --Sets the buff for the passed argument as true so it can display
 function medBuffsNBars_setBuffOn(buff)
 
-  MedBuffsNBars.buffIconTable[buff][2] = true
-  medBuffsNBars_updateEffects()
+  if MedUI.options.enableGauges and MedBuffsNBars.buffIconTable then
+    MedBuffsNBars.buffIconTable[buff][2] = true
+    medBuffsNBars_updateEffects()
+  end
   --echo("\nBuff on:"..buff.."\n")
 end
 
 --Sets the buff for the passed argument as false so it will not display
 function medBuffsNBars_setBuffOff(buff)
 
-  MedBuffsNBars.buffIconTable[buff][2] = false
-  medBuffsNBars_updateEffects()
+  if MedUI.options.enableGauges and MedBuffsNBars.buffIconTable then
+    MedBuffsNBars.buffIconTable[buff][2] = false
+    medBuffsNBars_updateEffects()
+  end
   --echo("\nBuff off:"..buff.."\n")
 end
 
