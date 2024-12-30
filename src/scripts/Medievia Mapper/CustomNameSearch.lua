@@ -1,5 +1,6 @@
 mudlet.custom_name_search = function (lines)
 
+    --[[
     local line_count = #lines + 1
     local capture_next = false
 
@@ -35,8 +36,9 @@ mudlet.custom_name_search = function (lines)
             end
         end
     end
+    --]]
 
-    return room_name
+    return gmcp.Room.Info.name
 end
 
 

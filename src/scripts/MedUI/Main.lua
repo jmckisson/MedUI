@@ -109,7 +109,7 @@ function MedUI.MedMap.mapMid()
   end
 end
 
-function MedUI.MedMap.mapEnd(roomName)
+function MedUI.MedMap.mapEnd()
   selectCurrentLine()
   copy()
   MedUI.MedMap.Mapper:appendBuffer()
@@ -117,19 +117,18 @@ function MedUI.MedMap.mapEnd(roomName)
     deleteLine()
   end
 
-  if roomName then
-    -- For CombatReps script, needs refactor
-    CR = CR or {}
-    CR.needRoomName = false
-    CR.lastRoom = CR.myRoom
-    CR.myRoom = matches[2]
-  
-    setTriggerStayOpen("MedieviaMapStart", 0)
-    -- paste the parsed name into the main console as we still want to see the room name
-    if not MedUI.options.keepInlineMap then
-      cecho("\n<yellow>"..roomName)
-    end
+  -- For CombatReps script, needs refactor
+  CR = CR or {}
+  CR.needRoomName = false
+  CR.lastRoom = CR.myRoom
+  CR.myRoom = gmcp.Room.Info.name
+
+  setTriggerStayOpen("MedieviaMapStart", 0)
+  -- paste the parsed name into the main console as we still want to see the room name
+  if not MedUI.options.keepInlineMap then
+    cecho("\n<yellow>"..roomName)
   end
+
 end
 
 ---------------------------------------------------------------------------------

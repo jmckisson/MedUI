@@ -1,1 +1,1 @@
-MedUI.MedMap.mapEnd(matches[2])
+MedUI.MedMap.mapEnd()
