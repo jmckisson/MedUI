@@ -32,7 +32,8 @@ MedUI = MedUI or {
     keepInlineMap = false,
     enableTimestamps = true,
     mapFontSize = 9,
-    chatFontSize = 8
+    chatFontSize = 8,
+    mainFontSize = 13
   }
 }
 GUI = GUI or {}
@@ -633,7 +634,7 @@ function MedUI.config(arg)
   logo = logo .. "\27[48;2;0;0;0m         \27[38;2;111;0;0;48;2;76;0;0m▄\27[38;2;2;0;0;48;2;99;0;0m▄\27[38;2;0;0;0;48;2;11;0;0m▄\27[48;2;0;0;0m  \27[38;2;0;0;0;48;2;4;0;0m▄\27[38;2;0;0;0;48;2;34;0;0m▄\27[38;2;1;0;0;48;2;113;0;0m▄\27[38;2;92;0;0;48;2;122;0;0m▄\27[48;2;122;0;0m                                            \27[38;2;121;0;0;48;2;50;0;0m▄\27[38;2;29;0;0;48;2;0;0;0m▄\27[48;2;0;0;0m              \27[38;2;2;0;0;48;2;105;0;0m▄\27[48;2;122;0;0m       \27[38;2;122;0;0;48;2;110;0;0m▄\27[38;2;121;0;0;48;2;28;0;0m▄\27[38;2;82;0;0;48;2;0;0;0m▄\27[38;2;0;0;0;48;2;4;0;0m▄\27[38;2;0;0;0;48;2;12;0;0m▄\27[38;2;0;0;0;48;2;14;0;0m▄\27[38;2;0;0;0;48;2;47;0;0m▄\27[38;2;0;0;0;48;2;53;0;0m▄\27[48;2;0;0;0m      \27[m\n"
   logo = logo .. "\27[49;38;2;0;0;0m▀▀▀▀▀▀▀▀▀\27[49;38;2;1;0;0m▀\27[49;38;2;0;0;0m▀▀▀▀▀▀▀▀\27[49;38;2;104;0;0m▀\27[49;38;2;122;0;0m▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀\27[49;38;2;40;0;0m▀\27[49;38;2;0;0;0m▀▀▀▀▀▀▀▀▀▀▀▀▀▀\27[49;38;2;21;0;0m▀\27[49;38;2;120;0;0m▀\27[49;38;2;122;0;0m▀▀▀▀▀▀▀▀\27[49;38;2;115;0;0m▀\27[49;38;2;26;0;0m▀\27[49;38;2;0;0;0m▀▀▀▀▀▀▀▀▀\27[m\n"
 
-  decho(ansi2decho(logo))
+  decho("\n"..ansi2decho(logo))
 
   cecho("<DeepSkyBlue>MedUI by <firebrick>Kymbahl <DeepSkyBlue>& <gold>Kronos<DeepSkyBlue>, version: <orange>" .. MedUI.version .. "\n")
 
@@ -706,7 +707,7 @@ end
 
 function MedUI.setMudletOptions()
     setFont("main", "Medievia Mudlet Sans Mono")
-    setFontSize("main", 13)
+    setFontSize("main", MedUI.options.mainFontSize or 13)
 
     setServerEncoding("MEDIEVIA")
     setConfig("controlCharacterHandling", "oem")
@@ -755,7 +756,8 @@ function MedUI.loadOptions()
     keepInlineMap = false,
     enableTimestamps = true,
     mapFontSize = 9,
-    chatFontSize = 8
+    chatFontSize = 8,
+    mainFontSize = 13
   }
 
   cecho("\n<DeepSkyBlue> MedUI: loaded options for <yellow>" .. charName)
