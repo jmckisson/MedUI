@@ -31,7 +31,8 @@ MedUI = MedUI or {
     keepInlineMap = false,
     enableTimestamps = true,
     mapFontSize = 9,
-    chatFontSize = 8
+    chatFontSize = 8,
+    oldBorderBottom = getBorderBottom()
   }
 }
 GUI = GUI or {}
@@ -552,12 +553,13 @@ function MedUI.enableGauges()
   end
 
   local totalHeight = math.ceil(tonumber(left_buff_container:get_height()) + tonumber(MedBuffsNBars.Bottom:get_height()))
+  MedUI.oldBorderBottom = getBorderBottom()
   setBorderBottom(totalHeight)
   
 end
 
 function MedUI.disableGauges()
-  setBorderBottom(0)
+  setBorderBottom(MedUI.oldBorderBottom)
   if MedBuffsNBars.Bottom then
     MedBuffsNBars.Bottom:hide()
   end
@@ -578,6 +580,10 @@ function MedUI.updateVitals()
   if not MedBuffsNBars.Health then
     -- 
     return
+  end
+
+  if not gmcp.Char then
+    MedUI.disableGauges()
   end
 
   local vitals = gmcp.Char.Vitals
@@ -748,7 +754,8 @@ function MedUI.loadOptions()
     keepInlineMap = false,
     enableTimestamps = true,
     mapFontSize = 9,
-    chatFontSize = 8
+    chatFontSize = 8,
+    oldBorderBottom = getBorderBottom()
   }
 
   cecho("\n<DeepSkyBlue> MedUI: loaded options for <yellow>" .. charName)
