@@ -12,7 +12,9 @@ Included in this package is:
 5. Custom Medievia Font  - A special TrueType font designed for rendering the in-game ASCII map.
 
 ### Configuration
-Most configuration options may be toggled using the 'medui' alias menu, such as:
-1. Toggle on/off the gauges display
-2. Toggle timestamps in the chat window
-3. Toggle showing the inline map (in your main display)
+Most configuration options may be toggled using the 'medui' alias menu (just type medui), such as:
+1. Toggle on/off the gauges display (type: medui gauges)
+2. Toggle showing the inline map (in your main display) (type: medui inlinemap)
+3. Toggle timestamps in the chat window (type: medui timestamp)
+4. Change the map font size (type: medui mapFontSize #)
+5. Change the comm window font size (type: medui chatFontSize #)
