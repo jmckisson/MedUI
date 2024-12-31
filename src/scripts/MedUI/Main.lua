@@ -540,9 +540,9 @@ end
 
 function MedUI.enableGauges()
   MedBuffsNBars.iconLocation = "/MedUI"
-  
+
   if MedBuffsNBars.Bottom then
-    MedBuffsNBars.Bottom:show()
+    tempTimer(.1, [[MedBuffsNBars.Bottom:show()]])
   else
     --Builds the icons for buffs the first time
     medBuffsNBars_initializeBuffTable() -- Table_Spell_Effects
@@ -550,12 +550,14 @@ function MedUI.enableGauges()
     medBuffsNBars_clearEffects()
     medBuffsNBars_initializeBarGauges()
     registerNamedEventHandler("MedUI", "MedBuffsNBars", "gmcp.Char.Vitals", "MedUI.updateVitals")
+
+    tempTimer(.1, [[MedBuffsNBars.Bottom:show()]])
   end
 
   local totalHeight = math.ceil(tonumber(left_buff_container:get_height()) + tonumber(MedBuffsNBars.Bottom:get_height()))
   MedUI.oldBorderBottom = getBorderBottom()
   setBorderBottom(totalHeight)
-  
+
 end
 
 function MedUI.disableGauges()
