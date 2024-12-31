@@ -130,10 +130,6 @@ function MedUI.MedMap.mapEnd(roomName)
     end
   end
 
-  if gmcp.Room then
-    roomName = gmcp.Room.Info.name
-  end
-
   -- paste the parsed name into the main console as we still want to see the room name
   if roomName and not MedUI.options.keepInlineMap then
     cecho("\n<yellow>"..roomName)
