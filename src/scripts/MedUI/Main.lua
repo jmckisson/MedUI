@@ -804,6 +804,7 @@ function MedUI.eventHandler(event, ...)
     elseif event == "sysLoadEvent" then
       MedUI.setMudletOptions()
       closeMapWidget()
+      MedUI.config(" ")
 
     elseif event == "sysInstallPackage" and arg[1] == "MedUI" then
       MedUI.setMudletOptions()
