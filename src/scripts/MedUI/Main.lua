@@ -804,7 +804,6 @@ function MedUI.eventHandler(event, ...)
     elseif event == "sysLoadEvent" then
       MedUI.setMudletOptions()
       closeMapWidget()
-      MedUI.config(" ")
 
     elseif event == "sysInstallPackage" and arg[1] == "MedUI" then
       MedUI.setMudletOptions()
@@ -861,3 +860,5 @@ end
 MedUI.chatFontAlias = tempAlias("^medui chatFontSize (\\d+)$", [[MedUI.config("5 " .. matches[2])]])
 
 MedUI.charName = string.lower(getProfileName())
+
+MedUI.config(" ")
