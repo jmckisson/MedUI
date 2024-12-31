@@ -179,7 +179,7 @@ end
 function medBuffsNBars_initializeBarGauges()
 
   --******CSS******--
-  
+
   MedBuffsNBars.BoxCSS = CSSMan.new([[
     background-color: rgba(0,0,0,100);
     border-style: solid;
@@ -188,7 +188,7 @@ function medBuffsNBars_initializeBarGauges()
     border-color: white;
     margin: 10px;
   ]])
-  
+
   MedBuffsNBars.GaugeBackCSS = CSSMan.new([[
     background-color: rgba(0,0,0,0);
     border-style: solid;
@@ -197,7 +197,7 @@ function medBuffsNBars_initializeBarGauges()
     border-radius: 5px;
     margin: 5px;
   ]])
-  
+
   MedBuffsNBars.GaugeFrontCSS = CSSMan.new([[
     background-color: rgba(0,0,0,0);
     border-style: solid;
@@ -207,20 +207,20 @@ function medBuffsNBars_initializeBarGauges()
     margin: 5px;
    
   ]])
-  
+
   MedBuffsNBars.BackgroundCSS = CSSMan.new([[
     background-color: black;
   ]])
-  
+
   --*****Build GUI containers****--
   MedBuffsNBars.Bottom = Geyser.Label:new({
     name = "MedBuffsNBars.Bottom",
-    x = "20", y = "-7%",
+    x = "20", y = "-6%",
     width = "50%",
-    height = "7%",
+    height = "6%",
   })
   MedBuffsNBars.Bottom:setStyleSheet(MedBuffsNBars.BackgroundCSS:getCSS())
-  
+
   --***Gauge Layout***--
   MedBuffsNBars.Footer = Geyser.HBox:new({
     name = "MedBuffsNBars.Footer",
@@ -228,43 +228,42 @@ function medBuffsNBars_initializeBarGauges()
     width = "100%",
     height = "100%",
   },MedBuffsNBars.Bottom)
-  
+
   MedBuffsNBars.LeftColumn = Geyser.VBox:new({
     name = "MedBuffsNBars.LeftColumn",
   },MedBuffsNBars.Footer)
-  
+
   MedBuffsNBars.RightColumn = Geyser.VBox:new({
     name = "MedBuffsNBars.RightColumn",
   },MedBuffsNBars.Footer)
-  --********************--
-  
+
+
   --*** HP Gauge ***--
   MedBuffsNBars.HPBox = Geyser.Container:new({
     name = "HPBox.Footer",
     x = 0, y = 0,
     width = "20%",
-    --height = "100%",
-  },MedBuffsNBars.LeftColumn)
-  
+  }, MedBuffsNBars.LeftColumn)
+
   gauge_hp_label = Geyser.Label:new({
     name = "HP",
     x = "0px", y = "0px",
-    width = "30px", height = "30pxpx",
+    width = "30px", height = "30px",
     color = "black",
   }, MedBuffsNBars.HPBox)
   MedBuffsNBars.hpImageLoc = getMudletHomeDir()..MedBuffsNBars.iconLocation.."/icons/hp.png"
   gauge_hp_label:setStyleSheet([[
       border-image:url(]]..MedBuffsNBars.hpImageLoc..[[);
   ]])
-  
+
   gauge_hpdisplay_label = Geyser.Label:new({
     name = "gauge_hpdisplay_label",
-    x = "11%", y = "0px",
-    width = "10%", height = "45px",
+    x = "11%", y = "5%",
+    width = "10%", height = "25px",
     color = "black",
   }, MedBuffsNBars.HPBox)
   gauge_hpdisplay_label:echo("<center><p style='font-size:18px; color = white'><b>???<b></p></center>")
-  
+
   MedBuffsNBars.Health = Geyser.Gauge:new({
     name = "MedBuffsNBars.Health",
     x = "22%", y = "0px",
@@ -276,18 +275,15 @@ function medBuffsNBars_initializeBarGauges()
   MedBuffsNBars.Health.front:setStyleSheet(MedBuffsNBars.GaugeFrontCSS:getCSS())
   MedBuffsNBars.Health:setValue(math.random(100),100)
   MedBuffsNBars.Health.front:echo("HP")
-  --********************--
-  
-  
+
+
   --***Mana Gauge***--
-  
   MedBuffsNBars.ManaBox = Geyser.Container:new({
     name = "ManaBox.Footer",
     x = 0, y = 0,
     width = "20%",
-    --height = "100%",
-  },MedBuffsNBars.LeftColumn)
-  
+  }, MedBuffsNBars.LeftColumn)
+
   gauge_mana_label = Geyser.Label:new({
     name = "Mana",
     x = "0px", y = "0px",
@@ -298,37 +294,35 @@ function medBuffsNBars_initializeBarGauges()
   gauge_mana_label:setStyleSheet([[
       border-image:url(]]..MedBuffsNBars.manaImageLoc..[[);
   ]])
-  
+
   gauge_manadisplay_label = Geyser.Label:new({
     name = "gauge_manadisplay_label",
-    x = "11%", y = "0px",
-    width = "10%", height = "45px",
+    x = "11%", y = "5%",
+    width = "10%", height = "25px",
     color = "black",
   }, MedBuffsNBars.ManaBox)
   gauge_manadisplay_label:echo("<center><p style='font-size:18px; color = white'><b>???<b></p></center>")
-  
+
   MedBuffsNBars.Mana = Geyser.Gauge:new({
     name = "MedBuffsNBars.Mana",
     x = "22%", y = "0px",
     height = "100%",
     width = "70%",
-  },MedBuffsNBars.ManaBox)
+  }, MedBuffsNBars.ManaBox)
   MedBuffsNBars.Mana.back:setStyleSheet(MedBuffsNBars.GaugeBackCSS:getCSS())
   MedBuffsNBars.GaugeFrontCSS:set("background-color","blue")
   MedBuffsNBars.Mana.front:setStyleSheet(MedBuffsNBars.GaugeFrontCSS:getCSS())
   MedBuffsNBars.Mana:setValue(math.random(100),100)
   MedBuffsNBars.Mana.front:echo("MP")
-  
-  
+
+
   --***MV Gauge***--
-  
   MedBuffsNBars.MVBox = Geyser.Container:new({
     name = "MVBox.Footer",
     x = 0, y = 0,
     width = "20%",
-    --height = "100%",
   },MedBuffsNBars.RightColumn)
-  
+
   gauge_mv_label = Geyser.Label:new({
     name = "MV",
     x = "0px", y = "0px",
@@ -339,37 +333,34 @@ function medBuffsNBars_initializeBarGauges()
   gauge_mv_label:setStyleSheet([[
       border-image:url(]]..MedBuffsNBars.mvImageLoc..[[);
   ]])
-  
+
   gauge_mvdisplay_label = Geyser.Label:new({
     name = "gauge_mvdisplay_label",
-    x = "11%", y = "0px",
-    width = "10%", height = "45px",
+    x = "11%", y = "5%",
+    width = "10%", height = "25px",
     color = "black",
   }, MedBuffsNBars.MVBox)
   gauge_mvdisplay_label:echo("<center><p style='font-size:18px; color = white'><b>???<b></p></center>")
-  
-  MedBuffsNBars.Endurance = Geyser.Gauge:new({
-    name = "MedBuffsNBars.Endurance",
+
+  MedBuffsNBars.Movement = Geyser.Gauge:new({
+    name = "MedBuffsNBars.Movement",
     x = "22%", y = "0px",
     height = "100%",
     width = "70%",
-  },MedBuffsNBars.MVBox)
-  MedBuffsNBars.Endurance.back:setStyleSheet(MedBuffsNBars.GaugeBackCSS:getCSS())
+  }, MedBuffsNBars.MVBox)
+  MedBuffsNBars.Movement.back:setStyleSheet(MedBuffsNBars.GaugeBackCSS:getCSS())
   MedBuffsNBars.GaugeFrontCSS:set("background-color","yellow")
-  MedBuffsNBars.Endurance.front:setStyleSheet(MedBuffsNBars.GaugeFrontCSS:getCSS())
-  MedBuffsNBars.Endurance:setValue(math.random(100),100)
-  --MedBuffsNBars.Endurance.front:echo("MedBuffsNBars.Endurance")
-  MedBuffsNBars.Endurance.front:echo([[<span style = "color: black">MV</span>]])
-  
+  MedBuffsNBars.Movement.front:setStyleSheet(MedBuffsNBars.GaugeFrontCSS:getCSS())
+  MedBuffsNBars.Movement:setValue(math.random(100),100)
+  MedBuffsNBars.Movement.front:echo([[<span style = "color: black">MV</span>]])
+
   --***Breath***--
-  
   MedBuffsNBars.BRBox = Geyser.Container:new({
     name = "BRBox.Footer",
     x = 0, y = "50%",
     width = "20%",
-    --height = "100%",
-  },MedBuffsNBars.RightColumn)
-  
+  }, MedBuffsNBars.RightColumn)
+
   gauge_br_label = Geyser.Label:new({
     name = "BR",
     x = "0px", y = "0px",
@@ -380,28 +371,26 @@ function medBuffsNBars_initializeBarGauges()
   gauge_br_label:setStyleSheet([[
       border-image:url(]]..MedBuffsNBars.brImageLoc..[[);
   ]])
-  
+
   gauge_brdisplay_label = Geyser.Label:new({
     name = "gauge_brdisplay_label",
-    x = "11%", y = "0px",
-    width = "10%", height = "45px",
+    x = "11%", y = "5%",
+    width = "10%", height = "25px",
     color = "black",
   }, MedBuffsNBars.BRBox)
   gauge_brdisplay_label:echo("<center><p style='font-size:18px; color = white'><b>???<b></p></center>")
-  
-  MedBuffsNBars.Willpower = Geyser.Gauge:new({
-    name = "MedBuffsNBars.Willpower",
+
+  MedBuffsNBars.Breath = Geyser.Gauge:new({
+    name = "MedBuffsNBars.Breath",
     x = "22%", y = "0px",
     height = "100%",
     width = "70%",
-  },MedBuffsNBars.BRBox)
-  MedBuffsNBars.Willpower.back:setStyleSheet(MedBuffsNBars.GaugeBackCSS:getCSS())
+  }, MedBuffsNBars.BRBox)
+  MedBuffsNBars.Breath.back:setStyleSheet(MedBuffsNBars.GaugeBackCSS:getCSS())
   MedBuffsNBars.GaugeFrontCSS:set("background-color","green")
-  MedBuffsNBars.Willpower.front:setStyleSheet(MedBuffsNBars.GaugeFrontCSS:getCSS())
-  --test = math.random(100)
-  --echo(test.."\n")
-  MedBuffsNBars.Willpower:setValue(math.random(100),100)
-  MedBuffsNBars.Willpower.front:echo("BR")
+  MedBuffsNBars.Breath.front:setStyleSheet(MedBuffsNBars.GaugeFrontCSS:getCSS())
+  MedBuffsNBars.Breath:setValue(math.random(100),100)
+  MedBuffsNBars.Breath.front:echo("BR")
 
 end
 
@@ -611,12 +600,12 @@ function MedUI.updateVitals()
   end
 
   if vitals.mv and vitals.maxMv then
-    MedBuffsNBars.Endurance:setValue(vitals.mv, vitals.maxMv)
+    MedBuffsNBars.Movement:setValue(vitals.mv, vitals.maxMv)
     gauge_mvdisplay_label:echo("<center><p style='font-size:18px; color = white'><b>".. vitals.mv .."<b></p></center>")
   end
 
   if vitals.br then
-    MedBuffsNBars.Willpower:setValue(vitals.br, 100)
+    MedBuffsNBars.Breath:setValue(vitals.br, 100)
     gauge_brdisplay_label:echo("<center><p style='font-size:18px; color = white'><b>".. vitals.br .."<b></p></center>")
   end
 
