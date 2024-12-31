@@ -803,9 +803,11 @@ function MedUI.eventHandler(event, ...)
 
     elseif event == "sysLoadEvent" then
       MedUI.setMudletOptions()
+      closeMapWidget()
 
     elseif event == "sysInstallPackage" and arg[1] == "MedUI" then
       MedUI.setMudletOptions()
+      closeMapWidget()
 
     elseif event == "sysUninstallPackage" and arg[1] == "MedUI" then
         stopNamedEventHandler("MedUI", "MedUIResize")
