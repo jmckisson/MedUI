@@ -1,5 +1,6 @@
 --[[
   Changelog:
+    1.8.1 - Don't reset main font size
     1.8.0 - Use GMCP variables for gauges, remove prompt parsing
     1.7.8 - Fix beginner prompt, add correct map for Medievia and Haven, fix map/chat window placement
     1.7.7 - Embed EMCO chat module instead of requiring as dependency
@@ -32,8 +33,7 @@ MedUI = MedUI or {
     keepInlineMap = false,
     enableTimestamps = true,
     mapFontSize = 9,
-    chatFontSize = 8,
-    mainFontSize = 13
+    chatFontSize = 8
   }
 }
 GUI = GUI or {}
@@ -711,7 +711,6 @@ end
 
 function MedUI.setMudletOptions()
     setFont("main", "Medievia Mudlet Sans Mono")
-    setFontSize("main", MedUI.options.mainFontSize or 13)
 
     setServerEncoding("MEDIEVIA")
     setConfig("controlCharacterHandling", "oem")
@@ -760,8 +759,7 @@ function MedUI.loadOptions()
     keepInlineMap = false,
     enableTimestamps = true,
     mapFontSize = 9,
-    chatFontSize = 8,
-    mainFontSize = 13
+    chatFontSize = 8
   }
 
   cecho("\n<DeepSkyBlue> MedUI: loaded options for <yellow>" .. charName)

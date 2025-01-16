@@ -1,7 +1,7 @@
 {
        "package": "MedUI",
        "title": "User Interface for Medievia",
-       "version": "1.8.0",
+       "version": "1.8.1",
        "author": "Kymbahl, Kronos",
        "icon": "",
        "outputFile": true

@@ -1,4 +1,4 @@
-if not map then
+if not map or not map.prompt or not map.prompt.exits then
     return
 end
 
