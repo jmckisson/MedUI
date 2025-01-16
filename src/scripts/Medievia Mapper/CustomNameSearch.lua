@@ -78,15 +78,15 @@ end
 killCustomMapEventHandlers()
 
 
-table.insert(MedUI.mapCustomEventHandlers, "sysLoadEvent", function()
+table.insert(MedUI.mapCustomEventHandlers, registerAnonymousEventHandler("sysLoadEvent", function()
     setCustomNameConfig()
-end)
+end))
 
-table.insert(MedUI.mapCustomEventHandlers, "sysInstall", function(event, name)
+table.insert(MedUI.mapCustomEventHandlers, registerAnonymousEventHandler("sysInstall", function(event, name)
     if name == "generic_mapper" then
         setCustomNameConfig()
     end
-end)
+end))
 
 
 
