@@ -598,6 +598,10 @@ end
 
 
 function MedUI.updateAfflictions()
+  if not MedUI.options.enableGauges then
+    return
+  end
+
   local added = gmcp.Char.Afflictions.Add
 
   if added and added.name then
