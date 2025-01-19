@@ -34,6 +34,28 @@ MedUI = MedUI or {
     enableTimestamps = true,
     mapFontSize = 9,
     chatFontSize = 8
+  },
+  affTable = {
+    ["Armor"]                 = "armor",
+    ["Bless"]                 = "bless",
+    ["Breathe Water"]         = "breathwater",
+    ["Detect Invisibility"]   = "detectinv",
+    ["Fire Protection"]       = "protfire",
+    ["Fireshield"]            = "fireshield",
+    ["Ice Protection"]        = "protice",
+    ["Iceshield"]             = "iceshield",
+    ["Infravision"]           = "infravision",
+    ["Levitate"]              = "levitate",
+    ["Lightning Protection"]  = "protlightning",
+    ["Manashield"]            = "manashield",
+    ["Phantasmal Images"]     = "phanimages",
+    ["Protection From Evil"]  = "protfromevil",
+    ["Protection From Good"]  = "protfromgood",
+    ["Quickness"]             = "quickness",
+    ["Sanctuary"]             = "sanc",
+    ["Sense Life"]            = "senselife",
+    ["Shield"]                = "shield",
+    ["Strength"]              = "strength",
   }
 }
 GUI = GUI or {}
@@ -550,6 +572,7 @@ function MedUI.enableGauges()
     medBuffsNBars_clearEffects()
     medBuffsNBars_initializeBarGauges()
     registerNamedEventHandler("MedUI", "MedBuffsNBars", "gmcp.Char.Vitals", "MedUI.updateVitals")
+    registerNamedEventHandler("MedUI", "MedBuffs", "gmcp.Char.Afflictions", "MedUI.updateAfflictions")
 
     tempTimer(.1, [[MedBuffsNBars.Bottom:show()]])
   end
@@ -572,6 +595,26 @@ function MedUI.disableGauges()
     left_buff_container:hide()
   end
 end
+
+
+function MedUI.updateAfflictions()
+  local added = gmcp.Char.Afflictions.Add
+
+  if added and added.name then
+      local affName = added.name
+      local affTicks = v.affTicks
+      if MedUI.affTable[affName] then
+        medBuffsNBars_setBuffOn(MedUI.affTable[affName])
+      end
+  end
+
+  local removed = gmcp.Char.Afflictions.Remove
+
+  if removed and MedUI.affTable[removed] then
+    medBuffsNBars_setBuffOff(MedUI.affTable[removed])
+  end
+end
+
 
 -- Update gauge values from data parsed from GMCP
 function MedUI.updateVitals()
