@@ -510,6 +510,10 @@ end
 
 --Used to hide all of the buffs before an update
 function medBuffsNBars_clearEffects()
+  if not MedBuffsNBars or not MedBuffsNBars.buffIconTable then
+    return
+  end
+
   for k, v in pairs(MedBuffsNBars.buffIconTable) do
     hideWindow(v[3])
   end
@@ -897,5 +901,25 @@ end
 MedUI.chatFontAlias = tempAlias("^medui chatFontSize (\\d+)$", [[MedUI.config("5 " .. matches[2])]])
 
 MedUI.charName = string.lower(getProfileName())
+
+local setupComplete = false
+
+function MedUI.doConnectionSetup()
+
+  if setupComplete then
+    return
+  end
+  setupComplete = true
+
+  MedUI.loadOptions()
+  MedUI.reconfigure()
+  tempTimer(.5, [[MedUI.updateVitals()]])
+
+  loadMap(getMudletHomeDir().."/MedUI/MedieviaMap.dat")
+  closeMapWidget()
+end
+
+registerNamedEventHandler("MedUI", "MedLoginHandler", "gmcp.Char.Info", "MedUI.doConnectionSetup")
+MedUI.doConnectionSetup()
 
 MedUI.config(" ")

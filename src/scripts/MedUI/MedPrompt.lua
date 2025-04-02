@@ -43,37 +43,3 @@ AnsiMap = {
   ["yellow"]  = AnsiColors.ForeYellow,
   ["ansi_light_red"]     = AnsiColors.ForeRed,
 }
-
-MedPrompt = MedPrompt or {}
-
-MedPrompt.setupComplete = false
-
-function MedPrompt.killLoginTriggers()
-  if MedPrompt.loginTrigIds then
-    for k, v in pairs(MedPrompt.loginTrigIds) do
-      killTrigger(v)
-    end
-  end
-  MedPrompt.loginTrigIds = {}
-end
-
-MedPrompt.killLoginTriggers()
-
-
-function MedPrompt.doConnectionSetup()
-
-  tempTimer(.5, function()
-    MedUI.loadOptions()
-    MedUI.reconfigure()
-    tempTimer(.5, [[MedUI.updateVitals()]])
-  end)
-
-  MedPrompt.killLoginTriggers()
-  loadMap(getMudletHomeDir().."/MedUI/MedieviaMap.dat")
-  closeMapWidget()
-
-  MedPrompt.setupComplete = true
-end
-
-registerNamedEventHandler("MedUI", "MedLoginHandler", "gmcp.Char.Info", "MedPrompt.doConnectionSetup")
-
