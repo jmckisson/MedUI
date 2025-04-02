@@ -1,5 +1,6 @@
 --[[
   Changelog:
+    1.8.2 - Use gmcp Char.Info to trigger options loading
     1.8.1 - Don't reset main font size
     1.8.0 - Use GMCP variables for gauges, remove prompt parsing
     1.7.8 - Fix beginner prompt, add correct map for Medievia and Haven, fix map/chat window placement

@@ -75,14 +75,5 @@ function MedPrompt.doConnectionSetup()
   MedPrompt.setupComplete = true
 end
 
-local trigId = tempRegexTrigger("^Reconnecting", [[MedPrompt.doConnectionSetup()]], 1)
-table.insert(MedPrompt.loginTrigIds, trigId)
+registerNamedEventHandler("MedUI", "MedLoginHandler", "gmcp.Char.Info", "MedPrompt.doConnectionSetup")
 
-trigId = tempRegexTrigger("^You are the (.*) person to connect", [[MedPrompt.doConnectionSetup()]], 1)
-table.insert(MedPrompt.loginTrigIds, trigId)
-
-trigId = tempTrigger("Norb the Minotaur telepaths you, 'You are in the zone",
-  function()
-    tempTimer(.25, [[MedPrompt.doConnectionSetup()]])
-  end, 1)
-table.insert(MedPrompt.loginTrigIds, trigId)
