@@ -53,7 +53,7 @@ function medieviaTabbedChat_InitMedChat()
   MedChat.Left:lockContainer("light")
 
   -- Initialize MMCP tab if our client supports MMCP (MudMaster Chat Protocol)
-  if chatCall then
+  if mudlet.supports.mmcp or chatCall then
     if not table.index_of(MedChat.runEMCO.consoles, "MMCP") then
       MedChat.runEMCO:addTab("MMCP", #MedChat.runEMCO.consoles + 1)
     end
