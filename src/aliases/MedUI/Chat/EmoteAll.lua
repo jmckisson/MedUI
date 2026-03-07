@@ -1,2 +1,7 @@
 local emoteStr = "says, '" .. matches[2] .. "'"
-chatEmoteAll(emoteStr)
+
+if mudlet.supports.mmcp then
+    mmcp.emoteAll(emoteStr)
+else
+    chatEmoteAll(emoteStr)
+end

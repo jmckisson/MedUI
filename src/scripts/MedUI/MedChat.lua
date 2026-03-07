@@ -75,7 +75,8 @@ end
 
 function MedChat.eventHandler(event, ...)
 
-  if event == "sysMMCPMessage" then
+  if event == "sysMMCPChatMessage" or event == "sysMMCPMessage" then
+    -- Old event handler
     local trimmedStr = arg[1]:match("^%s*(.-)%s*$")
 
     if MedUI.options.enableTimestamps then
@@ -85,20 +86,12 @@ function MedChat.eventHandler(event, ...)
     MedChat.runEMCO:decho("MMCP", ansi2decho(trimmedStr) .. "\n", false)
 
   elseif event == "sysUninstallPackage" and arg[1] == "MedUI" then
-    --[[
-    for _,id in ipairs(MedChat.registeredEvents) do
-      killAnonymousEventHandler(id)
-    end
-    ]]
     stopNamedEventHandler("MedUI", "MedChat")
   end
 end
 
---MedChat.registeredEvents = {
---  registerAnonymousEventHandler("sysMMCPMessage", "MedChat.eventHandler")
---}
-
-registerNamedEventHandler("MedUI", "MedChat", "sysMMCPMessage", "MedChat.eventHandler")
+registerNamedEventHandler("MedUI", "MedChatLegacy", "sysMMCPMessage", "MedChat.eventHandler")
+registerNamedEventHandler("MedUI", "MedChat", "sysMMCPChatMessage", "MedChat.eventHandler")
 
 medieviaTabbedChat_InitMedChat()
 

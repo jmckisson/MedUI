@@ -4,4 +4,8 @@ if matches[3] ~= nil then
   port = matches[3]
 end
 
-chatCall(addr, port)
+if mudlet.supports.mmcp then
+  mmcp.call(addr, port)
+else
+  chatCall(addr, port)
+end
