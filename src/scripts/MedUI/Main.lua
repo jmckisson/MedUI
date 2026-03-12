@@ -1,5 +1,7 @@
 --[[
   Changelog:
+    1.9.1 - Fix windows resizing when map and chat are hidden
+    1.9.0 - Detect MMCP for both original PR and development versions
     1.8.2 - Use gmcp Char.Info to trigger options loading
     1.8.1 - Don't reset main font size
     1.8.0 - Use GMCP variables for gauges, remove prompt parsing
@@ -767,8 +769,10 @@ function MedUI.setMudletOptions()
     setServerEncoding("MEDIEVIA")
     setConfig("controlCharacterHandling", "oem")
 
-    local w,h = getMainWindowSize()
-    setBorderRight(w/3.3)
+    if MedUI.MedMap.MapperAdjCont and MedChat.Left and not MedUI.MedMap.MapperAdjCont["hidden"] and not MedChat.Left["hidden"] then
+      local w,h = getMainWindowSize()
+      setBorderRight(w/3.3)
+    end
 
     -- Disable the generic_mapper "English Exits Trigger" to allow the Medievia mapper to function properly
     disableTrigger("English Exits Trigger")
@@ -814,7 +818,7 @@ function MedUI.loadOptions()
     chatFontSize = 8
   }
 
-  cecho("\n<DeepSkyBlue> MedUI: loaded options for <yellow>" .. charName)
+  cecho("\n<DeepSkyBlue> MedUI: loaded options for <yellow>" .. charName .. "\n")
   MedUI.charName = charName
 end
 
@@ -827,7 +831,7 @@ function MedUI.saveOptions()
 
   table.save(getMudletHomeDir().."/medui_"..charName..".lua", saveTable)
 
-  cecho("\n<DeepSkyBlue> MedUI: saved options for <yellow>" .. charName)
+  cecho("\n<DeepSkyBlue> MedUI: saved options for <yellow>" .. charName .. "\n")
   MedUI.charName = charName
 end
 
@@ -837,9 +841,11 @@ function MedUI.eventHandler(event, ...)
     if event == "sysWindowResizeEvent" then
         local x, y, windowName = arg[1], arg[2], arg[3]
 
-        if windowName == "main" then      
-          local w,h = getMainWindowSize()
-          setBorderRight(w/3.3)
+        if windowName == "main" and MedUI.MedMap.MapperAdjCont and MedChat.Left then
+          if not MedUI.MedMap.MapperAdjCont["hidden"] and not MedChat.Left["hidden"] then
+            local w,h = getMainWindowSize()
+            setBorderRight(w/3.3)
+          end
         end
 
     elseif event == "sysLoadEvent" then
