@@ -1,11 +1,16 @@
 [
     {
-           "name": "Medievia Mapper",
-           "isActive": "yes",
-           "isFolder": "yes"
+        "name": "Medievia Mapper",
+        "isActive": "yes",
+        "isFolder": "yes"
     },
     {
         "name": "MedUI",
+        "isActive": "yes",
+        "isFolder": "yes"
+    },
+    {
+        "name": "MultiPlay",
         "isActive": "yes",
         "isFolder": "yes"
     }

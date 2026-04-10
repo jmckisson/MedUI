@@ -1,5 +1,6 @@
 --[[
   Changelog:
+    2.0.0 - Add MultiPlay module
     1.9.1 - Fix windows resizing when map and chat are hidden
     1.9.0 - Detect MMCP for both original PR and development versions
     1.8.2 - Use gmcp Char.Info to trigger options loading
@@ -26,6 +27,53 @@
             Add option to keep the inline map in 'medui' command
 --]]
 
+AnsiColors = {
+    StyleReset = "\27[0m",
+    StyleBold = "\27[1m",
+    StyleReverse = "\27[7m",
+    ForeBlack = "\27[30m",
+    ForeRed = "\27[31m",
+    ForeGreen = "\27[32m",
+    ForeYellow = "\27[33m",
+    ForeBlue = "\27[34m",
+    ForeMagenta = "\27[35m",
+    ForeCyan = "\27[36m",
+    ForeWhite = "\27[37m",
+    FBLDGRY = "\27[1;30m",
+    FBLDRED = "\27[1;31m",
+    FBLDGRN = "\27[1;32m",
+    FBLDYEL = "\27[1;33m",
+    FBLDBLU = "\27[1;34m",
+    FBLDMAG = "\27[1;35m",
+    FBLDCYN = "\27[1;36m",
+    FBLDWHT = "\27[1;37m",
+    BBLK = "\27[40m",
+    BRED = "\27[41m",
+    BGRN = "\27[42m",
+    BYEL = "\27[43m",
+    BBLU = "\27[44m",
+    BMAG = "\27[45m",
+    BCYN = "\27[46m",
+    BWHT = "\27[47m"
+}
+
+AnsiMap = {
+  ["<black>"]   = AnsiColors.ForeBlack,
+  ["<red>"]     = AnsiColors.ForeRed,
+  ["<green>"]   = AnsiColors.ForeGreen,
+  ["ansi_010"]  = AnsiColors.ForeGreen,
+  ["<yellow>"]  = AnsiColors.ForeYellow,
+  ["<blue>"]    = AnsiColors.ForeBlue,
+  ["ansi_012"]  = AnsiColors.ForeBlue,
+  ["<magenta>"] = AnsiColors.ForeMagenta,
+  ["<cyan>"]    = AnsiColors.ForeCyan,
+  ["<white>"]   = AnsiColors.ForeWhite,
+  ["blue"]    = AnsiColors.ForeBlue,
+  ["yellow"]  = AnsiColors.ForeYellow,
+  ["ansi_light_red"]     = AnsiColors.ForeRed,
+}
+
+
 MedUI = MedUI or {
   version = "__VERSION__",
   MedChat = {},
@@ -36,7 +84,9 @@ MedUI = MedUI or {
     keepInlineMap = false,
     enableTimestamps = true,
     mapFontSize = 9,
-    chatFontSize = 8
+    chatFontSize = 8,
+    enableMultiPlay = false,
+    mpGaugeMode = false,
   },
   affTable = {
     ["Armor"]                 = "armor",
@@ -604,6 +654,20 @@ function MedUI.disableGauges()
 end
 
 
+function MedUI.enableMultiPlay()
+  if MultiPlay then
+    MultiPlay.enableModule()
+  end
+end
+
+
+function MedUI.disableMultiPlay()
+  if MultiPlay then
+    MultiPlay.disableModule()
+  end
+end
+
+
 function MedUI.updateAfflictions()
   if not MedUI.options.enableGauges then
     return
@@ -702,7 +766,12 @@ function MedUI.config(arg)
       helpKey = "<white>'<yellow>medui %d <size><white>' or '<yellow>medui mapFontSize <size><white>' to adjust"},
     {description = "Chat Font Size", optionKey = "chatFontSize", type = "value",
       specialAction = function() MedChat.runEMCO:setFontSize(tonumber(MedUI.options.chatFontSize) or 8) end,
-      helpKey = "<white>'<yellow>medui %d <size><white>' or '<yellow>medui chatFontSize <size><white>' to adjust"}
+      helpKey = "<white>'<yellow>medui %d <size><white>' or '<yellow>medui chatFontSize <size><white>' to adjust"},
+    {description = "Enable MultiPlay Module", optionKey = "enableMultiPlay", type = "toggle",
+      helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui mp<white>' to toggle"},
+    {description = "MultiPlay Gauge Mode", optionKey = "mpGaugeMode", type = "toggle",
+      specialAction = function() MPWindow.setDisplayMode(MedUI.options.mpGaugeMode) end,
+      helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui mpgauges<white>' to toggle"}
   }
 
   local args = {}
@@ -769,7 +838,8 @@ function MedUI.setMudletOptions()
     setServerEncoding("MEDIEVIA")
     setConfig("controlCharacterHandling", "oem")
 
-    if MedUI.MedMap.MapperAdjCont and MedChat.Left and not MedUI.MedMap.MapperAdjCont["hidden"] and not MedChat.Left["hidden"] then
+    if MedUI.MedMap and MedChat and MedUI.MedMap.MapperAdjCont and MedChat.Left
+      and not MedUI.MedMap.MapperAdjCont["hidden"] and not MedChat.Left["hidden"] then
       local w,h = getMainWindowSize()
       setBorderRight(w/3.3)
     end
@@ -797,6 +867,16 @@ function MedUI.reconfigure()
         MedUI.disableGauges()
     end
 
+    if MedUI.options.enableMultiPlay then
+      MedUI.enableMultiPlay()
+    else
+      MedUI.disableMultiPlay()
+    end
+
+    if MPWindow then
+      MPWindow.setDisplayMode(MedUI.options.mpGaugeMode)
+    end
+
 end
 
 function MedUI.loadOptions()
@@ -815,7 +895,9 @@ function MedUI.loadOptions()
     keepInlineMap = false,
     enableTimestamps = true,
     mapFontSize = 9,
-    chatFontSize = 8
+    chatFontSize = 8,
+    enableMultiPlay = false,
+    mpGaugeMode = false
   }
 
   cecho("\n<DeepSkyBlue> MedUI: loaded options for <yellow>" .. charName .. "\n")
@@ -841,7 +923,8 @@ function MedUI.eventHandler(event, ...)
     if event == "sysWindowResizeEvent" then
         local x, y, windowName = arg[1], arg[2], arg[3]
 
-        if windowName == "main" and MedUI.MedMap.MapperAdjCont and MedChat.Left then
+        -- MedChat may not be loaded yet, so check for it, MedUI.MedMap is loaded at the top of this file
+        if windowName == "main" and MedChat and MedChat.Left then
           if not MedUI.MedMap.MapperAdjCont["hidden"] and not MedChat.Left["hidden"] then
             local w,h = getMainWindowSize()
             setBorderRight(w/3.3)
@@ -862,6 +945,18 @@ function MedUI.eventHandler(event, ...)
         stopNamedEventHandler("MedUI", "MedUIInstall")
         stopNamedEventHandler("MedUI", "MedUIUninstall")
         stopNamedEventHandler("MedUI", "MedBuffsNBars")
+        if MedChat and MedChat.Left then
+          MedChat.Left:delete()
+          MedChat.Left = nil
+        end
+        if MedUI.MedMap and MedUI.MedMap.MapperAdjCont then
+          MedUI.MedMap.MapperAdjCont:delete()
+          MedUI.MedMap.MapperAdjCont = nil
+        end
+        if (MedChat and not MedChat.Left) and (MedUI.MedMap and not MedUI.MedMap.MapperAdjCont) then
+          setBorderRight(0)
+        end
+
     end
 end
 
@@ -905,6 +1000,18 @@ if MedUI.chatFontAlias then
 end
 
 MedUI.chatFontAlias = tempAlias("^medui chatFontSize (\\d+)$", [[MedUI.config("5 " .. matches[2])]])
+
+if MedUI.multiPlayAlias then
+  killAlias(MedUI.multiPlayAlias)
+end
+
+MedUI.multiPlayAlias = tempAlias("^medui mp$", [[MedUI.config("6")]])
+
+if MedUI.mpGaugesAlias then
+  killAlias(MedUI.mpGaugesAlias)
+end
+
+MedUI.mpGaugesAlias = tempAlias("^medui mpgauges$", [[MedUI.config("7")]])
 
 MedUI.charName = string.lower(getProfileName())
 

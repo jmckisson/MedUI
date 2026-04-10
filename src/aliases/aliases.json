@@ -4,5 +4,11 @@
               "isActive": "yes",
               "script": "",
               "isFolder": "yes"
+       },
+       {
+              "name": "MultiPlay",
+              "isActive": "yes",
+              "script": "",
+              "isFolder": "yes"
        }
 ]

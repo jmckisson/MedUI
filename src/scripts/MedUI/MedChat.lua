@@ -76,8 +76,7 @@ end
 function MedChat.eventHandler(event, ...)
 
   if event == "sysMMCPChatMessage" or event == "sysMMCPMessage" then
-    -- Old event handler
-    local trimmedStr = arg[1]:match("^%s*(.-)%s*$")
+    local trimmedStr = arg[2]:match("^%s*(.-)%s*$")
 
     if MedUI.options.enableTimestamps then
       MedChat.runEMCO:cecho("MMCP", "<white>["..getTime(true, "HH:mm:ss") .."] ")
@@ -90,7 +89,10 @@ function MedChat.eventHandler(event, ...)
   end
 end
 
-registerNamedEventHandler("MedUI", "MedChatLegacy", "sysMMCPMessage", "MedChat.eventHandler")
+local mudletVersion = getMudletVersion()
+if mudletVersion.major == 4 and mudletVersion.minor < 20 then
+  registerNamedEventHandler("MedUI", "MedChatLegacy", "sysMMCPMessage", "MedChat.eventHandler")
+end
 registerNamedEventHandler("MedUI", "MedChat", "sysMMCPChatMessage", "MedChat.eventHandler")
 
 medieviaTabbedChat_InitMedChat()

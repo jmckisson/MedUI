@@ -1,0 +1,12 @@
+[
+       {
+              "name": "MultiPlay",
+              "isActive": "yes",
+              "isFolder": "no"
+       },
+       {
+              "name": "MPWindow",
+              "isActive": "yes",
+              "isFolder": "no"
+       }
+]

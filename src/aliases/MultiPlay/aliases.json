@@ -1,0 +1,37 @@
+[
+       {
+              "name": "TellAll",
+              "isActive": "yes",
+              "regex": "^# (.*)$",
+              "script": "",
+              "isFolder": "no"
+       },
+       {
+              "name": "TellGroup",
+              "isActive": "yes",
+              "regex": "^#(\\w+) (.*)$",
+              "script": "",
+              "isFolder": "no"
+       },
+       {
+              "name": "AddGroup",
+              "isActive": "yes",
+              "regex": "^#\\+g (\\w+)$",
+              "script": "",
+              "isFolder": "no"
+       },
+       {
+              "name": "AddToGroup",
+              "isActive": "yes",
+              "regex": "^#\\+a (\\w+) (\\w+)$",
+              "script": "",
+              "isFolder": "no"
+       },
+       {
+              "name": "ShowGroups",
+              "isActive": "yes",
+              "regex": "^#\\?$",
+              "script": "",
+              "isFolder": "no"
+       }
+]

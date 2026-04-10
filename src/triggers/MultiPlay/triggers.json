@@ -1,0 +1,22 @@
+[
+    {
+        "name": "FormStats",
+        "patterns": [
+            {
+                "pattern": "^([*r ]+)\\[(\\w+)\\s*\\]\\[(\\w+)\\]\\[\\s*lv\\s+(\\d+)\\|\\s*(\\d+)\/\\s*(\\d+)hp\\s*(\\d+)\/\\s*(\\d+)m\\s*(\\d+)\/\\s*(\\d+)mv\\]$",
+                "type": "regex"
+            }
+        ],
+        "isActive": "yes",
+        "isFolder": "no",
+        "multiline": "no",
+        "multilineDelta": "0",
+        "matchall": "no",
+        "filter": "no",
+        "fireLength": "0",
+        "highlight": "no",
+        "highlightFG": "#ff0000",
+        "highlightBG": "#ffff00",
+        "script": ""
+    }
+]

@@ -10,11 +10,6 @@
               "isFolder": "no"
        },
        {
-              "name": "MedPrompt",
-              "isActive": "yes",
-              "isFolder": "no"
-       },
-       {
               "name": "Main",
               "isActive": "yes",
               "isFolder": "no"
