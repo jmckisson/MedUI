@@ -1,18 +1,18 @@
 MedChat = MedChat or {}
 
-function medieviaTabbedChat_InitMedChat()
+local function medieviaTabbedChat_InitMedChat()
 
   local EMCO = require("MedUI.emco")
   local stylesheet = [[background-color: rgb(0,255,255,255); border-width: 1px; border-style: solid; border-color: gold; border-radius: 10px;]]
   local istylesheet = [[background-color: rgb(60,0,0,255); border-width: 1px; border-style: solid; border-color: gold; border-radius: 10px;]]
 
-  if MedChat.Left and MedChat.Left:get_width() == 0 then
-    --cecho("\n<yellow>Found existing MedChat.Left with 0 width, setting to nil and reinitializing...\n")
-    MedChat.Left = nil
-    MedChat.runEMCO = nil
+  if MedChat.AdjCont and MedChat.AdjCont:get_width() == 0 then
+    --cecho("\n<yellow>Found existing MedChat.AdjCont with 0 width, setting to nil and reinitializing...\n")
+    MedChat.AdjCont = nil
+    MedChat.EMCOConsole = nil
   end
 
-  MedChat.Left = MedChat.Left or Adjustable.Container:new({
+  MedChat.AdjCont = MedChat.AdjCont or Adjustable.Container:new({
     name = "Medievia Chat",
     x = "-30.303%", y = "50%",  -- compensate for the border being width/3.3
     width = "30.303%",
@@ -24,7 +24,7 @@ function medieviaTabbedChat_InitMedChat()
   })
 
 
-  MedChat.runEMCO = MedChat.runEMCO or EMCO:new({
+  MedChat.EMCOConsole = MedChat.EMCOConsole or EMCO:new({
     x = "0",
     y = "0",
     width = "100%",
@@ -43,16 +43,16 @@ function medieviaTabbedChat_InitMedChat()
     activeTabCSS = stylesheet,
     fontSize=tonumber(MedUI.options.chatFontSize) or 8,
     inactiveTabCSS = istylesheet,
-  }, MedChat.Left)
+  }, MedChat.AdjCont)
 
-  MedChat.Left:connectToBorder("right")
-  MedChat.Left:show()
-  MedChat.Left:lockContainer("light")
+  MedChat.AdjCont:connectToBorder("right")
+  MedChat.AdjCont:show()
+  MedChat.AdjCont:lockContainer("light")
 
   -- Initialize MMCP tab if our client supports MMCP (MudMaster Chat Protocol)
   if mudlet.supports.mmcp or chatCall then
-    if not table.index_of(MedChat.runEMCO.consoles, "MMCP") then
-      MedChat.runEMCO:addTab("MMCP", #MedChat.runEMCO.consoles + 1)
+    if not table.index_of(MedChat.EMCOConsole.consoles, "MMCP") then
+      MedChat.EMCOConsole:addTab("MMCP", #MedChat.EMCOConsole.consoles + 1)
     end
   end
 end
@@ -62,10 +62,10 @@ function MedChat.appendToChatPanel(channel)
   selectCurrentLine()
 
   if MedUI.options.enableTimestamps then
-    MedChat.runEMCO:cecho(channel, "<white>["..getTime(true, "HH:mm:ss") .."] ")
+    MedChat.EMCOConsole:cecho(channel, "<white>["..getTime(true, "HH:mm:ss") .."] ")
   end
 
-  MedChat.runEMCO:append(channel)
+  MedChat.EMCOConsole:append(channel)
   deselect()
   resetFormat()
 end
@@ -76,10 +76,10 @@ function MedChat.eventHandler(event, ...)
     local trimmedStr = arg[2]:match("^%s*(.-)%s*$")
 
     if MedUI.options.enableTimestamps then
-      MedChat.runEMCO:cecho("MMCP", "<white>["..getTime(true, "HH:mm:ss") .."] ")
+      MedChat.EMCOConsole:cecho("MMCP", "<white>["..getTime(true, "HH:mm:ss") .."] ")
     end
 
-    MedChat.runEMCO:decho("MMCP", ansi2decho(trimmedStr) .. "\n", false)
+    MedChat.EMCOConsole:decho("MMCP", ansi2decho(trimmedStr) .. "\n", false)
 
   elseif event == "sysUninstallPackage" and arg[1] == "MedUI" then
     stopNamedEventHandler("MedUI", "MedChat")

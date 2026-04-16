@@ -144,19 +144,19 @@ MedUI.buffIconTable = {
 
 
 function MedUI.MedMap.mapStart()
-  MedUI.MedMap.Mapper:clear()
+  MedUI.MedMap.Console:clear()
   selectCurrentLine()
   local length = #ansi2string(getCurrentLine())
 
   if length < 80 then
-    MedUI.MedMap.Mapper:setFontSize((tonumber(MedUI.options.mapFontSize) + 9) or 18)
+    MedUI.MedMap.Console:setFontSize((tonumber(MedUI.options.mapFontSize) + 9) or 18)
   elseif length < 200 then
-    MedUI.MedMap.Mapper:setFontSize((tonumber(MedUI.options.mapFontSize) + 3) or 12)
+    MedUI.MedMap.Console:setFontSize((tonumber(MedUI.options.mapFontSize) + 3) or 12)
   else
-    MedUI.MedMap.Mapper:setFontSize(tonumber(MedUI.options.mapFontSize) or 9)
+    MedUI.MedMap.Console:setFontSize(tonumber(MedUI.options.mapFontSize) or 9)
   end
   copy()
-  MedUI.MedMap.Mapper:appendBuffer()
+  MedUI.MedMap.Console:appendBuffer()
 
   if not MedUI.options.keepInlineMap then
     deleteLine()
@@ -166,7 +166,7 @@ end
 function MedUI.MedMap.mapMid()
   selectCurrentLine()
   copy()
-  MedUI.MedMap.Mapper:appendBuffer()
+  MedUI.MedMap.Console:appendBuffer()
   if not MedUI.options.keepInlineMap then
     deleteLine()
   end
@@ -175,7 +175,7 @@ end
 function MedUI.MedMap.mapEnd(roomName)
   selectCurrentLine()
   copy()
-  MedUI.MedMap.Mapper:appendBuffer()
+  MedUI.MedMap.Console:appendBuffer()
   if not MedUI.options.keepInlineMap then
     deleteLine()
   end
@@ -310,14 +310,14 @@ function MedUI.InitUI()
   end
 
   -- nullify the map window if it it somehow loaded with a 0 width
-  if MedUI.MedMap.MapperAdjCont and MedUI.MedMap.MapperAdjCont:get_width() == 0 then
-    MedUI.MedMap.MapperAdjCont = nil
-    MedUI.MedMap.Mapper = nil
+  if MedUI.MedMap.AdjCont and MedUI.MedMap.AdjCont:get_width() == 0 then
+    MedUI.MedMap.AdjCont = nil
+    MedUI.MedMap.Console = nil
   end
 
   -- Mapper container
-  MedUI.MedMap.MapperAdjCont = Adjustable.Container:new({
-    name = "Medieiva Map",
+  MedUI.MedMap.AdjCont = Adjustable.Container:new({
+    name = "Medievia Map",
     x = "-30.303%", y = 0,
     width = "30.303%",
     height = "50%",
@@ -327,20 +327,22 @@ function MedUI.InitUI()
     autoSave = true
   })
 
-  MedUI.MedMap.Mapper = Geyser.MiniConsole:new({
-    name="MedMapper",
+  MedUI.MedMap.AdjCont:setTitle("Medievia Map")
+
+  MedUI.MedMap.Console = Geyser.MiniConsole:new({
+    name="MapConsole",
     x= 0, y= 0,
     autoWrap = false,
     color = "black",
     scrollBar = false,
     fontSize = tonumber(MedUI.options.mapFontSize) or 9,
     width="100%", height="100%",
-  }, MedUI.MedMap.MapperAdjCont)
+  }, MedUI.MedMap.AdjCont)
 
-  MedUI.MedMap.Mapper:setFont("Medievia Mudlet Sans Mono")
-  MedUI.MedMap.MapperAdjCont:connectToBorder("right")
-  MedUI.MedMap.MapperAdjCont:show()
-  MedUI.MedMap.MapperAdjCont:lockContainer("light")
+  MedUI.MedMap.Console:setFont("Medievia Mudlet Sans Mono")
+  MedUI.MedMap.AdjCont:connectToBorder("right")
+  MedUI.MedMap.AdjCont:show()
+  MedUI.MedMap.AdjCont:lockContainer("light")
 
   -- Gauge and Buffs containers
   MedBuffsNBars.Bottom = Geyser.Label:new({
@@ -633,10 +635,10 @@ function MedUI.config(arg)
     {description = "Keep Inline Map", optionKey = "keepInlineMap", type = "toggle", helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui inlinemap<white>' to toggle"},
     {description = "Enable Timestamps", optionKey = "enableTimestamps", type = "toggle", helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui timestamp<white>' to toggle"},
     {description = "Map Font Size", optionKey = "mapFontSize", type = "value",
-      specialAction = function() MedUI.MedMap.Mapper:setFontSize(tonumber(MedUI.options.mapFontSize) or 9) end, 
+      specialAction = function() MedUI.MedMap.Console:setFontSize(tonumber(MedUI.options.mapFontSize) or 9) end, 
       helpKey = "<white>'<yellow>medui %d <size><white>' or '<yellow>medui mapFontSize <size><white>' to adjust"},
     {description = "Chat Font Size", optionKey = "chatFontSize", type = "value",
-      specialAction = function() MedChat.runEMCO:setFontSize(tonumber(MedUI.options.chatFontSize) or 8) end,
+      specialAction = function() MedChat.EMCOConsole:setFontSize(tonumber(MedUI.options.chatFontSize) or 8) end,
       helpKey = "<white>'<yellow>medui %d <size><white>' or '<yellow>medui chatFontSize <size><white>' to adjust"},
     {description = "Enable MultiPlay Module", optionKey = "enableMultiPlay", type = "toggle",
       helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui mp<white>' to toggle"},
@@ -709,8 +711,8 @@ function MedUI.setMudletOptions()
     setServerEncoding("MEDIEVIA")
     setConfig("controlCharacterHandling", "oem")
 
-    if MedUI.MedMap and MedChat and MedUI.MedMap.MapperAdjCont and MedChat.Left
-      and not MedUI.MedMap.MapperAdjCont["hidden"] and not MedChat.Left["hidden"] then
+    if MedUI.MedMap and MedChat and MedUI.MedMap.AdjCont and MedChat.AdjCont
+      and not MedUI.MedMap.AdjCont["hidden"] and not MedChat.AdjCont["hidden"] then
       local w,h = getMainWindowSize()
       setBorderRight(w/3.3)
     end
@@ -795,8 +797,8 @@ function MedUI.eventHandler(event, ...)
         local x, y, windowName = arg[1], arg[2], arg[3]
 
         -- MedChat may not be loaded yet, so check for it, MedUI.MedMap is loaded at the top of this file
-        if windowName == "main" and MedChat and MedChat.Left then
-          if not MedUI.MedMap.MapperAdjCont["hidden"] and not MedChat.Left["hidden"] then
+        if windowName == "main" and MedChat and MedChat.AdjCont then
+          if not MedUI.MedMap.AdjCont["hidden"] and not MedChat.AdjCont["hidden"] then
             local w,h = getMainWindowSize()
             setBorderRight(w/3.3)
           end
@@ -818,17 +820,29 @@ function MedUI.eventHandler(event, ...)
         stopNamedEventHandler("MedUI", "MedUIInstall")
         stopNamedEventHandler("MedUI", "MedUIUninstall")
         stopNamedEventHandler("MedUI", "MedBuffsNBars")
-        if MedChat and MedChat.Left then
-          MedChat.Left:delete()
-          MedChat.Left = nil
+        if MedChat and MedChat.AdjCont then
+          MedChat.AdjCont:delete()
+          MedChat.AdjCont = nil
+          MedChat.EMCOConsole = nil
         end
-        if MedUI.MedMap and MedUI.MedMap.MapperAdjCont then
-          MedUI.MedMap.MapperAdjCont:delete()
-          MedUI.MedMap.MapperAdjCont = nil
+        if MedUI.MedMap and MedUI.MedMap.AdjCont then
+          MedUI.MedMap.AdjCont:delete()
+          MedUI.MedMap.AdjCont = nil
+          MedUI.MedMap.Console = nil
         end
-        if (MedChat and not MedChat.Left) and (MedUI.MedMap and not MedUI.MedMap.MapperAdjCont) then
-          setBorderRight(0)
+        if MedBuffsNBars.Bottom then
+          MedBuffsNBars.Bottom:delete()
+          MedBuffsNBars.Bottom = nil
         end
+        if MedBuffsNBars.BuffBox then
+          MedBuffsNBars.BuffBox:delete()
+          MedBuffsNBars.BuffBox = nil
+        end
+        for _, v in pairs(MedUI.buffIconTable) do
+          v[5] = "ref_place_holder"
+        end
+        setBorderRight(0)
+        setBorderBottom(0)
 
     end
 end
