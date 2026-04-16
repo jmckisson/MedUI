@@ -116,30 +116,30 @@ MedUI = MedUI or {
 }
 
 MedUI.buffIconTable = {
-    sanc = {MedUI.iconLocation.."/icons/sanc.png", false, "spell_label_sanc", "buff", "ref_place_holder", 1},
-    fireshield = {MedUI.iconLocation.."/icons/fireshield.png", false, "spell_label_fireshield", "buff", "ref_place_holder", 2},
-    iceshield = {MedUI.iconLocation.."/icons/iceshield.png", false, "spell_label_iceshield", "buff", "ref_place_holder", 3},
-    protfire = {MedUI.iconLocation.."/icons/prot_fire.png", false, "spell_label_protfire", "buff", "ref_place_holder", 4},
-    protice = {MedUI.iconLocation.."/icons/prot_ice.png", false, "spell_label_protice", "buff", "ref_place_holder", 5},
-    protlightning = {MedUI.iconLocation.."/icons/prot_lightning.png", false, "spell_label_protlightning", "buff", "ref_place_holder", 6},
-    manashield = {MedUI.iconLocation.."/icons/manashield.png", false, "spell_label_manashield", "buff", "ref_place_holder", 7},
-    phanimages = {MedUI.iconLocation.."/icons/phanimages.png", false, "spell_label_phanimages", "buff", "ref_place_holder", 8},
-    quickness = {MedUI.iconLocation.."/icons/quickness.png", false, "spell_label_quickness", "buff", "ref_place_holder", 9},
-    levitate = {MedUI.iconLocation.."/icons/levitate.png", false, "spell_label_levitate", "buff", "ref_place_holder", 10},
-    breathwater = {MedUI.iconLocation.."/icons/breathwater.png", false, "spell_label_breathwater", "buff", "ref_place_holder", 11},
-    strength = {MedUI.iconLocation.."/icons/strength.png", false, "spell_label_strength", "buff", "ref_place_holder", 12},
-    armor = {MedUI.iconLocation.."/icons/armor.png", false, "spell_label_armor", "buff", "ref_place_holder", 13},
-    bless = {MedUI.iconLocation.."/icons/bless.png", false, "spell_label_bless", "buff", "ref_place_holder", 14},
-    stoneskin = {MedUI.iconLocation.."/icons/stoneskin_shield.png", false, "spell_label_stoneskin", "buff", "ref_place_holder", 15},
-    shield = {MedUI.iconLocation.."/icons/shield.png", false, "spell_label_shield", "buff", "ref_place_holder", 16},
-    protfromgood = {MedUI.iconLocation.."/icons/protfromgood.png", false, "spell_label_protfromgood", "buff", "ref_place_holder", 17},
-    blind = {MedUI.iconLocation.."/icons/blind.png", false, "spell_label_blind", "debuff", "ref_place_holder", 18},
-    infravision = {MedUI.iconLocation.."/icons/infravision.png", false, "spell_label_infravision", "buff", "ref_place_holder", 19},
-    detectevil = {MedUI.iconLocation.."/icons/detect_evil.png", false, "spell_label_detectevil", "buff", "ref_place_holder", 20},
-    detectgood = {MedUI.iconLocation.."/icons/detect_good.png", false, "spell_label_detectgood", "buff", "ref_place_holder", 21},
-    detectinv = {MedUI.iconLocation.."/icons/detect_inv.png", false, "spell_label_detectinv", "buff", "ref_place_holder", 22},
-    detectmagic = {MedUI.iconLocation.."/icons/detect_magic.png", false, "spell_label_detectmagic", "buff", "ref_place_holder", 23},
-    senselife = {MedUI.iconLocation.."/icons/senselife.png", false, "spell_label_senselife", "buff", "ref_place_holder", 24}   
+    sanc =         {icon="/icons/sanc.png",            active=false, labelName="spell_label_sanc",         buffType="buff",   order=1},
+    fireshield =   {icon="/icons/fireshield.png",      active=false, labelName="spell_label_fireshield",   buffType="buff",   order=2},
+    iceshield =    {icon="/icons/iceshield.png",       active=false, labelName="spell_label_iceshield",    buffType="buff",   order=3},
+    protfire =     {icon="/icons/prot_fire.png",       active=false, labelName="spell_label_protfire",     buffType="buff",   order=4},
+    protice =      {icon="/icons/prot_ice.png",        active=false, labelName="spell_label_protice",      buffType="buff",   order=5},
+    protlightning ={icon="/icons/prot_lightning.png",  active=false, labelName="spell_label_protlightning",buffType="buff",   order=6},
+    manashield =   {icon="/icons/manashield.png",      active=false, labelName="spell_label_manashield",   buffType="buff",   order=7},
+    phanimages =   {icon="/icons/phanimages.png",      active=false, labelName="spell_label_phanimages",   buffType="buff",   order=8},
+    quickness =    {icon="/icons/quickness.png",       active=false, labelName="spell_label_quickness",    buffType="buff",   order=9},
+    levitate =     {icon="/icons/levitate.png",        active=false, labelName="spell_label_levitate",     buffType="buff",   order=10},
+    breathwater =  {icon="/icons/breathwater.png",     active=false, labelName="spell_label_breathwater",  buffType="buff",   order=11},
+    strength =     {icon="/icons/strength.png",        active=false, labelName="spell_label_strength",     buffType="buff",   order=12},
+    armor =        {icon="/icons/armor.png",           active=false, labelName="spell_label_armor",        buffType="buff",   order=13},
+    bless =        {icon="/icons/bless.png",           active=false, labelName="spell_label_bless",        buffType="buff",   order=14},
+    stoneskin =    {icon="/icons/stoneskin_shield.png",active=false, labelName="spell_label_stoneskin",    buffType="buff",   order=15},
+    shield =       {icon="/icons/shield.png",          active=false, labelName="spell_label_shield",       buffType="buff",   order=16},
+    protfromgood = {icon="/icons/protfromgood.png",    active=false, labelName="spell_label_protfromgood", buffType="buff",   order=17},
+    blind =        {icon="/icons/blind.png",           active=false, labelName="spell_label_blind",        buffType="debuff", order=18},
+    infravision =  {icon="/icons/infravision.png",     active=false, labelName="spell_label_infravision",  buffType="buff",   order=19},
+    detectevil =   {icon="/icons/detect_evil.png",     active=false, labelName="spell_label_detectevil",   buffType="buff",   order=20},
+    detectgood =   {icon="/icons/detect_good.png",     active=false, labelName="spell_label_detectgood",   buffType="buff",   order=21},
+    detectinv =    {icon="/icons/detect_inv.png",      active=false, labelName="spell_label_detectinv",    buffType="buff",   order=22},
+    detectmagic =  {icon="/icons/detect_magic.png",    active=false, labelName="spell_label_detectmagic",  buffType="buff",   order=23},
+    senselife =    {icon="/icons/senselife.png",       active=false, labelName="spell_label_senselife",    buffType="buff",   order=24},
   }
 
 
@@ -385,7 +385,7 @@ end
 function medBuffsNBars_showBuffTable()
   echo('\n')
   for k, v in pairs(MedUI.buffIconTable) do
-    echo(v[1].."::"..tostring(v[2]).."::"..v[3].."::"..v[4]..'\n')
+    echo(v.icon.."::"..tostring(v.active).."::"..v.labelName.."::"..v.buffType..'\n')
   end
 end
 
@@ -400,19 +400,18 @@ function MedUI.initAffects()
 
     MedBuffsNBars.dynamic_x_int = 5 + (28*counter)
     MedBuffsNBars.dynamic_x_str = tostring(MedBuffsNBars.dynamic_x_int).."px"
-    local nameLabel = v[3]
-    if type(v[5]) ~= "table" then
-      v[5] = Geyser.Label:new({
-        name = nameLabel,
+    if not v.label then
+      v.label = Geyser.Label:new({
+        name = v.labelName,
         x = MedBuffsNBars.dynamic_x_str, y = "5px",
         width = "30px", height = "30px",
       }, MedBuffsNBars.BuffBox)
-      local medPicImageLoc = getMudletHomeDir() .. v[1]
-      v[5]:setStyleSheet([[
+      local medPicImageLoc = getMudletHomeDir() .. MedUI.iconLocation .. v.icon
+      v.label:setStyleSheet([[
         border-image:url(]]..medPicImageLoc..[[);
       ]])
     end
-    --echo(v[1].."::"..tostring(v[2]).."::"..v[3].."::"..v[4].."::"..v[5]..'\n')
+    --echo(v.icon.."::"..tostring(v.active).."::"..v.labelName.."::"..v.buffType..'\n')
     counter=counter + 1
   end
   --echo(counter..'\n')
@@ -426,14 +425,13 @@ function MedUI.buildAffects()
 
   local sortedBuffTable = MedBuffsNBars.sortedBuffTable or MedUI.sortedBuffsTable()
   for k, v in pairs(sortedBuffTable) do
-    --echo('\n'..v[1].."::"..tostring(v[2]).."::"..v[3].."::"..v[4]..'\n')
+    --echo('\n'..v.icon.."::"..tostring(v.active).."::"..v.labelName.."::"..v.buffType..'\n')
     MedBuffsNBars.dynamic_x_int = 5 + (28*counter)
     MedBuffsNBars.dynamic_x_str = tostring(MedBuffsNBars.dynamic_x_int).."px"
-    --echo('\n'..v[1].."::"..tostring(v[2]).."::"..v[3].."::"..v[4]..'\n')
-    if(v[2]) then
-      --echo("\nTEST"..v[1].."\n")
-      v[5]:move(MedBuffsNBars.dynamic_x_int, 5)
-      showWindow(v[3])
+    if v.active then
+      --echo("\nTEST"..v.icon.."\n")
+      v.label:move(MedBuffsNBars.dynamic_x_int, 5)
+      showWindow(v.labelName)
       counter = counter + 1
     end
   end
@@ -444,7 +442,7 @@ end
 function MedUI.clearAffects()
 
   for k, v in pairs(MedUI.buffIconTable) do
-    hideWindow(v[3])
+    hideWindow(v.labelName)
   end
 end
 
@@ -463,13 +461,12 @@ function medBuffsNBars_test_showAllBuffIcons()
   local counter = 0
   local sortedBuffTable = MedUI.sortedBuffsTable()
   for k, v in pairs(sortedBuffTable) do
-    --echo('\n'..v[1].."::"..tostring(v[2]).."::"..v[3].."::"..v[4]..'\n')
+    --echo('\n'..v.icon.."::"..tostring(v.active).."::"..v.labelName.."::"..v.buffType..'\n')
     MedBuffsNBars.dynamic_x_int = 5 + (28*counter)
     MedBuffsNBars.dynamic_x_str = tostring(MedBuffsNBars.dynamic_x_int).."px"
-    --echo('\n'..v[1].."::"..tostring(v[2]).."::"..v[3].."::"..v[4]..'\n')
-    v[5]:move(MedBuffsNBars.dynamic_x_int, 5)
-    --moveWindow(v[3], dynamic_x_int, 5)
-    showWindow(v[3])
+    v.label:move(MedBuffsNBars.dynamic_x_int, 5)
+    --moveWindow(v.labelName, dynamic_x_int, 5)
+    showWindow(v.labelName)
     counter = counter + 1
   end
 end
@@ -480,7 +477,7 @@ end
 function MedUI.sortedBuffsTable()
   local sortedBuffTable = {}
   for k, v in pairs(MedUI.buffIconTable) do
-    sortedBuffTable[v[6]] = v
+    sortedBuffTable[v.order] = v
   end
   return sortedBuffTable
 end
@@ -490,7 +487,7 @@ end
 -- It can also fix buffs that may have fallen off but not been caught by trigger for whatever reason.
 function MedUI.allBuffsOff()
   for k, v in pairs(MedUI.buffIconTable) do
-    v[2] = false
+    v.active = false
   end
 end
 
@@ -552,7 +549,7 @@ function MedUI.updateAfflictions()
       local shortName = MedUI.affTable[affName]
       if shortName then
         if MedUI.options.enableGauges then
-          MedUI.buffIconTable[shortName][2] = true
+          MedUI.buffIconTable[shortName].active = true
           MedUI.updateAffects()
         end
       end
@@ -563,7 +560,7 @@ function MedUI.updateAfflictions()
   if removed then
     local shortName = MedUI.affTable[removed]
     if shortName and MedUI.options.enableGauges then
-      MedUI.buffIconTable[shortName][2] = false
+      MedUI.buffIconTable[shortName].active = false
       MedUI.updateAffects()
     end
   end
@@ -834,12 +831,20 @@ function MedUI.eventHandler(event, ...)
           MedBuffsNBars.Bottom:delete()
           MedBuffsNBars.Bottom = nil
         end
+        MedBuffsNBars.Footer = nil
+        MedBuffsNBars.LeftColumn = nil
+        MedBuffsNBars.RightColumn = nil
+        MedBuffsNBars.HPBox = nil
+        MedBuffsNBars.ManaBox = nil
+        MedBuffsNBars.MVBox = nil
+        MedBuffsNBars.BRBox = nil
+        MedBuffsNBars.gauges = nil
         if MedBuffsNBars.BuffBox then
           MedBuffsNBars.BuffBox:delete()
           MedBuffsNBars.BuffBox = nil
         end
         for _, v in pairs(MedUI.buffIconTable) do
-          v[5] = "ref_place_holder"
+          v.label = nil
         end
         setBorderRight(0)
         setBorderBottom(0)
