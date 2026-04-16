@@ -109,53 +109,39 @@ MedUI = MedUI or {
     ["Sense Life"]            = "senselife",
     ["Shield"]                = "shield",
     ["Strength"]              = "strength",
-  }
-}
-GUI = GUI or {}
-
-GUI.BoxCSS = CSSMan.new([[
-  background-color: rgba(0,0,0,100);
-  border-style: solid;
-  border-width: 1px;
-  border-radius: 10px;
-  border-color: white;
-  margin: 10px;
-]])
-
--- nullify the map window if it it somehow loaded with a 0 width
-if MedUI.MedMap.MapperAdjCont and MedUI.MedMap.MapperAdjCont:get_width() == 0 then
-  MedUI.MedMap.MapperAdjCont = nil
-  MedUI.MedMap.Mapper = nil
-end
-
--- create an adjustable container for more flexibility
-MedUI.MedMap.MapperAdjCont = Adjustable.Container:new({
-  name = "Medieiva Map",
-  x = "-30.303%", y = 0,
-  width = "30.303%",
-  height = "50%",
-  lockStyle = "border",
-  adjLabelstyle = "background-color:darkred; border: 0; padding: 1px;",
-  autoLoad = true,
-  autoSave = true
-})
-
-
-MedUI.MedMap.Mapper = Geyser.MiniConsole:new({
-    name="MedMapper",
-    x= 0, y= 0,
-    autoWrap = false,
-    color = "black",
-    scrollBar = false,
-    fontSize = tonumber(MedUI.options.mapFontSize) or 9,
-    width="100%", height="100%",
   },
-  MedUI.MedMap.MapperAdjCont
-)
-MedUI.MedMap.Mapper:setFont("Medievia Mudlet Sans Mono")
-MedUI.MedMap.MapperAdjCont:connectToBorder("right")
-MedUI.MedMap.MapperAdjCont:show()
-MedUI.MedMap.MapperAdjCont:lockContainer("light")
+  --Stores the location reference of the PNG for each buff and debuff
+  --Use with getMudletHomeDir() to get full path
+  iconLocation = "/MedUI"
+}
+
+MedUI.buffIconTable = {
+    sanc = {MedUI.iconLocation.."/icons/sanc.png", false, "spell_label_sanc", "buff", "ref_place_holder", 1},
+    fireshield = {MedUI.iconLocation.."/icons/fireshield.png", false, "spell_label_fireshield", "buff", "ref_place_holder", 2},
+    iceshield = {MedUI.iconLocation.."/icons/iceshield.png", false, "spell_label_iceshield", "buff", "ref_place_holder", 3},
+    protfire = {MedUI.iconLocation.."/icons/prot_fire.png", false, "spell_label_protfire", "buff", "ref_place_holder", 4},
+    protice = {MedUI.iconLocation.."/icons/prot_ice.png", false, "spell_label_protice", "buff", "ref_place_holder", 5},
+    protlightning = {MedUI.iconLocation.."/icons/prot_lightning.png", false, "spell_label_protlightning", "buff", "ref_place_holder", 6},
+    manashield = {MedUI.iconLocation.."/icons/manashield.png", false, "spell_label_manashield", "buff", "ref_place_holder", 7},
+    phanimages = {MedUI.iconLocation.."/icons/phanimages.png", false, "spell_label_phanimages", "buff", "ref_place_holder", 8},
+    quickness = {MedUI.iconLocation.."/icons/quickness.png", false, "spell_label_quickness", "buff", "ref_place_holder", 9},
+    levitate = {MedUI.iconLocation.."/icons/levitate.png", false, "spell_label_levitate", "buff", "ref_place_holder", 10},
+    breathwater = {MedUI.iconLocation.."/icons/breathwater.png", false, "spell_label_breathwater", "buff", "ref_place_holder", 11},
+    strength = {MedUI.iconLocation.."/icons/strength.png", false, "spell_label_strength", "buff", "ref_place_holder", 12},
+    armor = {MedUI.iconLocation.."/icons/armor.png", false, "spell_label_armor", "buff", "ref_place_holder", 13},
+    bless = {MedUI.iconLocation.."/icons/bless.png", false, "spell_label_bless", "buff", "ref_place_holder", 14},
+    stoneskin = {MedUI.iconLocation.."/icons/stoneskin_shield.png", false, "spell_label_stoneskin", "buff", "ref_place_holder", 15},
+    shield = {MedUI.iconLocation.."/icons/shield.png", false, "spell_label_shield", "buff", "ref_place_holder", 16},
+    protfromgood = {MedUI.iconLocation.."/icons/protfromgood.png", false, "spell_label_protfromgood", "buff", "ref_place_holder", 17},
+    blind = {MedUI.iconLocation.."/icons/blind.png", false, "spell_label_blind", "debuff", "ref_place_holder", 18},
+    infravision = {MedUI.iconLocation.."/icons/infravision.png", false, "spell_label_infravision", "buff", "ref_place_holder", 19},
+    detectevil = {MedUI.iconLocation.."/icons/detect_evil.png", false, "spell_label_detectevil", "buff", "ref_place_holder", 20},
+    detectgood = {MedUI.iconLocation.."/icons/detect_good.png", false, "spell_label_detectgood", "buff", "ref_place_holder", 21},
+    detectinv = {MedUI.iconLocation.."/icons/detect_inv.png", false, "spell_label_detectinv", "buff", "ref_place_holder", 22},
+    detectmagic = {MedUI.iconLocation.."/icons/detect_magic.png", false, "spell_label_detectmagic", "buff", "ref_place_holder", 23},
+    senselife = {MedUI.iconLocation.."/icons/senselife.png", false, "spell_label_senselife", "buff", "ref_place_holder", 24}   
+  }
+
 
 function MedUI.MedMap.mapStart()
   MedUI.MedMap.Mapper:clear()
@@ -171,7 +157,7 @@ function MedUI.MedMap.mapStart()
   end
   copy()
   MedUI.MedMap.Mapper:appendBuffer()
-  
+
   if not MedUI.options.keepInlineMap then
     deleteLine()
   end
@@ -194,17 +180,6 @@ function MedUI.MedMap.mapEnd(roomName)
     deleteLine()
   end
 
-  -- For CombatReps script, needs refactor
-  if CR then
-    CR.needRoomName = false
-    CR.lastRoom = CR.myRoom
-    if gmcp.Room then
-      CR.myRoom = gmcp.Room.Info.name
-    elseif roomName then
-      CR.myRoom = roomName
-    end
-  end
-
   -- paste the parsed name into the main console as we still want to see the room name
   if roomName and not MedUI.options.keepInlineMap then
     cecho("\n<yellow>"..roomName)
@@ -219,84 +194,163 @@ end
 ---------------------------------------------------------------------------------
 MedBuffsNBars = MedBuffsNBars or {}
 
---Stores the location reference of the PNG for each buff and debuff
---Use with getMudletHomeDir() to get full path
-function medBuffsNBars_initializeBuffTable()
- 
-  MedBuffsNBars.buffIconTable = {
-    sanc = {MedBuffsNBars.iconLocation.."/icons/sanc.png", false, "spell_label_sanc", "buff", "ref_place_holder", 1},
-    fireshield = {MedBuffsNBars.iconLocation.."/icons/fireshield.png", false, "spell_label_fireshield", "buff", "ref_place_holder", 2},
-    iceshield = {MedBuffsNBars.iconLocation.."/icons/iceshield.png", false, "spell_label_iceshield", "buff", "ref_place_holder", 3},
-    protfire = {MedBuffsNBars.iconLocation.."/icons/prot_fire.png", false, "spell_label_protfire", "buff", "ref_place_holder", 4},
-    protice = {MedBuffsNBars.iconLocation.."/icons/prot_ice.png", false, "spell_label_protice", "buff", "ref_place_holder", 5},
-    protlightning = {MedBuffsNBars.iconLocation.."/icons/prot_lightning.png", false, "spell_label_protlightning", "buff", "ref_place_holder", 6},
-    manashield = {MedBuffsNBars.iconLocation.."/icons/manashield.png", false, "spell_label_manashield", "buff", "ref_place_holder", 7},
-    phanimages = {MedBuffsNBars.iconLocation.."/icons/phanimages.png", false, "spell_label_phanimages", "buff", "ref_place_holder", 8},
-    quickness = {MedBuffsNBars.iconLocation.."/icons/quickness.png", false, "spell_label_quickness", "buff", "ref_place_holder", 9},
-    levitate = {MedBuffsNBars.iconLocation.."/icons/levitate.png", false, "spell_label_levitate", "buff", "ref_place_holder", 10},
-    breathwater = {MedBuffsNBars.iconLocation.."/icons/breathwater.png", false, "spell_label_breathwater", "buff", "ref_place_holder", 11},
-    strength = {MedBuffsNBars.iconLocation.."/icons/strength.png", false, "spell_label_strength", "buff", "ref_place_holder", 12},
-    armor = {MedBuffsNBars.iconLocation.."/icons/armor.png", false, "spell_label_armor", "buff", "ref_place_holder", 13},
-    bless = {MedBuffsNBars.iconLocation.."/icons/bless.png", false, "spell_label_bless", "buff", "ref_place_holder", 14},
-    stoneskin = {MedBuffsNBars.iconLocation.."/icons/stoneskin_shield.png", false, "spell_label_stoneskin", "buff", "ref_place_holder", 15},
-    shield = {MedBuffsNBars.iconLocation.."/icons/shield.png", false, "spell_label_shield", "buff", "ref_place_holder", 16},
-    protfromgood = {MedBuffsNBars.iconLocation.."/icons/protfromgood.png", false, "spell_label_protfromgood", "buff", "ref_place_holder", 17},
-    blind = {MedBuffsNBars.iconLocation.."/icons/blind.png", false, "spell_label_blind", "debuff", "ref_place_holder", 18},
-    infravision = {MedBuffsNBars.iconLocation.."/icons/infravision.png", false, "spell_label_infravision", "buff", "ref_place_holder", 19},
-    detectevil = {MedBuffsNBars.iconLocation.."/icons/detect_evil.png", false, "spell_label_detectevil", "buff", "ref_place_holder", 20},
-    detectgood = {MedBuffsNBars.iconLocation.."/icons/detect_good.png", false, "spell_label_detectgood", "buff", "ref_place_holder", 21},
-    detectinv = {MedBuffsNBars.iconLocation.."/icons/detect_inv.png", false, "spell_label_detectinv", "buff", "ref_place_holder", 22},
-    detectmagic = {MedBuffsNBars.iconLocation.."/icons/detect_magic.png", false, "spell_label_detectmagic", "buff", "ref_place_holder", 23},
-    senselife = {MedBuffsNBars.iconLocation.."/icons/senselife.png", false, "spell_label_senselife", "buff", "ref_place_holder", 24}       
-  }
+local function makeGradientCSS(color)
+  local gradMin
+  local gradMax
+  if color == "blue" then
+      gradMax = "#0047b3"
+      gradMin = "#b3d1ff"
+    elseif color == "green" then
+      gradMax = "#98f041"
+      gradMin = "#66cc00"
+    elseif color == "yellow" then
+      gradMax = "#ffff00"
+      gradMin = "#ffff66"
+    elseif color == "red" then
+      gradMax = "#ff0000"
+      gradMin = "#ff9999"
+    end
+
+  if not gradMax or not gradMin then
+    display("Failed to make gradiant for color: " .. color)
+  end
+
+  return string.format([[
+    background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 %s, stop: 1 %s);
+    border-style: solid;
+    border-color: white;
+    border-width: 1px;
+    border-radius: 5px;
+    margin: 5px;
+  ]], gradMax, gradMin)
 end
 
-function medBuffsNBars_initializeBarGauges()
+local gaugeHeight = "90%"
+local iconSize = "25px"
 
-  --******CSS******--
+local function makeGaugeBox(iconFile, gaugeColor, labelText, containerName, x, y, column)
+  -- Container for icon, text, gauge
+  MedBuffsNBars[containerName] = Geyser.Container:new({
+    name = containerName..".Footer",
+    x = x, y = y,
+    width = "20%",
+  }, column)
 
-  MedBuffsNBars.BoxCSS = CSSMan.new([[
-    background-color: rgba(0,0,0,100);
-    border-style: solid;
-    border-width: 1px;
-    border-radius: 10px;
-    border-color: white;
-    margin: 10px;
-  ]])
+  local icon = Geyser.Label:new({
+    name = labelText.."_icon",
+    x = "0px", y = "3px",
+    width = iconSize, height = iconSize,
+    color = "black",
+  }, MedBuffsNBars[containerName])
 
-  MedBuffsNBars.GaugeBackCSS = CSSMan.new([[
-    background-color: rgba(0,0,0,0);
+  icon:setStyleSheet(string.format("border-image:url(%s);",
+    getMudletHomeDir()..MedUI.iconLocation.."/icons/"..iconFile))
+
+  local label = Geyser.Label:new({
+    name = labelText.."_label",
+    x = "5%", y = "7%",
+    width = "10%", height = "25px",
+    color = "black",
+  }, MedBuffsNBars[containerName])
+  label:echo("<center><p style='font-size:18px; color = white'><b>???<b></p></center>")
+
+  local gauge = Geyser.Gauge:new({
+    name = labelText.."_gauge",
+    x = "15%", y = "0px",
+    height = gaugeHeight,
+    width = "70%",
+  }, MedBuffsNBars[containerName])
+
+  gauge.front:setStyleSheet(makeGradientCSS(gaugeColor))
+  gauge.back:setStyleSheet([[
+    background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #666666, stop: 1 #cccccc);
     border-style: solid;
     border-color: white;
     border-width: 1px;
     border-radius: 5px;
     margin: 5px;
   ]])
+  gauge:setValue(math.random(100),100)
+  gauge.front:echo([[<font color="black">]]..labelText..[[</font>]])
 
-  MedBuffsNBars.GaugeFrontCSS = CSSMan.new([[
-    background-color: rgba(0,0,0,0);
-    border-style: solid;
-    border-color: white;
-    border-width: 1px;
-    border-radius: 5px;
-    margin: 5px;
-   
-  ]])
+  MedBuffsNBars.gauges = MedBuffsNBars.gauges or {}
+  MedBuffsNBars.gauges[labelText] = {}
+  MedBuffsNBars.gauges[labelText].label = label
+  MedBuffsNBars.gauges[labelText].gauge = gauge
 
-  MedBuffsNBars.BackgroundCSS = CSSMan.new([[
-    background-color: black;
-  ]])
+  return MedBuffsNBars[containerName]
+end
 
-  --*****Build GUI containers****--
+function MedUI.createGauges()
+
+  -- Don't re-init
+  if MedBuffsNBars.HPBox then
+    return
+  end
+
+  --*** HP Gauge ***--
+  MedBuffsNBars.HPBox = makeGaugeBox("hp.png", "red", "HP", "HPBox", 0, 0, MedBuffsNBars.LeftColumn)
+
+  --***Mana Gauge***--
+  MedBuffsNBars.ManaBox = makeGaugeBox("mana.png", "blue", "MP", "ManaBox", 0, 0, MedBuffsNBars.LeftColumn)
+
+  --***MV Gauge***--
+  MedBuffsNBars.MVBox = makeGaugeBox("mv.png", "yellow", "MV", "MVBox",  0, 0, MedBuffsNBars.RightColumn)
+
+  --***Breath***--
+  MedBuffsNBars.BRBox = makeGaugeBox("breath.png", "green", "BR", "BRBox", 0, "50%", MedBuffsNBars.RightColumn)
+
+end
+
+function MedUI.InitUI()
+
+  -- Don't re-init if already done
+  if MedBuffsNBars.Bottom then
+    return
+  end
+
+  -- nullify the map window if it it somehow loaded with a 0 width
+  if MedUI.MedMap.MapperAdjCont and MedUI.MedMap.MapperAdjCont:get_width() == 0 then
+    MedUI.MedMap.MapperAdjCont = nil
+    MedUI.MedMap.Mapper = nil
+  end
+
+  -- Mapper container
+  MedUI.MedMap.MapperAdjCont = Adjustable.Container:new({
+    name = "Medieiva Map",
+    x = "-30.303%", y = 0,
+    width = "30.303%",
+    height = "50%",
+    lockStyle = "border",
+    adjLabelstyle = "background-color:darkred; border: 0; padding: 1px;",
+    autoLoad = true,
+    autoSave = true
+  })
+
+  MedUI.MedMap.Mapper = Geyser.MiniConsole:new({
+    name="MedMapper",
+    x= 0, y= 0,
+    autoWrap = false,
+    color = "black",
+    scrollBar = false,
+    fontSize = tonumber(MedUI.options.mapFontSize) or 9,
+    width="100%", height="100%",
+  }, MedUI.MedMap.MapperAdjCont)
+
+  MedUI.MedMap.Mapper:setFont("Medievia Mudlet Sans Mono")
+  MedUI.MedMap.MapperAdjCont:connectToBorder("right")
+  MedUI.MedMap.MapperAdjCont:show()
+  MedUI.MedMap.MapperAdjCont:lockContainer("light")
+
+  -- Gauge and Buffs containers
   MedBuffsNBars.Bottom = Geyser.Label:new({
     name = "MedBuffsNBars.Bottom",
     x = "20", y = "-6%",
     width = "50%",
     height = "6%",
   })
-  MedBuffsNBars.Bottom:setStyleSheet(MedBuffsNBars.BackgroundCSS:getCSS())
+  MedBuffsNBars.Bottom:setStyleSheet("background-color: black;")
 
-  --***Gauge Layout***--
   MedBuffsNBars.Footer = Geyser.HBox:new({
     name = "MedBuffsNBars.Footer",
     x = 0, y = 0,
@@ -312,226 +366,50 @@ function medBuffsNBars_initializeBarGauges()
     name = "MedBuffsNBars.RightColumn",
   },MedBuffsNBars.Footer)
 
+  local bottomBoxHeight = MedBuffsNBars.Bottom:get_height()
 
-  --*** HP Gauge ***--
-  MedBuffsNBars.HPBox = Geyser.Container:new({
-    name = "HPBox.Footer",
-    x = 0, y = 0,
-    width = "20%",
-  }, MedBuffsNBars.LeftColumn)
+  MedBuffsNBars.BuffBox = Geyser.Container:new({
+    name = "playerBuffs",
+    x= "1%", y=-bottomBoxHeight - 35,
+    width = "25%", height="35",
+  })
 
-  gauge_hp_label = Geyser.Label:new({
-    name = "HP",
-    x = "0px", y = "0px",
-    width = "30px", height = "30px",
-    color = "black",
-  }, MedBuffsNBars.HPBox)
-  MedBuffsNBars.hpImageLoc = getMudletHomeDir()..MedBuffsNBars.iconLocation.."/icons/hp.png"
-  gauge_hp_label:setStyleSheet([[
-      border-image:url(]]..MedBuffsNBars.hpImageLoc..[[);
-  ]])
-
-  gauge_hpdisplay_label = Geyser.Label:new({
-    name = "gauge_hpdisplay_label",
-    x = "11%", y = "5%",
-    width = "10%", height = "25px",
-    color = "black",
-  }, MedBuffsNBars.HPBox)
-  gauge_hpdisplay_label:echo("<center><p style='font-size:18px; color = white'><b>???<b></p></center>")
-
-  MedBuffsNBars.Health = Geyser.Gauge:new({
-    name = "MedBuffsNBars.Health",
-    x = "22%", y = "0px",
-    height = "100%",
-    width = "70%",
-  }, MedBuffsNBars.HPBox)
-  MedBuffsNBars.Health.back:setStyleSheet(MedBuffsNBars.GaugeBackCSS:getCSS())
-  MedBuffsNBars.GaugeFrontCSS:set("background-color","red")
-  MedBuffsNBars.Health.front:setStyleSheet(MedBuffsNBars.GaugeFrontCSS:getCSS())
-  MedBuffsNBars.Health:setValue(math.random(100),100)
-  MedBuffsNBars.Health.front:echo("HP")
-
-
-  --***Mana Gauge***--
-  MedBuffsNBars.ManaBox = Geyser.Container:new({
-    name = "ManaBox.Footer",
-    x = 0, y = 0,
-    width = "20%",
-  }, MedBuffsNBars.LeftColumn)
-
-  gauge_mana_label = Geyser.Label:new({
-    name = "Mana",
-    x = "0px", y = "0px",
-    width = "30px", height = "30px",
-    color = "black",
-  }, MedBuffsNBars.ManaBox)
-  MedBuffsNBars.manaImageLoc = getMudletHomeDir()..MedBuffsNBars.iconLocation.."/icons/mana.png"
-  gauge_mana_label:setStyleSheet([[
-      border-image:url(]]..MedBuffsNBars.manaImageLoc..[[);
-  ]])
-
-  gauge_manadisplay_label = Geyser.Label:new({
-    name = "gauge_manadisplay_label",
-    x = "11%", y = "5%",
-    width = "10%", height = "25px",
-    color = "black",
-  }, MedBuffsNBars.ManaBox)
-  gauge_manadisplay_label:echo("<center><p style='font-size:18px; color = white'><b>???<b></p></center>")
-
-  MedBuffsNBars.Mana = Geyser.Gauge:new({
-    name = "MedBuffsNBars.Mana",
-    x = "22%", y = "0px",
-    height = "100%",
-    width = "70%",
-  }, MedBuffsNBars.ManaBox)
-  MedBuffsNBars.Mana.back:setStyleSheet(MedBuffsNBars.GaugeBackCSS:getCSS())
-  MedBuffsNBars.GaugeFrontCSS:set("background-color","blue")
-  MedBuffsNBars.Mana.front:setStyleSheet(MedBuffsNBars.GaugeFrontCSS:getCSS())
-  MedBuffsNBars.Mana:setValue(math.random(100),100)
-  MedBuffsNBars.Mana.front:echo("MP")
-
-
-  --***MV Gauge***--
-  MedBuffsNBars.MVBox = Geyser.Container:new({
-    name = "MVBox.Footer",
-    x = 0, y = 0,
-    width = "20%",
-  },MedBuffsNBars.RightColumn)
-
-  gauge_mv_label = Geyser.Label:new({
-    name = "MV",
-    x = "0px", y = "0px",
-    width = "30px", height = "30px",
-    color = "black",
-  }, MedBuffsNBars.MVBox)
-  MedBuffsNBars.mvImageLoc = getMudletHomeDir()..MedBuffsNBars.iconLocation.."/icons/mv.png"
-  gauge_mv_label:setStyleSheet([[
-      border-image:url(]]..MedBuffsNBars.mvImageLoc..[[);
-  ]])
-
-  gauge_mvdisplay_label = Geyser.Label:new({
-    name = "gauge_mvdisplay_label",
-    x = "11%", y = "5%",
-    width = "10%", height = "25px",
-    color = "black",
-  }, MedBuffsNBars.MVBox)
-  gauge_mvdisplay_label:echo("<center><p style='font-size:18px; color = white'><b>???<b></p></center>")
-
-  MedBuffsNBars.Movement = Geyser.Gauge:new({
-    name = "MedBuffsNBars.Movement",
-    x = "22%", y = "0px",
-    height = "100%",
-    width = "70%",
-  }, MedBuffsNBars.MVBox)
-  MedBuffsNBars.Movement.back:setStyleSheet(MedBuffsNBars.GaugeBackCSS:getCSS())
-  MedBuffsNBars.GaugeFrontCSS:set("background-color","yellow")
-  MedBuffsNBars.Movement.front:setStyleSheet(MedBuffsNBars.GaugeFrontCSS:getCSS())
-  MedBuffsNBars.Movement:setValue(math.random(100),100)
-  MedBuffsNBars.Movement.front:echo([[<span style = "color: black">MV</span>]])
-
-  --***Breath***--
-  MedBuffsNBars.BRBox = Geyser.Container:new({
-    name = "BRBox.Footer",
-    x = 0, y = "50%",
-    width = "20%",
-  }, MedBuffsNBars.RightColumn)
-
-  gauge_br_label = Geyser.Label:new({
-    name = "BR",
-    x = "0px", y = "0px",
-    width = "30px", height = "30px",
-    color = "black",
-  }, MedBuffsNBars.BRBox)
-  MedBuffsNBars.brImageLoc = getMudletHomeDir()..MedBuffsNBars.iconLocation.."/icons/breath.png"
-  gauge_br_label:setStyleSheet([[
-      border-image:url(]]..MedBuffsNBars.brImageLoc..[[);
-  ]])
-
-  gauge_brdisplay_label = Geyser.Label:new({
-    name = "gauge_brdisplay_label",
-    x = "11%", y = "5%",
-    width = "10%", height = "25px",
-    color = "black",
-  }, MedBuffsNBars.BRBox)
-  gauge_brdisplay_label:echo("<center><p style='font-size:18px; color = white'><b>???<b></p></center>")
-
-  MedBuffsNBars.Breath = Geyser.Gauge:new({
-    name = "MedBuffsNBars.Breath",
-    x = "22%", y = "0px",
-    height = "100%",
-    width = "70%",
-  }, MedBuffsNBars.BRBox)
-  MedBuffsNBars.Breath.back:setStyleSheet(MedBuffsNBars.GaugeBackCSS:getCSS())
-  MedBuffsNBars.GaugeFrontCSS:set("background-color","green")
-  MedBuffsNBars.Breath.front:setStyleSheet(MedBuffsNBars.GaugeFrontCSS:getCSS())
-  MedBuffsNBars.Breath:setValue(math.random(100),100)
-  MedBuffsNBars.Breath.front:echo("BR")
-
+  MedUI.initAffects() --SpellEffects
 end
-
---Create Containers--
-left_buff_container = Geyser.Container:new({
-  name = "left_buff_container",
-  x="1%", y="90%",
-  width = "25%", height="35",
-})
-
-player_buffs_container = Geyser.Container:new({
-  name = "playerBuffs", 
-  x= "0px", y="0%",  
-  width = "100%", height="100%", 
-}, left_buff_container)
-
 
 --Helper function to show which buffs have been turned on in the table, used for debugging
 -- lua med_showBuffTable()
 -- Only used for debugging
 function medBuffsNBars_showBuffTable()
   echo('\n')
-  for k, v in pairs(MedBuffsNBars.buffIconTable) do
+  for k, v in pairs(MedUI.buffIconTable) do
     echo(v[1].."::"..tostring(v[2]).."::"..v[3].."::"..v[4]..'\n')
   end
 end
 
---Sets the buff for the passed argument as true so it can display
-function medBuffsNBars_setBuffOn(buff)
-
-  if MedUI.options.enableGauges and MedBuffsNBars.buffIconTable then
-    MedBuffsNBars.buffIconTable[buff][2] = true
-    medBuffsNBars_updateEffects()
-  end
-  --echo("\nBuff on:"..buff.."\n")
-end
-
---Sets the buff for the passed argument as false so it will not display
-function medBuffsNBars_setBuffOff(buff)
-
-  if MedUI.options.enableGauges and MedBuffsNBars.buffIconTable then
-    MedBuffsNBars.buffIconTable[buff][2] = false
-    medBuffsNBars_updateEffects()
-  end
-  --echo("\nBuff off:"..buff.."\n")
-end
 
 --All icons must be enabled by default, then we can show and hide
-function medBuffsNBars_initializeEffects()  
+function MedUI.initAffects()
+
   local counter = 0
-  --for k, v in pairs(MedBuffsNBars.buffIconTable) do
-  local sortedBuffTable = medBuffsNBars_sortedBuffTable()
-  for k, v in pairs(sortedBuffTable) do
+  MedBuffsNBars.sortedBuffTable = MedUI.sortedBuffsTable()
+
+  for k, v in pairs(MedBuffsNBars.sortedBuffTable) do
 
     MedBuffsNBars.dynamic_x_int = 5 + (28*counter)
     MedBuffsNBars.dynamic_x_str = tostring(MedBuffsNBars.dynamic_x_int).."px"
     local nameLabel = v[3]
-    v[5] = Geyser.Label:new({
-      name = nameLabel,
-      x = MedBuffsNBars.dynamic_x_str, y = "5px",
-      width = "30px", height = "30px",
-    }, player_buffs_container)
-    local medPicImageLoc = getMudletHomeDir() .. v[1]
-    v[5]:setStyleSheet([[
-      border-image:url(]]..medPicImageLoc..[[);
-    ]])
+    if type(v[5]) ~= "table" then
+      v[5] = Geyser.Label:new({
+        name = nameLabel,
+        x = MedBuffsNBars.dynamic_x_str, y = "5px",
+        width = "30px", height = "30px",
+      }, MedBuffsNBars.BuffBox)
+      local medPicImageLoc = getMudletHomeDir() .. v[1]
+      v[5]:setStyleSheet([[
+        border-image:url(]]..medPicImageLoc..[[);
+      ]])
+    end
     --echo(v[1].."::"..tostring(v[2]).."::"..v[3].."::"..v[4].."::"..v[5]..'\n')
     counter=counter + 1
   end
@@ -539,12 +417,12 @@ function medBuffsNBars_initializeEffects()
 end
 
 --Does the actual work of checking the table for each buff and positioning it
-function medBuffsNBars_buildEffects()
+function MedUI.buildAffects()
   --med_showBuffTable()
 
   local counter = 0
-  
-  local sortedBuffTable = medBuffsNBars_sortedBuffTable()
+
+  local sortedBuffTable = MedBuffsNBars.sortedBuffTable or MedUI.sortedBuffsTable()
   for k, v in pairs(sortedBuffTable) do
     --echo('\n'..v[1].."::"..tostring(v[2]).."::"..v[3].."::"..v[4]..'\n')
     MedBuffsNBars.dynamic_x_int = 5 + (28*counter)
@@ -561,22 +439,19 @@ function medBuffsNBars_buildEffects()
 end
 
 --Used to hide all of the buffs before an update
-function medBuffsNBars_clearEffects()
-  if not MedBuffsNBars or not MedBuffsNBars.buffIconTable then
-    return
-  end
+function MedUI.clearAffects()
 
-  for k, v in pairs(MedBuffsNBars.buffIconTable) do
+  for k, v in pairs(MedUI.buffIconTable) do
     hideWindow(v[3])
   end
 end
 
 --Clears and the builds the buffs
-function medBuffsNBars_updateEffects()
-  medBuffsNBars_clearEffects()
+function MedUI.updateAffects()
+  MedUI.clearAffects()
 
   if MedUI.options.enableGauges then
-    medBuffsNBars_buildEffects()
+    MedUI.buildAffects()
   end
 end
 
@@ -584,7 +459,7 @@ end
 function medBuffsNBars_test_showAllBuffIcons()
   --med_showBuffTable()
   local counter = 0
-  local sortedBuffTable = medBuffsNBars_sortedBuffTable()
+  local sortedBuffTable = MedUI.sortedBuffsTable()
   for k, v in pairs(sortedBuffTable) do
     --echo('\n'..v[1].."::"..tostring(v[2]).."::"..v[3].."::"..v[4]..'\n')
     MedBuffsNBars.dynamic_x_int = 5 + (28*counter)
@@ -600,9 +475,9 @@ end
 --Used to sort the table in position of priority which is in the buff table
 --KEEP IN MIND THIS CREATES A SECOND TABLE THAT IS USED TEMPORARILY
 --DO NOT ATTEMPT TO SET VALUES IN THIS TABLE
-function medBuffsNBars_sortedBuffTable()
+function MedUI.sortedBuffsTable()
   local sortedBuffTable = {}
-  for k, v in pairs(MedBuffsNBars.buffIconTable) do
+  for k, v in pairs(MedUI.buffIconTable) do
     sortedBuffTable[v[6]] = v
   end
   return sortedBuffTable
@@ -611,33 +486,27 @@ end
 --Turns off all buffs in the table itself. Used with "SC" and "SC A" to clear buffs and reset them
 -- Provides a way to resync buffs when first logging on.
 -- It can also fix buffs that may have fallen off but not been caught by trigger for whatever reason.
-function medBuffsNBars_allBuffsOff()
-  for k, v in pairs(MedBuffsNBars.buffIconTable) do
+function MedUI.allBuffsOff()
+  for k, v in pairs(MedUI.buffIconTable) do
     v[2] = false
   end
 end
 
 function MedUI.enableGauges()
-  MedBuffsNBars.iconLocation = "/MedUI"
 
-  if MedBuffsNBars.Bottom then
-    tempTimer(.1, [[MedBuffsNBars.Bottom:show()]])
-  else
-    --Builds the icons for buffs the first time
-    medBuffsNBars_initializeBuffTable() -- Table_Spell_Effects
-    medBuffsNBars_initializeEffects() --SpellEffects
-    medBuffsNBars_clearEffects()
-    medBuffsNBars_initializeBarGauges()
-    registerNamedEventHandler("MedUI", "MedBuffsNBars", "gmcp.Char.Vitals", "MedUI.updateVitals")
-    registerNamedEventHandler("MedUI", "MedBuffs", "gmcp.Char.Afflictions", "MedUI.updateAfflictions")
+  MedUI.clearAffects()
+  MedUI.createGauges()
 
-    tempTimer(.1, [[MedBuffsNBars.Bottom:show()]])
-  end
+  registerNamedEventHandler("MedUI", "MedBuffsNBars", "gmcp.Char.Vitals", "MedUI.updateVitals")
+  registerNamedEventHandler("MedUI", "MedBuffs", "gmcp.Char.Afflictions", "MedUI.updateAfflictions")
 
-  local totalHeight = math.ceil(tonumber(left_buff_container:get_height()) + tonumber(MedBuffsNBars.Bottom:get_height()))
+  tempTimer(.1, function()
+    MedBuffsNBars.Bottom:show()
+  end)
+
+  local totalHeight = math.ceil(tonumber(MedBuffsNBars.BuffBox:get_height()) + tonumber(MedBuffsNBars.Bottom:get_height()))
   MedUI.oldBorderBottom = getBorderBottom()
   setBorderBottom(totalHeight)
-
 end
 
 function MedUI.disableGauges()
@@ -645,11 +514,11 @@ function MedUI.disableGauges()
   if MedBuffsNBars.Bottom then
     MedBuffsNBars.Bottom:hide()
   end
-  
+
   -- hide buffs container too
-  if left_buff_container then
-    medBuffsNBars_clearEffects()
-    left_buff_container:hide()
+  if MedBuffsNBars.BuffBox then
+    MedUI.clearAffects()
+    MedBuffsNBars.BuffBox:hide()
   end
 end
 
@@ -677,56 +546,58 @@ function MedUI.updateAfflictions()
 
   if added and added.name then
       local affName = added.name
-      local affTicks = v.affTicks
-      if MedUI.affTable[affName] then
-        medBuffsNBars_setBuffOn(MedUI.affTable[affName])
+      local affTicks = added.ticks
+      local shortName = MedUI.affTable[affName]
+      if shortName then
+        if MedUI.options.enableGauges then
+          MedUI.buffIconTable[shortName][2] = true
+          MedUI.updateAffects()
+        end
       end
   end
 
   local removed = gmcp.Char.Afflictions.Remove
 
-  if removed and MedUI.affTable[removed] then
-    medBuffsNBars_setBuffOff(MedUI.affTable[removed])
+  if removed then
+    local shortName = MedUI.affTable[removed]
+    if shortName and MedUI.options.enableGauges then
+      MedUI.buffIconTable[shortName][2] = false
+      MedUI.updateAffects()
+    end
   end
 end
 
 
 -- Update gauge values from data parsed from GMCP
 function MedUI.updateVitals()
-  if not MedUI.options.enableGauges then
+  if not MedUI.options.enableGauges or not gmcp.Char then
     return
   end
 
-  if not MedBuffsNBars.Health then
-    -- 
-    return
-  end
-
-  if not gmcp.Char then
-    MedUI.disableGauges()
+  if not MedBuffsNBars.gauges or not MedBuffsNBars.gauges["HP"] then
     return
   end
 
   local vitals = gmcp.Char.Vitals
 
   if vitals.hp and vitals.maxHp then
-    MedBuffsNBars.Health:setValue(vitals.hp, vitals.maxHp)
-    gauge_hpdisplay_label:echo("<center><p style='font-size:18px; color = white'><b>".. vitals.hp .."<b></p></center>")
+    MedBuffsNBars.gauges["HP"].gauge:setValue(vitals.hp, vitals.maxHp)
+    MedBuffsNBars.gauges["HP"].label:echo("<center><p style='font-size:18px; color = white'><b>".. vitals.hp .."<b></p></center>")
   end
 
   if vitals.mana and vitals.maxMana then
-    MedBuffsNBars.Mana:setValue(vitals.mana, vitals.maxMana)
-    gauge_manadisplay_label:echo("<center><p style='font-size:18px; color = white'><b>".. vitals.mana .."<b></p></center>")
+    MedBuffsNBars.gauges["MP"].gauge:setValue(vitals.mana, vitals.maxMana)
+    MedBuffsNBars.gauges["MP"].label:echo("<center><p style='font-size:18px; color = white'><b>".. vitals.mana .."<b></p></center>")
   end
 
   if vitals.mv and vitals.maxMv then
-    MedBuffsNBars.Movement:setValue(vitals.mv, vitals.maxMv)
-    gauge_mvdisplay_label:echo("<center><p style='font-size:18px; color = white'><b>".. vitals.mv .."<b></p></center>")
+    MedBuffsNBars.gauges["MV"].gauge:setValue(vitals.mv, vitals.maxMv)
+    MedBuffsNBars.gauges["MV"].label:echo("<center><p style='font-size:18px; color = white'><b>".. vitals.mv .."<b></p></center>")
   end
 
   if vitals.br then
-    MedBuffsNBars.Breath:setValue(vitals.br, 100)
-    gauge_brdisplay_label:echo("<center><p style='font-size:18px; color = white'><b>".. vitals.br .."<b></p></center>")
+    MedBuffsNBars.gauges["BR"].gauge:setValue(vitals.br, 100)
+    MedBuffsNBars.gauges["BR"].label:echo("<center><p style='font-size:18px; color = white'><b>".. vitals.br .."<b></p></center>")
   end
 
 end
@@ -932,10 +803,12 @@ function MedUI.eventHandler(event, ...)
         end
 
     elseif event == "sysLoadEvent" then
-      MedUI.setMudletOptions()
+      MedUI.doConnectionSetup()
       closeMapWidget()
 
     elseif event == "sysInstallPackage" and arg[1] == "MedUI" then
+      MedUI.doConnectionSetup()
+      MedUI.config(" ")
       MedUI.setMudletOptions()
       closeMapWidget()
 
@@ -1024,15 +897,12 @@ function MedUI.doConnectionSetup()
   end
   setupComplete = true
 
+  MedUI.InitUI()
   MedUI.loadOptions()
   MedUI.reconfigure()
-  tempTimer(.5, [[MedUI.updateVitals()]])
 
   loadMap(getMudletHomeDir().."/MedUI/MedieviaMap.dat")
   closeMapWidget()
 end
 
 registerNamedEventHandler("MedUI", "MedLoginHandler", "gmcp.Char.Info", "MedUI.doConnectionSetup")
-MedUI.doConnectionSetup()
-
-MedUI.config(" ")

@@ -146,12 +146,17 @@ function MPWindow.setupGroupMenu(label, playerName)
         table.insert(menuItems, "Remove from " .. currentGroup)
     end
 
-    label:createRightClickMenu({
-        MenuItems = menuItems,
-        Style = "Dark",
-        MenuWidth = 120,
-        MenuFormat1 = "c9",
-    })
+    if not label.rightClickMenu then
+        label:createRightClickMenu({
+            MenuItems = menuItems,
+            Style = "Dark",
+            MenuWidth = 120,
+            MenuFormat1 = "c9",
+        })
+    else
+        label.MenuItems = menuItems
+        label:createMenuItems(true)
+    end
 
     label:setMenuAction("New Group", function()
         local groupName = "group" .. (table.size(MultiPlay.myGroups) + 1)

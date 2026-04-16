@@ -1,13 +1,10 @@
 MedChat = MedChat or {}
 
 function medieviaTabbedChat_InitMedChat()
-  -- create some variable space so we don't pollute global variables
 
   local EMCO = require("MedUI.emco")
   local stylesheet = [[background-color: rgb(0,255,255,255); border-width: 1px; border-style: solid; border-color: gold; border-radius: 10px;]]
   local istylesheet = [[background-color: rgb(60,0,0,255); border-width: 1px; border-style: solid; border-color: gold; border-radius: 10px;]]
-  --local medchatstylesheet = [[background-color: rgb(255,255,255,255); border-width: 1px; border-style: solid; border-color: gold; border-radius: 10px;]]
-  -- create an adjustable container for more flexibility
 
   if MedChat.Left and MedChat.Left:get_width() == 0 then
     --cecho("\n<yellow>Found existing MedChat.Left with 0 width, setting to nil and reinitializing...\n")

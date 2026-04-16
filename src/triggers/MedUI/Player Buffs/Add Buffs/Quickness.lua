@@ -1,1 +1,0 @@
-medBuffsNBars_setBuffOn("quickness")

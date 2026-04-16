@@ -1,2 +1,2 @@
-medBuffsNBars_allBuffsOff()
-medBuffsNBars_updateEffects()
+MedUI.allBuffsOff()
+MedUI.updateAffects()

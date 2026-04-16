@@ -1,1 +1,0 @@
-medBuffsNBars_setBuffOff("protice")

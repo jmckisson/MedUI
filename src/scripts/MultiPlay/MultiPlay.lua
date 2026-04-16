@@ -70,6 +70,13 @@ end
 
 
 function MultiPlay.sendMyInfo()
+
+    -- GMCP might be off, or data might not be available yet
+    -- don't respond to requests if so
+    if not MultiPlay.myVitals or not MultiPlay.myVitals.hp then
+        return
+    end
+
     local classStr = "???"
 
     if MultiPlay.myClass ~= nil then
