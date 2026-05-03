@@ -504,7 +504,13 @@ function MedUI.enableGauges()
   end)
 
   local totalHeight = math.ceil(tonumber(MedBuffsNBars.BuffBox:get_height()) + tonumber(MedBuffsNBars.Bottom:get_height()))
-  MedUI.oldBorderBottom = getBorderBottom()
+  -- Only capture the pre-gauge border when re-enabling after an explicit disable.
+  -- On first load the initial value is captured at table construction (line 81).
+  -- On reinstall while gauges are active, Bottom is not hidden and getBorderBottom()
+  -- would return the gauge height, which would corrupt the restore on disable.
+  if MedBuffsNBars.Bottom["hidden"] then
+    MedUI.oldBorderBottom = getBorderBottom()
+  end
   setBorderBottom(totalHeight)
 end
 
