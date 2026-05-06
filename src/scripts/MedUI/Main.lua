@@ -922,12 +922,16 @@ function MedUI.doConnectionSetup()
   end
   setupComplete = true
 
-  MedUI.InitUI()
-  MedUI.loadOptions()
-  MedUI.reconfigure()
+  -- Defer one tick so Qt drains its deleteLater queue (old TLabels from
+  -- before resetProfile) before any luaL_ref runs for our new callbacks.
+  tempTimer(0, function()
+    MedUI.InitUI()
+    MedUI.loadOptions()
+    MedUI.reconfigure()
 
-  loadMap(getMudletHomeDir().."/MedUI/MedieviaMap.dat")
-  closeMapWidget()
+    loadMap(getMudletHomeDir().."/MedUI/MedieviaMap.dat")
+    closeMapWidget()
+  end)
 end
 
 registerNamedEventHandler("MedUI", "MedLoginHandler", "gmcp.Char.Info", "MedUI.doConnectionSetup")

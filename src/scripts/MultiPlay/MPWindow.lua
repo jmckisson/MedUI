@@ -1,21 +1,25 @@
 MPWindow = MPWindow or {}
 MPWindow.gaugeFrames = MPWindow.gaugeFrames or {}
 
--- Adjustable container for the whole window
-MPWindow.window = MPWindow.window or Adjustable.Container:new({
-    name = "MultiPlay Stats",
-})
+-- Defer one tick so Qt drains its deleteLater queue (old TLabels from
+-- before resetProfile) before any luaL_ref runs for our new callbacks.
+tempTimer(0, function()
+    -- Adjustable container for the whole window
+    MPWindow.window = MPWindow.window or Adjustable.Container:new({
+        name = "MultiPlay Stats",
+    })
 
--- Text mode console
-MPWindow.console = MPWindow.console or Geyser.MiniConsole:new({
-    name = "MPConsole",
-    width = "100%", height = "100%",
-    x = 0, y = 0,
-    autoWrap = false,
-    color = "black",
-    scrollBar = false,
-    fontSize = 13,
-}, MPWindow.window)
+    -- Text mode console
+    MPWindow.console = MPWindow.console or Geyser.MiniConsole:new({
+        name = "MPConsole",
+        width = "100%", height = "100%",
+        x = 0, y = 0,
+        autoWrap = false,
+        color = "black",
+        scrollBar = false,
+        fontSize = 13,
+    }, MPWindow.window)
+end)
 
 -- Gauge mode container (created on demand)
 MPWindow.gaugeContainer = MPWindow.gaugeContainer or nil

@@ -92,5 +92,7 @@ if mudletVersion.major == 4 and mudletVersion.minor < 20 then
 end
 registerNamedEventHandler("MedUI", "MedChat", "sysMMCPChatMessage", "MedChat.eventHandler")
 
-medieviaTabbedChat_InitMedChat()
+-- Defer one tick so Qt drains its deleteLater queue (old TLabels from
+-- before resetProfile) before any luaL_ref runs for our new callbacks.
+tempTimer(0, medieviaTabbedChat_InitMedChat)
 
