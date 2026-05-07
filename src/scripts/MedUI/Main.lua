@@ -800,7 +800,7 @@ function MedUI.eventHandler(event, ...)
         local x, y, windowName = arg[1], arg[2], arg[3]
 
         -- MedChat may not be loaded yet, so check for it, MedUI.MedMap is loaded at the top of this file
-        if windowName == "main" and MedChat and MedChat.AdjCont then
+        if windowName == "main" and MedUI.MedMap and MedUI.MedMap.AdjCont and MedChat and MedChat.AdjCont then
           if not MedUI.MedMap.AdjCont["hidden"] and not MedChat.AdjCont["hidden"] then
             local w,h = getMainWindowSize()
             setBorderRight(w/3.3)
