@@ -15,7 +15,11 @@ MultiPlay = {
     },
     eventHandlerIDs = {},
     bReceivedCharInfo = false,
-    bReceivedCharVitals = false
+    bReceivedCharVitals = false,
+    -- Snapshot of the last broadcast payload; sendMyInfo skips the global
+    -- event when nothing has changed to keep N profiles from producing N^2
+    -- vitals broadcasts per round.
+    lastSent = nil
 }
 
 -- Tell all others to execute a command
@@ -99,9 +103,29 @@ function MultiPlay.sendMyInfo()
         end
     end
 
+    local v = MultiPlay.myVitals
+    local last = MultiPlay.lastSent
+    if last
+        and last.name == MultiPlay.myPlayerName
+        and last.class == classStr
+        and last.level == MultiPlay.myLevel
+        and last.hp == v.hp and last.maxHp == v.maxHp
+        and last.mana == v.mana and last.maxMana == v.maxMana
+        and last.br == v.br and last.mv == v.mv then
+        return
+    end
+
+    MultiPlay.lastSent = {
+        name = MultiPlay.myPlayerName,
+        class = classStr,
+        level = MultiPlay.myLevel,
+        hp = v.hp, maxHp = v.maxHp,
+        mana = v.mana, maxMana = v.maxMana,
+        br = v.br, mv = v.mv,
+    }
+
     raiseGlobalEvent("MPInfoResponse", MultiPlay.myPlayerName, classStr, MultiPlay.myLevel,
-        MultiPlay.myVitals.hp, MultiPlay.myVitals.maxHp, MultiPlay.myVitals.mana, MultiPlay.myVitals.maxMana,
-        MultiPlay.myVitals.br, MultiPlay.myVitals.mv)
+        v.hp, v.maxHp, v.mana, v.maxMana, v.br, v.mv)
 end
 
 
@@ -176,6 +200,9 @@ function MultiPlay.eventHandler(event, ...)
     elseif event == "MPRequestInfo" then
         --echo("got MPRequestInfo\n")
         if MedUI and MedUI.options.enableMultiPlay then
+            -- Force a fresh broadcast: a profile only asks when it has no
+            -- record of us, so dedup against lastSent must not suppress this.
+            MultiPlay.lastSent = nil
             MultiPlay.sendMyInfo()
         end
 

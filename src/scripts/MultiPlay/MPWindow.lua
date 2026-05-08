@@ -1,5 +1,23 @@
 MPWindow = MPWindow or {}
 MPWindow.gaugeFrames = MPWindow.gaugeFrames or {}
+MPWindow.groupVersion = MPWindow.groupVersion or 0
+MPWindow.pendingUpdateTimer = nil
+
+-- Bumped whenever group membership changes; per-frame menus are rebuilt only
+-- when their cached version differs.
+function MPWindow.invalidateMenus()
+    MPWindow.groupVersion = MPWindow.groupVersion + 1
+end
+
+-- Coalesces bursts of MultiPlayConsoleUpdate events (e.g. when N profiles all
+-- broadcast vitals at once) into a single repaint.
+function MPWindow.queueUpdate()
+    if MPWindow.pendingUpdateTimer then return end
+    MPWindow.pendingUpdateTimer = tempTimer(0.05, function()
+        MPWindow.pendingUpdateTimer = nil
+        MPWindow.Update()
+    end)
+end
 
 -- Defer one tick so Qt drains its deleteLater queue (old TLabels from
 -- before resetProfile) before any luaL_ref runs for our new callbacks.
@@ -34,31 +52,21 @@ local backStyleSheet = [[background-color: QLinearGradient( x1: 0, y1: 0, x2: 0,
 ]]
 
 local function getGaugeStyleSheet(current, max)
-    local gradMax, gradMin
-
     local pct = 100
     if max > 0 then
         pct = current / max * 100
     end
 
-    local textColor
+    local band, gradMax, gradMin, textColor
 
     if pct > 90 then
-        gradMax = "#0047b3"
-        gradMin = "#b3d1ff"
-        textColor = "white"
+        band, gradMax, gradMin, textColor = 1, "#0047b3", "#b3d1ff", "white"
     elseif pct > 75 then
-        gradMax = "#98f041"
-        gradMin = "#66cc00"
-        textColor = "black"
+        band, gradMax, gradMin, textColor = 2, "#98f041", "#66cc00", "black"
     elseif pct > 25 then
-        gradMax = "#ffff00"
-        gradMin = "#ffff66"
-        textColor = "black"
+        band, gradMax, gradMin, textColor = 3, "#ffff00", "#ffff66", "black"
     else
-        gradMax = "#ff0000"
-        gradMin = "#ff6666"
-        textColor = "white"
+        band, gradMax, gradMin, textColor = 4, "#ff0000", "#ff6666", "white"
     end
 
     local styleSheet = string.format(
@@ -70,7 +78,7 @@ local function getGaugeStyleSheet(current, max)
         padding: 2px;\
         outline:2px", gradMax, gradMin)
 
-    return styleSheet, textColor
+    return styleSheet, textColor, band
 end
 
 local rowHeight = 25
@@ -165,6 +173,7 @@ function MPWindow.setupGroupMenu(label, playerName)
     label:setMenuAction("New Group", function()
         local groupName = "group" .. (table.size(MultiPlay.myGroups) + 1)
         MultiPlay.addToGroup(groupName, playerName)
+        MPWindow.invalidateMenus()
         raiseEvent("MultiPlayConsoleUpdate")
         cecho(string.format("\n<DeepSkyBlue>MultiPlay: <white>Added <yellow>%s<white> to new group <yellow>%s\n", playerName, groupName))
         closeAllLevels(label)
@@ -180,6 +189,7 @@ function MPWindow.setupGroupMenu(label, playerName)
                 end
             end
             MultiPlay.addToGroup(group, playerName)
+            MPWindow.invalidateMenus()
             raiseEvent("MultiPlayConsoleUpdate")
             cecho(string.format("\n<DeepSkyBlue>MultiPlay: <white>Added <yellow>%s<white> to group <yellow>%s\n", playerName, group))
             closeAllLevels(label)
@@ -191,6 +201,7 @@ function MPWindow.setupGroupMenu(label, playerName)
             local idx = table.index_of(MultiPlay.myGroups[currentGroup], playerName)
             if idx then
                 table.remove(MultiPlay.myGroups[currentGroup], idx)
+                MPWindow.invalidateMenus()
                 raiseEvent("MultiPlayConsoleUpdate")
                 cecho(string.format("\n<DeepSkyBlue>MultiPlay: <white>Removed <yellow>%s<white> from group <yellow>%s\n", playerName, currentGroup))
             end
@@ -246,7 +257,7 @@ function MPWindow.buildPlayerFrame(index, player)
         width = 120, height = "100%",
     }, row)
     hpGauge.back:setStyleSheet(backStyleSheet)
-    local hpSheet, hpTextColor = getGaugeStyleSheet(player.hp, player.maxHp)
+    local hpSheet, hpTextColor, hpBand = getGaugeStyleSheet(player.hp, player.maxHp)
     hpGauge.front:setStyleSheet(hpSheet)
     hpGauge:setValue(player.hp, player.maxHp, string.format("<b><font color='%s'>%d HP</font></b>", hpTextColor, player.hp))
 
@@ -271,7 +282,7 @@ function MPWindow.buildPlayerFrame(index, player)
         width = 120, height = "100%",
     }, row)
     manaGauge.back:setStyleSheet(backStyleSheet)
-    local manaSheet, manaTextColor = getGaugeStyleSheet(player.mana, player.maxMana)
+    local manaSheet, manaTextColor, manaBand = getGaugeStyleSheet(player.mana, player.maxMana)
     manaGauge.front:setStyleSheet(manaSheet)
     manaGauge:setValue(player.mana, player.maxMana, string.format("<b><font color='%s'>%d MN</font></b>", manaTextColor, player.mana))
 
@@ -324,7 +335,8 @@ function MPWindow.buildPlayerFrame(index, player)
     -- Right-click menu on the row name label
     MPWindow.setupGroupMenu(nameLabel, player.name)
 
-    -- Store references for updates
+    -- Store references and cached display values to avoid redundant Qt calls
+    -- on subsequent updates (the hot path during multi-profile vitals bursts).
     MPWindow.gaugeFrames[index] = {
         row = row,
         nameLabel = nameLabel,
@@ -336,35 +348,88 @@ function MPWindow.buildPlayerFrame(index, player)
         levelLabel = levelLabel,
         groupLabel = groupLabel,
         playerName = player.name,
+        shownName = player.name,
+        shownHp = player.hp,
+        shownMaxHp = player.maxHp,
+        shownMana = player.mana,
+        shownMaxMana = player.maxMana,
+        shownMv = player.mv,
+        shownBr = player.br,
+        shownClass = player.class,
+        shownLevel = player.level,
+        shownGroup = groupName,
+        hpBand = hpBand,
+        manaBand = manaBand,
+        menuVersion = MPWindow.groupVersion,
     }
 end
 
 
---- Update an existing player frame with new data
+--- Update an existing player frame with new data, skipping any Qt calls
+--- whose displayed value hasn't changed since the last update.
 function MPWindow.updatePlayerFrame(index, player)
     local frame = MPWindow.gaugeFrames[index]
     if not frame then return end
 
-    frame.nameLabel:echo(player.name, "white", "c")
+    if frame.shownName ~= player.name then
+        frame.nameLabel:echo(player.name, "white", "c")
+        frame.shownName = player.name
+    end
 
-    local hpSheet, hpTextColor = getGaugeStyleSheet(player.hp, player.maxHp)
-    frame.hpGauge.front:setStyleSheet(hpSheet)
-    frame.hpGauge:setValue(player.hp, player.maxHp, string.format("<b><font color='%s'>%d HP</font></b>", hpTextColor, player.hp))
+    if frame.shownHp ~= player.hp or frame.shownMaxHp ~= player.maxHp then
+        local hpSheet, hpTextColor, hpBand = getGaugeStyleSheet(player.hp, player.maxHp)
+        if frame.hpBand ~= hpBand then
+            frame.hpGauge.front:setStyleSheet(hpSheet)
+            frame.hpBand = hpBand
+        end
+        frame.hpGauge:setValue(player.hp, player.maxHp, string.format("<b><font color='%s'>%d HP</font></b>", hpTextColor, player.hp))
+        frame.shownHp = player.hp
+        frame.shownMaxHp = player.maxHp
+    end
 
-    local manaSheet, manaTextColor = getGaugeStyleSheet(player.mana, player.maxMana)
-    frame.manaGauge.front:setStyleSheet(manaSheet)
-    frame.manaGauge:setValue(player.mana, player.maxMana, string.format("<b><font color='%s'>%d MN</font></b>", manaTextColor, player.mana))
+    if frame.shownMana ~= player.mana or frame.shownMaxMana ~= player.maxMana then
+        local manaSheet, manaTextColor, manaBand = getGaugeStyleSheet(player.mana, player.maxMana)
+        if frame.manaBand ~= manaBand then
+            frame.manaGauge.front:setStyleSheet(manaSheet)
+            frame.manaBand = manaBand
+        end
+        frame.manaGauge:setValue(player.mana, player.maxMana, string.format("<b><font color='%s'>%d MN</font></b>", manaTextColor, player.mana))
+        frame.shownMana = player.mana
+        frame.shownMaxMana = player.maxMana
+    end
 
-    frame.mvLabel:echo(tostring(player.mv), "white", "c")
-    frame.brLabel:echo(tostring(player.br), "white", "c")
-    frame.classLabel:echo(tostring(player.class), "cyan", "c")
-    frame.levelLabel:echo(tostring(player.level), "yellow", "c")
+    if frame.shownMv ~= player.mv then
+        frame.mvLabel:echo(tostring(player.mv), "white", "c")
+        frame.shownMv = player.mv
+    end
+
+    if frame.shownBr ~= player.br then
+        frame.brLabel:echo(tostring(player.br), "white", "c")
+        frame.shownBr = player.br
+    end
+
+    if frame.shownClass ~= player.class then
+        frame.classLabel:echo(tostring(player.class), "cyan", "c")
+        frame.shownClass = player.class
+    end
+
+    if frame.shownLevel ~= player.level then
+        frame.levelLabel:echo(tostring(player.level), "yellow", "c")
+        frame.shownLevel = player.level
+    end
 
     local groupName = MPWindow.getPlayerGroup(player.name)
-    frame.groupLabel:echo(groupName, "orange", "c")
+    if frame.shownGroup ~= groupName then
+        frame.groupLabel:echo(groupName, "orange", "c")
+        frame.shownGroup = groupName
+    end
 
-    -- Refresh right-click menu every update so group changes are reflected
-    MPWindow.setupGroupMenu(frame.nameLabel, player.name)
+    -- Only rebuild the right-click menu when group membership has actually
+    -- changed, not on every vitals tick.
+    if frame.menuVersion ~= MPWindow.groupVersion then
+        MPWindow.setupGroupMenu(frame.nameLabel, player.name)
+        frame.menuVersion = MPWindow.groupVersion
+    end
 
     frame.playerName = player.name
 end
@@ -408,7 +473,14 @@ end
 
 --- Main update dispatcher - picks text or gauge mode
 function MPWindow.Update()
-    if MedUI and MedUI.options and MedUI.options.mpGaugeMode then
+    -- If the MultiPlay module is disabled the window is hidden; skip all the
+    -- Geyser/Qt work but let the underlying MultiPlay.myForm table keep
+    -- collecting cross-profile vitals so the display is fresh when re-enabled.
+    if not MedUI or not MedUI.options or not MedUI.options.enableMultiPlay then
+        return
+    end
+
+    if MedUI.options.mpGaugeMode then
         MPWindow.console:hide()
         if MPWindow.gaugeContainer then
             MPWindow.gaugeContainer:show()
@@ -441,4 +513,4 @@ function MPWindow.setDisplayMode(gaugeMode)
 end
 
 
-registerNamedEventHandler("MultiPlay", "WindowUpdate", "MultiPlayConsoleUpdate", MPWindow.Update)
+registerNamedEventHandler("MultiPlay", "WindowUpdate", "MultiPlayConsoleUpdate", MPWindow.queueUpdate)

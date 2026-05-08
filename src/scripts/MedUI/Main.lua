@@ -709,6 +709,8 @@ function MedUI.config(arg)
 end
 
 function MedUI.setMudletOptions()
+  tempTimer(1, function() 
+
     setFont("main", "Medievia Mudlet Sans Mono")
 
     setServerEncoding("MEDIEVIA")
@@ -730,6 +732,7 @@ function MedUI.setMudletOptions()
         table.insert(map.defaults.prompt_test_patterns, "^%b()<(.-)>")
       end
     end
+  end)
 end
 
 function MedUI.reconfigure()
