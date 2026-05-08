@@ -262,8 +262,7 @@ function MPWindow.buildPlayerFrame(index, player)
     -- Click on HP gauge to request smart heal from Clerics
     local pName = player.name
     hpGauge.front:setClickCallback(function()
-        -- Find this player's current data
-        for _, p in ipairs(MultiPlay.myForm) do
+        for _, p in ipairs(MPWindow.getDisplayList()) do
             if p.name == pName then
                 local missingHp = p.maxHp - p.hp
                 if missingHp > 0 then
@@ -444,15 +443,35 @@ function MPWindow.cleanupGaugeFrames(playerCount)
 end
 
 
+--- Build the ordered list of rows to display: self first (if vitals known),
+--- then everyone else from MultiPlay.myForm. Filters self out of myForm in
+--- case it ever gets broadcast back to the originating profile.
+function MPWindow.getDisplayList()
+    local list = {}
+    local self = MultiPlay.getSelfInfo()
+    if self then
+        table.insert(list, self)
+    end
+    local selfKey = self and self.name and self.name:lower() or nil
+    for _, p in ipairs(MultiPlay.myForm) do
+        if not (selfKey and p.name and p.name:lower() == selfKey) then
+            table.insert(list, p)
+        end
+    end
+    return list
+end
+
+
 --- Update the gauge display with current player data
 function MPWindow.UpdateGauges()
     MPWindow.setupGaugeContainer()
 
-    for id, player in ipairs(MultiPlay.myForm) do
+    local rows = MPWindow.getDisplayList()
+    for id, player in ipairs(rows) do
         MPWindow.buildPlayerFrame(id, player)
     end
 
-    MPWindow.cleanupGaugeFrames(#MultiPlay.myForm)
+    MPWindow.cleanupGaugeFrames(#rows)
 end
 
 
@@ -460,7 +479,7 @@ end
 function MPWindow.UpdateConsole()
     MPWindow.console:clear()
 
-    for id, player in ipairs(MultiPlay.myForm) do
+    for _, player in ipairs(MPWindow.getDisplayList()) do
         local infoStr = string.format("<white>%-12s<blue>|<white>%3s<blue>|<white>%2d<blue>|<white>%4d<blue>/<white>%d<blue>hp <white>%4d<blue>/<white>%d<blue>m <white>%d<blue>mv <white>%d<blue>br\n",
             player.name, player.class, player.level, player.hp, player.maxHp, player.mana, player.maxMana, player.mv, player.br)
 

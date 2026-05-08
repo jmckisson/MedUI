@@ -8,6 +8,13 @@ local function capitalizeFirst(s)
     return s:sub(1, 1):upper() .. s:sub(2)
 end
 
+local classToCode = {
+    Warrior = "WAR",
+    Cleric  = "CLE",
+    Mage    = "MAG",
+    Thief   = "THI",
+}
+
 MultiPlay = {
     myPlayerName = capitalizeFirst(getCharacterName()) or "<Unknown>",
     myClass = "<Unknown>",
@@ -104,26 +111,11 @@ function MultiPlay.showGroups()
 end
 
 
-function MultiPlay.sendMyInfo()
-
-    -- GMCP might be off, or data might not be available yet
-    -- don't respond to requests if so
-    if not MultiPlay.myVitals or not MultiPlay.myVitals.hp then
-        return
-    end
-
-    local classStr = "???"
-
-    if MultiPlay.myClass ~= nil then
-        if MultiPlay.myClass == "Warrior" then
-            classStr = "WAR"
-        elseif MultiPlay.myClass == "Cleric" then
-            classStr = "CLE"
-        elseif MultiPlay.myClass == "Mage" then
-            classStr = "MAG"
-        elseif MultiPlay.myClass == "Thief" then
-            classStr = "THI"
-        end
+--- Build a player-info table for the current profile in the same shape as
+--- entries in MultiPlay.myForm. Returns nil if vitals haven't arrived yet.
+function MultiPlay.getSelfInfo()
+    if not MultiPlay.bReceivedCharVitals then
+        return nil
     end
 
     if not MultiPlay.myPlayerName or MultiPlay.myPlayerName == "" then
@@ -131,28 +123,41 @@ function MultiPlay.sendMyInfo()
     end
 
     local v = MultiPlay.myVitals
-    local last = MultiPlay.lastSent
-    if last
-        and last.name == MultiPlay.myPlayerName
-        and last.class == classStr
-        and last.level == MultiPlay.myLevel
-        and last.hp == v.hp and last.maxHp == v.maxHp
-        and last.mana == v.mana and last.maxMana == v.maxMana
-        and last.br == v.br and last.mv == v.mv then
-        return
-    end
-
-    MultiPlay.lastSent = {
+    return {
         name = MultiPlay.myPlayerName,
-        class = classStr,
+        class = classToCode[MultiPlay.myClass] or "???",
         level = MultiPlay.myLevel,
         hp = v.hp, maxHp = v.maxHp,
         mana = v.mana, maxMana = v.maxMana,
         br = v.br, mv = v.mv,
     }
+end
 
-    raiseGlobalEvent("MPInfoResponse", MultiPlay.myPlayerName, classStr, MultiPlay.myLevel,
-        v.hp, v.maxHp, v.mana, v.maxMana, v.br, v.mv)
+
+function MultiPlay.sendMyInfo()
+
+    -- GMCP might be off, or data might not be available yet
+    -- don't respond to requests if so
+    local info = MultiPlay.getSelfInfo()
+    if not info or not info.hp then
+        return
+    end
+
+    local last = MultiPlay.lastSent
+    if last
+        and last.name == info.name
+        and last.class == info.class
+        and last.level == info.level
+        and last.hp == info.hp and last.maxHp == info.maxHp
+        and last.mana == info.mana and last.maxMana == info.maxMana
+        and last.br == info.br and last.mv == info.mv then
+        return
+    end
+
+    MultiPlay.lastSent = info
+
+    raiseGlobalEvent("MPInfoResponse", info.name, info.class, info.level,
+        info.hp, info.maxHp, info.mana, info.maxMana, info.br, info.mv)
 end
 
 
