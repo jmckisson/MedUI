@@ -128,9 +128,13 @@ end
 
 --- Find which user-visible group a player belongs to (returns first match or "")
 function MPWindow.getPlayerGroup(playerName)
+    if not playerName then return "" end
+    local key = playerName:lower()
     for group, players in pairs(MultiPlay.myGroups) do
-        if table.index_of(players, playerName) then
-            return group
+        for _, p in ipairs(players) do
+            if p and p:lower() == key then
+                return group
+            end
         end
     end
     return ""
@@ -181,12 +185,8 @@ function MPWindow.setupGroupMenu(label, playerName)
 
     for _, group in ipairs(groupNames) do
         label:setMenuAction("Add to." .. group, function()
-            -- Remove from current group first
-            if currentGroup ~= "" and MultiPlay.myGroups[currentGroup] then
-                local idx = table.index_of(MultiPlay.myGroups[currentGroup], playerName)
-                if idx then
-                    table.remove(MultiPlay.myGroups[currentGroup], idx)
-                end
+            if currentGroup ~= "" then
+                MultiPlay.removeFromGroup(currentGroup, playerName)
             end
             MultiPlay.addToGroup(group, playerName)
             MPWindow.invalidateMenus()
@@ -198,9 +198,7 @@ function MPWindow.setupGroupMenu(label, playerName)
 
     if currentGroup ~= "" then
         label:setMenuAction("Remove from " .. currentGroup, function()
-            local idx = table.index_of(MultiPlay.myGroups[currentGroup], playerName)
-            if idx then
-                table.remove(MultiPlay.myGroups[currentGroup], idx)
+            if MultiPlay.removeFromGroup(currentGroup, playerName) then
                 MPWindow.invalidateMenus()
                 raiseEvent("MultiPlayConsoleUpdate")
                 cecho(string.format("\n<DeepSkyBlue>MultiPlay: <white>Removed <yellow>%s<white> from group <yellow>%s\n", playerName, currentGroup))

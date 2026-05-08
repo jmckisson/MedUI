@@ -1,6 +1,15 @@
 
+-- Char.Info.name is server-authoritative and properly cased; Char.Vitals.name
+-- has been observed in lowercase, and getCharacterName() reflects whatever the
+-- user typed in Mudlet's profile dialog. Capitalize the profile-name fallback
+-- so the multiplay window doesn't render lowercased rows before Char.Info arrives.
+local function capitalizeFirst(s)
+    if not s or s == "" then return nil end
+    return s:sub(1, 1):upper() .. s:sub(2)
+end
+
 MultiPlay = {
-    myPlayerName = getCharacterName() and getCharacterName() or "<Unknown>",
+    myPlayerName = capitalizeFirst(getCharacterName()) or "<Unknown>",
     myClass = "<Unknown>",
     myLevel = -1,
     myGroups = {},
@@ -57,10 +66,32 @@ end
 
 function MultiPlay.addToGroup(group, player)
     MultiPlay.addGroup(group)
+    if not player or player == "" then return end
 
-    if not table.index_of(MultiPlay.myGroups[group], player) then
-        table.insert(MultiPlay.myGroups[group], player)
+    -- Store names in canonical (capitalized) form. Evict any differently-cased
+    -- entry for the same player so a row added pre-Char.Info doesn't linger.
+    local canonical = capitalizeFirst(player) or player
+    local list = MultiPlay.myGroups[group]
+    local key = canonical:lower()
+    for i = #list, 1, -1 do
+        if list[i]:lower() == key then
+            table.remove(list, i)
+        end
     end
+    table.insert(list, canonical)
+end
+
+function MultiPlay.removeFromGroup(group, player)
+    local list = MultiPlay.myGroups[group]
+    if not list or not player then return false end
+    local key = player:lower()
+    for i = #list, 1, -1 do
+        if list[i]:lower() == key then
+            table.remove(list, i)
+            return true
+        end
+    end
+    return false
 end
 
 function MultiPlay.showGroups()
@@ -95,12 +126,8 @@ function MultiPlay.sendMyInfo()
         end
     end
 
-    if not MultiPlay.myPlayerName then
-        if getCharacterName() then
-            MultiPlay.myPlayerName = getCharacterName()
-        else
-            MultiPlay.myPlayerName = "<Unknown>"
-        end
+    if not MultiPlay.myPlayerName or MultiPlay.myPlayerName == "" then
+        MultiPlay.myPlayerName = capitalizeFirst(getCharacterName()) or "<Unknown>"
     end
 
     local v = MultiPlay.myVitals
@@ -146,7 +173,6 @@ end
 function MultiPlay.eventHandler(event, ...)
     if event == "gmcp.Char.Vitals" then
         local vitals = gmcp.Char.Vitals
-        MultiPlay.myPlayerName = vitals.name
         MultiPlay.myVitals.hp = vitals.hp
         MultiPlay.myVitals.maxHp = vitals.maxHp
         MultiPlay.myVitals.mana = vitals.mana
@@ -181,7 +207,8 @@ function MultiPlay.eventHandler(event, ...)
         local player = arg[1]
         local message = arg[2]
         local profile = arg[3]
-        if (player == MultiPlay.myPlayerName) then
+        if player and MultiPlay.myPlayerName
+            and player:lower() == MultiPlay.myPlayerName:lower() then
             echo(profile .. " >> " .. message)
             expandAlias(message)
         end
@@ -226,9 +253,12 @@ function MultiPlay.eventHandler(event, ...)
 
         local found = false
 
+        -- Case-insensitive match so a row first broadcast in lowercase
+        -- (pre-Char.Info) is replaced by the proper-case row instead of
+        -- producing a duplicate.
+        local incomingKey = playerInfo.name and playerInfo.name:lower() or ""
         for id, player in ipairs(MultiPlay.myForm) do
-            if player.name == playerInfo.name then
-                -- Update existing player info
+            if player.name and player.name:lower() == incomingKey then
                 MultiPlay.myForm[id] = playerInfo
                 found = true
                 break
