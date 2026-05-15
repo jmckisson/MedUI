@@ -840,6 +840,9 @@ function MedUI.eventHandler(event, ...)
         if MPWindow then
           MPWindow.window:delete()
           MPWindow.window = nil
+          MPWindow.console = nil
+          MPWindow.gaugeContainer = nil
+          MPWindow.gaugeFrames = {}
         end
         MedBuffsNBars.Footer = nil
         MedBuffsNBars.LeftColumn = nil
