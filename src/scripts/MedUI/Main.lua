@@ -842,8 +842,8 @@ function MedUI.eventHandler(event, ...)
           MedBuffsNBars.Bottom = nil
         end
         if MPWindow then
-          MPWindow:delete()
-          MPWindow = nil
+          MPWindow.window:delete()
+          MPWindow.window = nil
         end
         MedBuffsNBars.Footer = nil
         MedBuffsNBars.LeftColumn = nil
