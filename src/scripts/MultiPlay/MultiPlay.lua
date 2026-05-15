@@ -186,6 +186,11 @@ function MultiPlay.enableModule()
     enableTrigger("MultiPlay")
     MPWindow.window:show()
 
+    -- On package install/load the gmcp tree may already be populated from
+    -- earlier in the session, so no Char.Vitals/Char.Info event will fire to
+    -- trigger our normal repaint path. Paint once now from whatever's there.
+    raiseEvent("MultiPlayConsoleUpdate")
+
     tempTimer(3, function()
         sendGMCP("Char.Vitals.Get")
         MultiPlay.requestInfo()
@@ -215,6 +220,10 @@ function MultiPlay.eventHandler(event, ...)
             MultiPlay.sendMyInfo()
         end
 
+        -- raiseGlobalEvent only delivers to other profiles, so without this
+        -- the self row never repaints from our own GMCP updates.
+        raiseEvent("MultiPlayConsoleUpdate")
+
     elseif event == "gmcp.Char.Info" then
         local info = gmcp.Char.Info
         MultiPlay.myPlayerName = info.name
@@ -224,6 +233,8 @@ function MultiPlay.eventHandler(event, ...)
         --echo("Received character info: " .. info.name .. " (Class: " .. info.class .. ", Level: " .. info.level .. ")\n")
 
         disableTrigger("MultiPlay")
+
+        raiseEvent("MultiPlayConsoleUpdate")
 
     elseif event == "MPTell" then
         local message = arg[1]
