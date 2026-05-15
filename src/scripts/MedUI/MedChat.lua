@@ -95,5 +95,6 @@ registerNamedEventHandler("MedUI", "MedChat", "sysMMCPChatMessage", "MedChat.eve
 
 -- Defer one tick so Qt drains its deleteLater queue (old TLabels from
 -- before resetProfile) before any luaL_ref runs for our new callbacks.
+-- probably not needed anymore after PTB fix
 tempTimer(0, medieviaTabbedChat_InitMedChat)
 

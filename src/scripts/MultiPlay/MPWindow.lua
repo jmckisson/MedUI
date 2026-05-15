@@ -348,8 +348,8 @@ function MPWindow.buildPlayerFrame(index, player)
     -- Right-click menu on the row name label
     MPWindow.setupGroupMenu(nameLabel, player.name)
 
-    -- Store references and cached display values to avoid redundant Qt calls
-    -- on subsequent updates (the hot path during multi-profile vitals bursts).
+    -- Store references and cached display values to avoid redundant Geyser calls
+    -- on subsequent updates
     MPWindow.gaugeFrames[index] = {
         row = row,
         nameLabel = nameLabel,
@@ -379,7 +379,7 @@ function MPWindow.buildPlayerFrame(index, player)
 end
 
 
---- Update an existing player frame with new data, skipping any Qt calls
+--- Update an existing player frame with new data, skipping any Geyser calls
 --- whose displayed value hasn't changed since the last update.
 function MPWindow.updatePlayerFrame(index, player)
     local frame = MPWindow.gaugeFrames[index]
@@ -517,7 +517,7 @@ end
 --- Main update dispatcher - picks text or gauge mode
 function MPWindow.Update()
     -- If the MultiPlay module is disabled the window is hidden; skip all the
-    -- Geyser/Qt work but let the underlying MultiPlay.myForm table keep
+    -- Geyser work but let the underlying MultiPlay.myForm table keep
     -- collecting cross-profile vitals so the display is fresh when re-enabled.
     if not MedUI or not MedUI.options or not MedUI.options.enableMultiPlay then
         return
