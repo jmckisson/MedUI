@@ -91,7 +91,7 @@ local function getBandLabelColor(current, max)
     if max > 0 then
         pct = current / max * 100
     end
-    if pct > 90 then return "DeepSkyBlue"
+    if pct > 90 then return "white"
     elseif pct > 75 then return "LawnGreen"
     elseif pct > 25 then return "yellow"
     else return "red" end
