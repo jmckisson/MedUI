@@ -497,12 +497,14 @@ function MPWindow.UpdateConsole()
     MPWindow.console:clear()
 
     for _, player in ipairs(MPWindow.getDisplayList()) do
+        local hpColor = getBandLabelColor(player.hp, player.maxHp)
+        local manaColor = getBandLabelColor(player.mana, player.maxMana)
         local mvColor = getBandLabelColor(player.mv, player.maxMv)
         local brColor = getBandLabelColor(player.br, 100)
-        local infoStr = string.format("<white>%-12s<blue>|<white>%3s<blue>|<white>%2d<blue>|<white>%4d<blue>/<white>%d<blue>hp <white>%4d<blue>/<white>%d<blue>m <%s>%d<blue>mv <%s>%d<blue>br\n",
+        local infoStr = string.format("<white>%-12s<blue>|<white>%3s<blue>|<white>%2d<blue>|<%s>%4d<blue>/<white>%-4d<blue>hp <%s>%4d<blue>/<white>%-4d<blue>m <%s>%4d<blue>mv <%s>%3d<blue>br\n",
             player.name, player.class, player.level,
-            player.hp, player.maxHp,
-            player.mana, player.maxMana,
+            hpColor, player.hp, player.maxHp,
+            manaColor, player.mana, player.maxMana,
             mvColor, player.mv,
             brColor, player.br)
 
