@@ -248,7 +248,7 @@ function MPWindow.buildPlayerFrame(index, player)
         width = 90, height = "100%",
     }, row)
     nameLabel:setStyleSheet(cellStyle)
-    nameLabel:echo(player.name, "white", "c")
+    nameLabel:echo(player.name, "white", "l")
     nameLabel:setFontSize(10)
 
     -- HP Gauge
