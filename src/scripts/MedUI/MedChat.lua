@@ -23,6 +23,7 @@ local function medieviaTabbedChat_InitMedChat()
     autoSave = true,
   })
 
+  MedChat.AdjCont:setTitle("Medievia Chat")
 
   MedChat.EMCOConsole = MedChat.EMCOConsole or EMCO:new({
     x = "0",

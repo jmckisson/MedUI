@@ -27,6 +27,8 @@ tempTimer(0, function()
         name = "MultiPlay Stats",
     })
 
+    MPWindow.window:setTitle("MultiPlay Stats")
+
     -- Text mode console
     MPWindow.console = MPWindow.console or Geyser.MiniConsole:new({
         name = "MPConsole",
