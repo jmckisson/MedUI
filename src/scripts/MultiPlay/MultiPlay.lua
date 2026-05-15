@@ -31,8 +31,6 @@ MultiPlay = {
         maxMv = -1
     },
     eventHandlerIDs = {},
-    bReceivedCharInfo = false,
-    bReceivedCharVitals = false,
     -- Snapshot of the last broadcast payload; sendMyInfo skips the global
     -- event when nothing has changed to keep N profiles from producing N^2
     -- vitals broadcasts per round.
@@ -115,7 +113,28 @@ end
 --- Build a player-info table for the current profile in the same shape as
 --- entries in MultiPlay.myForm. Returns nil if vitals haven't arrived yet.
 function MultiPlay.getSelfInfo()
-    if not MultiPlay.bReceivedCharVitals then
+
+    if gmcp and gmcp.Char then
+        if gmcp.Char.Vitals then
+            local vitals = gmcp.Char.Vitals
+            MultiPlay.myVitals.hp = vitals.hp
+            MultiPlay.myVitals.maxHp = vitals.maxHp
+            MultiPlay.myVitals.mana = vitals.mana
+            MultiPlay.myVitals.maxMana = vitals.maxMana
+            MultiPlay.myVitals.br = vitals.br
+            MultiPlay.myVitals.mv = vitals.mv
+            MultiPlay.myVitals.maxMv = vitals.maxMv
+        end
+
+        if gmcp.Char.Info then
+            local myInfo = gmcp.Char.Info
+            MultiPlay.myPlayerName = myInfo.name
+            MultiPlay.myClass = myInfo.class
+            MultiPlay.myLevel = myInfo.level
+        end
+    end
+
+    if not gmcp or not gmcp.Char or not gmcp.Char.Vitals then
         return nil
     end
 
@@ -166,6 +185,11 @@ function MultiPlay.enableModule()
     enableAlias("MultiPlay")
     enableTrigger("MultiPlay")
     MPWindow.window:show()
+
+    tempTimer(3, function()
+        sendGMCP("Char.Vitals.Get")
+        MultiPlay.requestInfo()
+    end)
 end
 
 
@@ -187,8 +211,6 @@ function MultiPlay.eventHandler(event, ...)
         MultiPlay.myVitals.mv = vitals.mv
         MultiPlay.myVitals.maxMv = vitals.maxMv
 
-        MultiPlay.bReceivedCharVitals = true
-
         if MedUI and MedUI.options.enableMultiPlay then
             MultiPlay.sendMyInfo()
         end
@@ -201,7 +223,6 @@ function MultiPlay.eventHandler(event, ...)
 
         --echo("Received character info: " .. info.name .. " (Class: " .. info.class .. ", Level: " .. info.level .. ")\n")
 
-        MultiPlay.bReceivedCharInfo = true
         disableTrigger("MultiPlay")
 
     elseif event == "MPTell" then
@@ -315,16 +336,7 @@ for _, id in ipairs(MultiPlay.eventHandlerIDs) do
     killAnonymousEventHandler(id)
 end
 
-tempTimer(10, function()
-    if MedUI.options.enableMultiPlay then
-        sendGMCP("Char.Vitals.Get")
-        MultiPlay.requestInfo()
-    end
-end)
-
-
 MultiPlay.eventHandlerIDs = {
-
     registerAnonymousEventHandler("MPTell", "MultiPlay.eventHandler"),
     registerAnonymousEventHandler("MPTellPlayer", "MultiPlay.eventHandler"),
     registerAnonymousEventHandler("MPRequestInfo", "MultiPlay.eventHandler"),
