@@ -90,8 +90,8 @@ local function getBandLabelColor(current, max)
     if max > 0 then
         pct = current / max * 100
     end
-    if pct > 90 then return "deepskyblue"
-    elseif pct > 75 then return "lawngreen"
+    if pct > 90 then return "DeepSkyBlue"
+    elseif pct > 75 then return "LawnGreen"
     elseif pct > 25 then return "yellow"
     else return "red" end
 end
@@ -385,7 +385,7 @@ function MPWindow.updatePlayerFrame(index, player)
     if not frame then return end
 
     if frame.shownName ~= player.name then
-        frame.nameLabel:echo(player.name, "white", "c")
+        frame.nameLabel:echo(player.name, "white", "l")
         frame.shownName = player.name
     end
 
@@ -501,7 +501,7 @@ function MPWindow.UpdateConsole()
         local manaColor = getBandLabelColor(player.mana, player.maxMana)
         local mvColor = getBandLabelColor(player.mv, player.maxMv)
         local brColor = getBandLabelColor(player.br, 100)
-        local infoStr = string.format("<white>%-12s<blue>|<white>%3s<blue>|<white>%2d<blue>|<%s>%4d<blue>/<white>%-4d<blue>hp <%s>%4d<blue>/<white>%-4d<blue>m <%s>%4d<blue>mv <%s>%3d<blue>br\n",
+        local infoStr = string.format("<white>%-12s<blue>|<white>%3s<blue>|<white>%2d<blue>|<%s>%4d<blue>/<white>%4d<blue>hp <%s>%4d<blue>/<white>%4d<blue>m <%s>%4d<blue>mv <%s>%3d<blue>br\n",
             player.name, player.class, player.level,
             hpColor, player.hp, player.maxHp,
             manaColor, player.mana, player.maxMana,
