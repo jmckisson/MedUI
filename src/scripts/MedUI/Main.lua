@@ -616,7 +616,16 @@ end
 function MedUI.config(arg)
 
   if arg and arg ~= " " then
-    local logoPath = getMudletHomeDir() .. MedUI.iconLocation .. "/graphics/medui.ans"
+    local cols = getColumnCount("main")
+    local graphicStr = "medui_110.ans"
+    -- display smaller graphic if needed
+    if cols < 90 then
+      graphicStr = "medui_80.ans"
+    elseif cols < 110 then
+      graphicStr = "medui_90.ans"
+    end
+
+    local logoPath = getMudletHomeDir() .. MedUI.iconLocation .. "/graphics/" .. graphicStr
     local f, err = io.open(logoPath, "r")
     if f then
       local logo = f:read("*a")
