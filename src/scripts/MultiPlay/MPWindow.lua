@@ -21,7 +21,8 @@ end
 
 -- Defer one tick so Qt drains its deleteLater queue (old TLabels from
 -- before resetProfile) before any luaL_ref runs for our new callbacks.
-tempTimer(0, function()
+-- not needed after PTB fix
+--tempTimer(0, function()
     -- Adjustable container for the whole window
     MPWindow.window = MPWindow.window or Adjustable.Container:new({
         name = "MultiPlay Stats",
@@ -39,7 +40,7 @@ tempTimer(0, function()
         scrollBar = false,
         fontSize = 13,
     }, MPWindow.window)
-end)
+--end)
 
 -- Gauge mode container (created on demand)
 MPWindow.gaugeContainer = MPWindow.gaugeContainer or nil
