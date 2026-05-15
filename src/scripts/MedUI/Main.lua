@@ -501,17 +501,18 @@ function MedUI.enableGauges()
 
   tempTimer(.1, function()
     MedBuffsNBars.Bottom:show()
+
+    local totalHeight = math.ceil(tonumber(MedBuffsNBars.BuffBox:get_height()) + tonumber(MedBuffsNBars.Bottom:get_height()))
+    -- Only capture the pre-gauge border when re-enabling after an explicit disable.
+    -- On first load the initial value is captured at table construction (line 81).
+    -- On reinstall while gauges are active, Bottom is not hidden and getBorderBottom()
+    -- would return the gauge height, which would corrupt the restore on disable.
+    if MedBuffsNBars.Bottom["hidden"] then
+      MedUI.oldBorderBottom = getBorderBottom()
+    end
+    setBorderBottom(totalHeight)
   end)
 
-  local totalHeight = math.ceil(tonumber(MedBuffsNBars.BuffBox:get_height()) + tonumber(MedBuffsNBars.Bottom:get_height()))
-  -- Only capture the pre-gauge border when re-enabling after an explicit disable.
-  -- On first load the initial value is captured at table construction (line 81).
-  -- On reinstall while gauges are active, Bottom is not hidden and getBorderBottom()
-  -- would return the gauge height, which would corrupt the restore on disable.
-  if MedBuffsNBars.Bottom["hidden"] then
-    MedUI.oldBorderBottom = getBorderBottom()
-  end
-  setBorderBottom(totalHeight)
 end
 
 function MedUI.disableGauges()
@@ -840,6 +841,10 @@ function MedUI.eventHandler(event, ...)
           MedBuffsNBars.Bottom:delete()
           MedBuffsNBars.Bottom = nil
         end
+        if MPWindow then
+          MPWindow:delete()
+          MPWindow = nil
+        end
         MedBuffsNBars.Footer = nil
         MedBuffsNBars.LeftColumn = nil
         MedBuffsNBars.RightColumn = nil
@@ -927,14 +932,15 @@ function MedUI.doConnectionSetup()
 
   -- Defer one tick so Qt drains its deleteLater queue (old TLabels from
   -- before resetProfile) before any luaL_ref runs for our new callbacks.
-  tempTimer(0, function()
+  --tempTimer(0, function()
+  -- fixed in PTB
     MedUI.InitUI()
     MedUI.loadOptions()
     MedUI.reconfigure()
 
     loadMap(getMudletHomeDir().."/MedUI/MedieviaMap.dat")
     closeMapWidget()
-  end)
+  --end)
 end
 
 registerNamedEventHandler("MedUI", "MedLoginHandler", "gmcp.Char.Info", "MedUI.doConnectionSetup")
