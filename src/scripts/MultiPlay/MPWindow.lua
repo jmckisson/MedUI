@@ -83,6 +83,19 @@ local function getGaugeStyleSheet(current, max)
     return styleSheet, textColor, band
 end
 
+-- Mirrors the four bands in getGaugeStyleSheet for plain-text labels on dark
+-- cells: blue (full) / green (high) / yellow (medium) / red (low).
+local function getBandLabelColor(current, max)
+    local pct = 100
+    if max > 0 then
+        pct = current / max * 100
+    end
+    if pct > 90 then return "deepskyblue"
+    elseif pct > 75 then return "lawngreen"
+    elseif pct > 25 then return "yellow"
+    else return "red" end
+end
+
 local rowHeight = 25
 
 local cellStyle = "background-color: #222222; border: 1px solid #444444; padding: 2px;"
@@ -291,7 +304,7 @@ function MPWindow.buildPlayerFrame(index, player)
         width = 30, height = "100%",
     }, row)
     mvLabel:setStyleSheet(cellStyle)
-    mvLabel:echo(tostring(player.mv) .. " mv", "white", "c")
+    mvLabel:echo(tostring(player.mv), getBandLabelColor(player.mv, player.maxMv), "c")
     mvLabel:setFontSize(9)
 
     -- BR label
@@ -300,7 +313,7 @@ function MPWindow.buildPlayerFrame(index, player)
         width = 30, height = "100%",
     }, row)
     brLabel:setStyleSheet(cellStyle)
-    brLabel:echo(tostring(player.br) .. " br", "white", "c")
+    brLabel:echo(tostring(player.br), getBandLabelColor(player.br, 100), "c")
     brLabel:setFontSize(9)
 
     -- Class label
@@ -353,6 +366,7 @@ function MPWindow.buildPlayerFrame(index, player)
         shownMana = player.mana,
         shownMaxMana = player.maxMana,
         shownMv = player.mv,
+        shownMaxMv = player.maxMv,
         shownBr = player.br,
         shownClass = player.class,
         shownLevel = player.level,
@@ -397,13 +411,14 @@ function MPWindow.updatePlayerFrame(index, player)
         frame.shownMaxMana = player.maxMana
     end
 
-    if frame.shownMv ~= player.mv then
-        frame.mvLabel:echo(tostring(player.mv), "white", "c")
+    if frame.shownMv ~= player.mv or frame.shownMaxMv ~= player.maxMv then
+        frame.mvLabel:echo(tostring(player.mv), getBandLabelColor(player.mv, player.maxMv), "c")
         frame.shownMv = player.mv
+        frame.shownMaxMv = player.maxMv
     end
 
     if frame.shownBr ~= player.br then
-        frame.brLabel:echo(tostring(player.br), "white", "c")
+        frame.brLabel:echo(tostring(player.br), getBandLabelColor(player.br, 100), "c")
         frame.shownBr = player.br
     end
 
@@ -482,8 +497,14 @@ function MPWindow.UpdateConsole()
     MPWindow.console:clear()
 
     for _, player in ipairs(MPWindow.getDisplayList()) do
-        local infoStr = string.format("<white>%-12s<blue>|<white>%3s<blue>|<white>%2d<blue>|<white>%4d<blue>/<white>%d<blue>hp <white>%4d<blue>/<white>%d<blue>m <white>%d<blue>mv <white>%d<blue>br\n",
-            player.name, player.class, player.level, player.hp, player.maxHp, player.mana, player.maxMana, player.mv, player.br)
+        local mvColor = getBandLabelColor(player.mv, player.maxMv)
+        local brColor = getBandLabelColor(player.br, 100)
+        local infoStr = string.format("<white>%-12s<blue>|<white>%3s<blue>|<white>%2d<blue>|<white>%4d<blue>/<white>%d<blue>hp <white>%4d<blue>/<white>%d<blue>m <%s>%d<blue>mv <%s>%d<blue>br\n",
+            player.name, player.class, player.level,
+            player.hp, player.maxHp,
+            player.mana, player.maxMana,
+            mvColor, player.mv,
+            brColor, player.br)
 
         MPWindow.console:cecho(infoStr)
     end

@@ -27,7 +27,8 @@ MultiPlay = {
         mana = -1,
         maxMana = -1,
         br = -1,
-        mv = -1
+        mv = -1,
+        maxMv = -1
     },
     eventHandlerIDs = {},
     bReceivedCharInfo = false,
@@ -129,7 +130,7 @@ function MultiPlay.getSelfInfo()
         level = MultiPlay.myLevel,
         hp = v.hp, maxHp = v.maxHp,
         mana = v.mana, maxMana = v.maxMana,
-        br = v.br, mv = v.mv,
+        br = v.br, mv = v.mv, maxMv = v.maxMv,
     }
 end
 
@@ -150,14 +151,14 @@ function MultiPlay.sendMyInfo()
         and last.level == info.level
         and last.hp == info.hp and last.maxHp == info.maxHp
         and last.mana == info.mana and last.maxMana == info.maxMana
-        and last.br == info.br and last.mv == info.mv then
+        and last.br == info.br and last.mv == info.mv and last.maxMv == info.maxMv then
         return
     end
 
     MultiPlay.lastSent = info
 
     raiseGlobalEvent("MPInfoResponse", info.name, info.class, info.level,
-        info.hp, info.maxHp, info.mana, info.maxMana, info.br, info.mv)
+        info.hp, info.maxHp, info.mana, info.maxMana, info.br, info.mv, info.maxMv)
 end
 
 
@@ -184,6 +185,7 @@ function MultiPlay.eventHandler(event, ...)
         MultiPlay.myVitals.maxMana = vitals.maxMana
         MultiPlay.myVitals.br = vitals.br
         MultiPlay.myVitals.mv = vitals.mv
+        MultiPlay.myVitals.maxMv = vitals.maxMv
 
         MultiPlay.bReceivedCharVitals = true
 
@@ -250,10 +252,11 @@ function MultiPlay.eventHandler(event, ...)
             mana = arg[6],
             maxMana = arg[7],
             br = arg[8],
-            mv = arg[9]
+            mv = arg[9],
+            maxMv = arg[10]
         }
 
-        local profile = arg[10]
+        local profile = arg[11]
         --echo("Received info from [" .. profile .. "] ".. playerInfo.name .. " (Class: " .. playerInfo.class .. ", Level: " .. playerInfo.level .. ")\n")
 
         local found = false
