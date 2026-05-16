@@ -26,6 +26,7 @@ local function medieviaTabbedChat_InitMedChat()
   MedChat.AdjCont:setTitle("Medievia Chat")
 
   MedChat.EMCOConsole = MedChat.EMCOConsole or EMCO:new({
+    name = "MedChat",
     x = "0",
     y = "0",
     width = "100%",
@@ -37,7 +38,7 @@ local function medieviaTabbedChat_InitMedChat()
     consoles = {
       "All",
       "Form",
-      "Clan", 
+      "Clan",
       "Town",
       "Chat",
     },
@@ -56,6 +57,9 @@ local function medieviaTabbedChat_InitMedChat()
       MedChat.EMCOConsole:addTab("MMCP", #MedChat.EMCOConsole.consoles + 1)
     end
   end
+
+  -- Disable file logging on all tabs (including MMCP, added above)
+  MedChat.EMCOConsole:disableAllLogging()
 end
 
 
