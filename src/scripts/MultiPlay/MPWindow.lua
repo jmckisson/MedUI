@@ -54,25 +54,11 @@ local backStyleSheet = [[background-color: QLinearGradient( x1: 0, y1: 0, x2: 0,
     padding: 2px;
 ]]
 
-local function getGaugeStyleSheet(current, max)
-    local pct = 100
-    if max > 0 then
-        pct = current / max * 100
-    end
-
-    local band, gradMax, gradMin, textColor
-
-    if pct > 90 then
-        band, gradMax, gradMin, textColor = 1, "#0047b3", "#b3d1ff", "white"
-    elseif pct > 75 then
-        band, gradMax, gradMin, textColor = 2, "#98f041", "#66cc00", "black"
-    elseif pct > 25 then
-        band, gradMax, gradMin, textColor = 3, "#ffff00", "#ffff66", "black"
-    else
-        band, gradMax, gradMin, textColor = 4, "#ff0000", "#ff6666", "white"
-    end
-
-    local styleSheet = string.format(
+-- Precomputed front-gauge stylesheets keyed by band. Only four distinct
+-- outputs, so we build them once at load time instead of string.format-ing on
+-- every vitals tick.
+local function buildGaugeSheet(gradMax, gradMin)
+    return string.format(
         "background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 %s, stop: 1 %s);\
         border-top: 1px black solid;\
         border-left: 1px black solid;\
@@ -80,12 +66,28 @@ local function getGaugeStyleSheet(current, max)
         border-radius: 5;\
         padding: 2px;\
         outline:2px", gradMax, gradMin)
-
-    return styleSheet, textColor, band
 end
 
--- Mirrors the four bands in getGaugeStyleSheet for plain-text labels on dark
--- cells: blue (full) / green (high) / yellow (medium) / red (low).
+local gaugeBands = {
+    {sheet = buildGaugeSheet("#0047b3", "#b3d1ff"), textColor = "white"},
+    {sheet = buildGaugeSheet("#98f041", "#66cc00"), textColor = "black"},
+    {sheet = buildGaugeSheet("#ffff00", "#ffff66"), textColor = "black"},
+    {sheet = buildGaugeSheet("#ff0000", "#ff6666"), textColor = "white"},
+}
+
+local function getGaugeBand(current, max)
+    local pct = 100
+    if max > 0 then
+        pct = current / max * 100
+    end
+    if pct > 90 then return 1
+    elseif pct > 75 then return 2
+    elseif pct > 25 then return 3
+    else return 4 end
+end
+
+-- Mirrors the four gauge bands for plain-text labels on dark cells:
+-- blue (full) / green (high) / yellow (medium) / red (low).
 local function getBandLabelColor(current, max)
     local pct = 100
     if max > 0 then
@@ -142,18 +144,30 @@ function MPWindow.requestHeal(playerName, missingHp)
 end
 
 
+-- Reverse playerName(lower) -> group index, rebuilt lazily when groupVersion
+-- changes. Avoids O(groups * members) scans of MultiPlay.myGroups on every
+-- vitals tick.
+MPWindow.playerToGroup = MPWindow.playerToGroup or {}
+MPWindow.playerToGroupVersion = -1
+
+local function ensurePlayerGroupIndex()
+    if MPWindow.playerToGroupVersion == MPWindow.groupVersion then return end
+    local map = {}
+    for group, players in pairs(MultiPlay.myGroups) do
+        for _, p in ipairs(players) do
+            if p then map[p:lower()] = group end
+        end
+    end
+    MPWindow.playerToGroup = map
+    MPWindow.playerToGroupVersion = MPWindow.groupVersion
+end
+
+
 --- Find which user-visible group a player belongs to (returns first match or "")
 function MPWindow.getPlayerGroup(playerName)
     if not playerName then return "" end
-    local key = playerName:lower()
-    for group, players in pairs(MultiPlay.myGroups) do
-        for _, p in ipairs(players) do
-            if p and p:lower() == key then
-                return group
-            end
-        end
-    end
-    return ""
+    ensurePlayerGroupIndex()
+    return MPWindow.playerToGroup[playerName:lower()] or ""
 end
 
 
@@ -271,21 +285,22 @@ function MPWindow.buildPlayerFrame(index, player)
         width = 120, height = "100%",
     }, row)
     hpGauge.back:setStyleSheet(backStyleSheet)
-    local hpSheet, hpTextColor, hpBand = getGaugeStyleSheet(player.hp, player.maxHp)
-    hpGauge.front:setStyleSheet(hpSheet)
-    hpGauge:setValue(player.hp, player.maxHp, string.format("<b><font color='%s'>%d HP</font></b>", hpTextColor, player.hp))
+    local hpBand = getGaugeBand(player.hp, player.maxHp)
+    local hpInfo = gaugeBands[hpBand]
+    hpGauge.front:setStyleSheet(hpInfo.sheet)
+    hpGauge:setValue(player.hp, player.maxHp, string.format("<b><font color='%s'>%d HP</font></b>", hpInfo.textColor, player.hp))
 
-    -- Click on HP gauge to request smart heal from Clerics
-    local pName = player.name
+    -- Click on HP gauge to request smart heal from Clerics.
+    -- Look up the live player off the frame instead of rescanning the display
+    -- list — the frame's .player ref is refreshed each update.
+    local frameIndex = index
     hpGauge.front:setClickCallback(function()
-        for _, p in ipairs(MPWindow.getDisplayList()) do
-            if p.name == pName then
-                local missingHp = p.maxHp - p.hp
-                if missingHp > 0 then
-                    MPWindow.requestHeal(pName, missingHp)
-                end
-                break
-            end
+        local frame = MPWindow.gaugeFrames[frameIndex]
+        if not frame or not frame.player then return end
+        local p = frame.player
+        local missingHp = p.maxHp - p.hp
+        if missingHp > 0 then
+            MPWindow.requestHeal(p.name, missingHp)
         end
     end)
 
@@ -295,9 +310,10 @@ function MPWindow.buildPlayerFrame(index, player)
         width = 120, height = "100%",
     }, row)
     manaGauge.back:setStyleSheet(backStyleSheet)
-    local manaSheet, manaTextColor, manaBand = getGaugeStyleSheet(player.mana, player.maxMana)
-    manaGauge.front:setStyleSheet(manaSheet)
-    manaGauge:setValue(player.mana, player.maxMana, string.format("<b><font color='%s'>%d MN</font></b>", manaTextColor, player.mana))
+    local manaBand = getGaugeBand(player.mana, player.maxMana)
+    local manaInfo = gaugeBands[manaBand]
+    manaGauge.front:setStyleSheet(manaInfo.sheet)
+    manaGauge:setValue(player.mana, player.maxMana, string.format("<b><font color='%s'>%d MN</font></b>", manaInfo.textColor, player.mana))
 
     -- MV label
     local mvLabel = Geyser.Label:new({
@@ -360,6 +376,7 @@ function MPWindow.buildPlayerFrame(index, player)
         classLabel = classLabel,
         levelLabel = levelLabel,
         groupLabel = groupLabel,
+        player = player,
         playerName = player.name,
         shownName = player.name,
         shownHp = player.hp,
@@ -385,29 +402,35 @@ function MPWindow.updatePlayerFrame(index, player)
     local frame = MPWindow.gaugeFrames[index]
     if not frame then return end
 
+    -- Keep the live player ref current so the HP click callback can read
+    -- up-to-date vitals without rescanning the display list.
+    frame.player = player
+
     if frame.shownName ~= player.name then
         frame.nameLabel:echo(player.name, "white", "l")
         frame.shownName = player.name
     end
 
     if frame.shownHp ~= player.hp or frame.shownMaxHp ~= player.maxHp then
-        local hpSheet, hpTextColor, hpBand = getGaugeStyleSheet(player.hp, player.maxHp)
+        local hpBand = getGaugeBand(player.hp, player.maxHp)
+        local hpInfo = gaugeBands[hpBand]
         if frame.hpBand ~= hpBand then
-            frame.hpGauge.front:setStyleSheet(hpSheet)
+            frame.hpGauge.front:setStyleSheet(hpInfo.sheet)
             frame.hpBand = hpBand
         end
-        frame.hpGauge:setValue(player.hp, player.maxHp, string.format("<b><font color='%s'>%d HP</font></b>", hpTextColor, player.hp))
+        frame.hpGauge:setValue(player.hp, player.maxHp, string.format("<b><font color='%s'>%d HP</font></b>", hpInfo.textColor, player.hp))
         frame.shownHp = player.hp
         frame.shownMaxHp = player.maxHp
     end
 
     if frame.shownMana ~= player.mana or frame.shownMaxMana ~= player.maxMana then
-        local manaSheet, manaTextColor, manaBand = getGaugeStyleSheet(player.mana, player.maxMana)
+        local manaBand = getGaugeBand(player.mana, player.maxMana)
+        local manaInfo = gaugeBands[manaBand]
         if frame.manaBand ~= manaBand then
-            frame.manaGauge.front:setStyleSheet(manaSheet)
+            frame.manaGauge.front:setStyleSheet(manaInfo.sheet)
             frame.manaBand = manaBand
         end
-        frame.manaGauge:setValue(player.mana, player.maxMana, string.format("<b><font color='%s'>%d MN</font></b>", manaTextColor, player.mana))
+        frame.manaGauge:setValue(player.mana, player.maxMana, string.format("<b><font color='%s'>%d MN</font></b>", manaInfo.textColor, player.mana))
         frame.shownMana = player.mana
         frame.shownMaxMana = player.maxMana
     end
