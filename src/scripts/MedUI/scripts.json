@@ -13,5 +13,10 @@
               "name": "MedChat",
               "isActive": "yes",
               "isFolder": "no"
+       },
+       {
+              "name": "OptionsDialog",
+              "isActive": "yes",
+              "isFolder": "no"
        }
 ]
