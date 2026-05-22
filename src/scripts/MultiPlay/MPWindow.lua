@@ -200,7 +200,12 @@ function MPWindow.setupGroupMenu(label, playerName)
             MenuFormat1 = "c9",
         })
     else
+        -- Geyser's findMenuElement reads from rightClickMenu.MenuItems, which
+        -- starts out as the same table reference as label.MenuItems. Replacing
+        -- label.MenuItems leaves the rightClickMenu pointing at the stale list,
+        -- so setMenuAction can't see newly-added items. Update both.
         label.MenuItems = menuItems
+        label.rightClickMenu.MenuItems = menuItems
         label:createMenuItems(true)
     end
 
