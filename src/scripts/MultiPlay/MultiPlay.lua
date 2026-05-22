@@ -64,9 +64,16 @@ function MultiPlay.requestInfo()
     raiseGlobalEvent("MPRequestInfo")
 end
 
+local function persistGroups()
+    if MedUI and MedUI.saveOptions and MedUI.options and MedUI.options.mpGroups then
+        MedUI.saveOptions(true)
+    end
+end
+
 function MultiPlay.addGroup(group)
     if not MultiPlay.myGroups[group] then
         MultiPlay.myGroups[group] = {}
+        persistGroups()
     end
 end
 
@@ -85,6 +92,7 @@ function MultiPlay.addToGroup(group, player)
         end
     end
     table.insert(list, canonical)
+    persistGroups()
 end
 
 function MultiPlay.removeFromGroup(group, player)
@@ -94,6 +102,7 @@ function MultiPlay.removeFromGroup(group, player)
     for i = #list, 1, -1 do
         if list[i]:lower() == key then
             table.remove(list, i)
+            persistGroups()
             return true
         end
     end

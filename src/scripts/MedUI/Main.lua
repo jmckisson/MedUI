@@ -1,6 +1,6 @@
 --[[
   Changelog:
-    2.0.0 - Add MultiPlay module
+    2.0.0 - Add MultiPlay module, major rework
     1.9.1 - Fix windows resizing when map and chat are hidden
     1.9.0 - Detect MMCP for both original PR and development versions
     1.8.2 - Use gmcp Char.Info to trigger options loading
@@ -404,7 +404,7 @@ end
 --Helper function to show which buffs have been turned on in the table, used for debugging
 -- lua med_showBuffTable()
 -- Only used for debugging
-function medBuffsNBars_showBuffTable()
+local function medBuffsNBars_showBuffTable()
   echo('\n')
   for k, v in pairs(MedUI.buffIconTable) do
     echo(v.icon.."::"..tostring(v.active).."::"..v.labelName.."::"..v.buffType..'\n')
@@ -478,7 +478,7 @@ function MedUI.updateAffects()
 end
 
 --Used with testing to make sure icons are displaying, turns them all on
-function medBuffsNBars_test_showAllBuffIcons()
+local function medBuffsNBars_test_showAllBuffIcons()
   --med_showBuffTable()
   local counter = 0
   local sortedBuffTable = MedUI.sortedBuffsTable()
@@ -791,14 +791,22 @@ function MedUI.loadOptions()
     mapFontSize = 9,
     chatFontSize = 8,
     enableMultiPlay = false,
-    mpGaugeMode = false
+    mpGaugeMode = false,
+    mpGroups = {}
   }
+
+  -- Share the persisted groups table with MultiPlay so any mutation lands in
+  -- MedUI.options and gets written by the next saveOptions() call.
+  MedUI.options.mpGroups = MedUI.options.mpGroups or {}
+  if MultiPlay then
+    MultiPlay.myGroups = MedUI.options.mpGroups
+  end
 
   cecho("\n<DeepSkyBlue> MedUI: loaded options for <yellow>" .. charName .. "\n")
   MedUI.charName = charName
 end
 
-function MedUI.saveOptions()
+function MedUI.saveOptions(silent)
   local charName = string.lower(getProfileName())
 
   local saveTable = {
@@ -807,7 +815,9 @@ function MedUI.saveOptions()
 
   table.save(getMudletHomeDir().."/medui_"..charName..".lua", saveTable)
 
-  cecho("\n<DeepSkyBlue> MedUI: saved options for <yellow>" .. charName .. "\n")
+  if not silent then
+    cecho("\n<DeepSkyBlue> MedUI: saved options for <yellow>" .. charName .. "\n")
+  end
   MedUI.charName = charName
 end
 
@@ -947,17 +957,13 @@ function MedUI.doConnectionSetup()
   end
   setupComplete = true
 
-  -- Defer one tick so Qt drains its deleteLater queue (old TLabels from
-  -- before resetProfile) before any luaL_ref runs for our new callbacks.
-  --tempTimer(0, function()
-  -- fixed in PTB
-    MedUI.InitUI()
-    MedUI.loadOptions()
-    MedUI.reconfigure()
+  MedUI.InitUI()
+  MedUI.loadOptions()
+  MedUI.reconfigure()
 
-    loadMap(getMudletHomeDir().."/MedUI/MedieviaMap.dat")
-    closeMapWidget()
-  --end)
+  loadMap(getMudletHomeDir().."/MedUI/MedieviaMap.dat")
+  closeMapWidget()
+
 end
 
 registerNamedEventHandler("MedUI", "MedLoginHandler", "gmcp.Char.Info", "MedUI.doConnectionSetup")

@@ -152,7 +152,7 @@ end
 local function applyChange(option)
   if option.onChange then option.onChange() end
   MedUI.reconfigure()
-  MedUI.saveOptions()
+  MedUI.saveOptions(true)
 end
 
 function Dialog.onToggle(key)
