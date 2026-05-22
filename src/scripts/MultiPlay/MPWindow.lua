@@ -171,6 +171,43 @@ function MPWindow.getPlayerGroup(playerName)
 end
 
 
+-- Geyser's createMenuItems only adds labels; it never prunes ones that were
+-- removed from MenuItems. Walk the cached MenuLabels/nestedLabels and drop
+-- anything not present in the fresh items list so stale entries (e.g. "Remove
+-- from groupX" after the player leaves the group) disappear on rebuild.
+local function pruneStaleMenuLabels(menuLabel, newItems)
+    if not menuLabel.MenuLabels then return end
+
+    local keep = {}
+    for _, item in ipairs(newItems) do
+        if type(item) == "string" then
+            keep[item] = true
+        end
+    end
+
+    for name, stale in pairs(menuLabel.MenuLabels) do
+        if not keep[name] then
+            if menuLabel.nestedLabels then
+                for i = #menuLabel.nestedLabels, 1, -1 do
+                    if menuLabel.nestedLabels[i] == stale then
+                        table.remove(menuLabel.nestedLabels, i)
+                    end
+                end
+            end
+            stale:hide()
+            menuLabel.MenuLabels[name] = nil
+        end
+    end
+
+    for i, item in ipairs(newItems) do
+        if type(item) == "table" and type(newItems[i - 1]) == "string" then
+            local child = menuLabel.MenuLabels[newItems[i - 1]]
+            if child then pruneStaleMenuLabels(child, item) end
+        end
+    end
+end
+
+
 --- Build right-click context menu on a label for assigning a player to a group
 function MPWindow.setupGroupMenu(label, playerName)
     local menuItems = {"New Group"}
@@ -204,13 +241,14 @@ function MPWindow.setupGroupMenu(label, playerName)
         -- starts out as the same table reference as label.MenuItems. Replacing
         -- label.MenuItems leaves the rightClickMenu pointing at the stale list,
         -- so setMenuAction can't see newly-added items. Update both.
+        pruneStaleMenuLabels(label.rightClickMenu, menuItems)
         label.MenuItems = menuItems
         label.rightClickMenu.MenuItems = menuItems
         label:createMenuItems(true)
     end
 
     label:setMenuAction("New Group", function()
-        local groupName = "group" .. (table.size(MultiPlay.myGroups) + 1)
+        local groupName = "g" .. (table.size(MultiPlay.myGroups) + 1)
         MultiPlay.addToGroup(groupName, playerName)
         MPWindow.invalidateMenus()
         raiseEvent("MultiPlayConsoleUpdate")
