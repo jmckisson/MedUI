@@ -138,29 +138,15 @@ local function footerButtonHoverCSS()
   ]]
 end
 
-local function htmlLabel(text, size, color, align, bold)
-  size = size or 11
+local function htmlLabel(text, sizePt, color, align, bold)
+  sizePt = sizePt or 10
   color = color or "#e6e6e6"
   align = align or "left"
-  local b = bold and "b" or "span"
-  return string.format(
-    [[<div align="%s"><font face="Bitstream Vera Sans" color="%s" size="%d"><%s>%s</%s></font></div>]],
-    align, color, size, b, text, b)
-end
-
-local function getOptionsList()
-  return {
-    {key = "enableGauges",      label = "Enable Gauges",          type = "toggle"},
-    {key = "keepInlineMap",     label = "Keep Inline Map",        type = "toggle"},
-    {key = "enableTimestamps",  label = "Enable Chat Timestamps", type = "toggle"},
-    {key = "mapFontSize",       label = "Map Font Size",          type = "value", min = 6, max = 24,
-      onChange = function() if MedUI.MedMap and MedUI.MedMap.Console then MedUI.MedMap.Console:setFontSize(tonumber(MedUI.options.mapFontSize) or 9) end end},
-    {key = "chatFontSize",      label = "Chat Font Size",         type = "value", min = 6, max = 24,
-      onChange = function() if MedChat and MedChat.EMCOConsole then MedChat.EMCOConsole:setFontSize(tonumber(MedUI.options.chatFontSize) or 8) end end},
-    {key = "enableMultiPlay",   label = "Enable MultiPlay Module",type = "toggle"},
-    {key = "mpGaugeMode",       label = "MultiPlay Gauge Mode",   type = "toggle",
-      onChange = function() if MPWindow then MPWindow.setDisplayMode(MedUI.options.mpGaugeMode) end end},
-  }
+  local weight = bold and "font-weight: bold;" or ""
+  local style = string.format(
+    "font-family: 'Bitstream Vera Sans'; color: %s; font-size: %dpt; %s",
+    color, sizePt, weight)
+  return string.format([[<div align="%s" style="%s">%s</div>]], align, style, text)
 end
 
 local function applyChange(option)
@@ -171,7 +157,7 @@ end
 
 function Dialog.onToggle(key)
   MedUI.options[key] = not MedUI.options[key]
-  local options = getOptionsList()
+  local options = MedUI.optionsList
   for _, opt in ipairs(options) do
     if opt.key == key then applyChange(opt) break end
   end
@@ -180,7 +166,7 @@ end
 
 function Dialog.onStep(key, delta)
   local current = tonumber(MedUI.options[key]) or 0
-  local options = getOptionsList()
+  local options = MedUI.optionsList
   local optMin, optMax = 6, 24
   local opt
   for _, o in ipairs(options) do
@@ -206,9 +192,9 @@ function Dialog.refreshRow(key)
     local on = MedUI.options[key] and true or false
     row.toggle:setStyleSheet(on and toggleOnCSS() or toggleOffCSS())
     row.toggle.onState = on
-    row.toggle:echo(htmlLabel(on and "ON" or "OFF", 11, "#ffffff", "center", true))
+    row.toggle:echo(htmlLabel(on and "ON" or "OFF", 9, "#ffffff", "center", true))
   elseif row.type == "value" then
-    row.valueLabel:echo(htmlLabel(tostring(MedUI.options[key]), 13, "#ffffff", "center", true))
+    row.valueLabel:echo(htmlLabel(tostring(MedUI.options[key]), 10, "#ffffff", "center", true))
   end
 end
 
@@ -237,31 +223,40 @@ end
 local function buildRow(parent, yPx, option)
   local row = {type = option.type, key = option.key}
 
+  local rowBgHeight = ROW_HEIGHT - 6
+  local ctlHeight = 20
+  local ctlY = math.floor((rowBgHeight - ctlHeight) / 2)
+
   local rowBg = Geyser.Label:new({
     name = "MedUIOptRow_" .. option.key,
     x = SIDE_PAD, y = yPx,
-    width = DIALOG_WIDTH - (SIDE_PAD * 2), height = ROW_HEIGHT - 6,
+    width = DIALOG_WIDTH - (SIDE_PAD * 2), height = rowBgHeight,
   }, parent)
   rowBg:setStyleSheet(rowCSS())
 
   local nameLabel = Geyser.Label:new({
     name = "MedUIOptName_" .. option.key,
-    x = 14, y = 0,
-    width = 280, height = "100%",
+    x = 12, y = 0,
+    width = 360, height = "100%",
   }, rowBg)
-  nameLabel:setStyleSheet("background-color: transparent;")
-  nameLabel:echo(htmlLabel(option.label, 11, "#e6e6e6", "left", false))
+  nameLabel:setStyleSheet([[
+    background-color: transparent;
+    qproperty-alignment: 'AlignVCenter | AlignLeft';
+    padding-left: 4px;
+  ]])
+  nameLabel:echo(htmlLabel(option.label, 10, "#e6e6e6", "left", false))
 
   if option.type == "toggle" then
     local on = MedUI.options[option.key] and true or false
+    local toggleW = 64
     local toggle = Geyser.Label:new({
       name = "MedUIOptToggle_" .. option.key,
-      x = -90, y = 4,
-      width = 76, height = ROW_HEIGHT - 14,
+      x = -(toggleW + 12), y = ctlY,
+      width = toggleW, height = ctlHeight,
     }, rowBg)
     toggle:setStyleSheet(on and toggleOnCSS() or toggleOffCSS())
     toggle.onState = on
-    toggle:echo(htmlLabel(on and "ON" or "OFF", 11, "#ffffff", "center", true))
+    toggle:echo(htmlLabel(on and "ON" or "OFF", 9, "#ffffff", "center", true))
     toggle:setClickCallback("MedUI.OptionsDialog.onToggle", option.key)
     toggle:setOnEnter(function()
       toggle:setStyleSheet(toggle.onState and toggleOnHoverCSS() or toggleOffHoverCSS())
@@ -271,29 +266,34 @@ local function buildRow(parent, yPx, option)
     end)
     row.toggle = toggle
   elseif option.type == "value" then
+    local btnW = 26
+    local valW = 42
+    local groupW = btnW + valW + btnW + 4
+    local startX = -(groupW + 12)
+
     local minus = Geyser.Label:new({
       name = "MedUIOptMinus_" .. option.key,
-      x = -150, y = 4,
-      width = 32, height = ROW_HEIGHT - 14,
+      x = startX, y = ctlY,
+      width = btnW, height = ctlHeight,
     }, rowBg)
-    minus:echo(htmlLabel("&#8722;", 14, "#ffffff", "center", true))
+    minus:echo(htmlLabel("&#8722;", 11, "#ffffff", "center", true))
     minus:setClickCallback("MedUI.OptionsDialog.onStep", option.key, -1)
     setHoverable(minus, stepperButtonCSS(), stepperButtonHoverCSS())
 
     local valueLabel = Geyser.Label:new({
       name = "MedUIOptValue_" .. option.key,
-      x = -114, y = 4,
-      width = 50, height = ROW_HEIGHT - 14,
+      x = startX + btnW + 2, y = ctlY,
+      width = valW, height = ctlHeight,
     }, rowBg)
     valueLabel:setStyleSheet(valueDisplayCSS())
-    valueLabel:echo(htmlLabel(tostring(MedUI.options[option.key]), 13, "#ffffff", "center", true))
+    valueLabel:echo(htmlLabel(tostring(MedUI.options[option.key]), 10, "#ffffff", "center", true))
 
     local plus = Geyser.Label:new({
       name = "MedUIOptPlus_" .. option.key,
-      x = -60, y = 4,
-      width = 32, height = ROW_HEIGHT - 14,
+      x = startX + btnW + valW + 4, y = ctlY,
+      width = btnW, height = ctlHeight,
     }, rowBg)
-    plus:echo(htmlLabel("+", 14, "#ffffff", "center", true))
+    plus:echo(htmlLabel("+", 11, "#ffffff", "center", true))
     plus:setClickCallback("MedUI.OptionsDialog.onStep", option.key, 1)
     setHoverable(plus, stepperButtonCSS(), stepperButtonHoverCSS())
 
@@ -348,7 +348,7 @@ function Dialog.open()
     width = "100%", height = TITLE_HEIGHT,
   }, Dialog.panel)
   title:setStyleSheet(titleCSS())
-  title:echo(htmlLabel("MedUI Options &mdash; v" .. tostring(MedUI.version), 14, "#ffd9a0", "center", true))
+  title:echo(htmlLabel("MedUI Options &mdash; v" .. tostring(MedUI.version), 12, "#ffd9a0", "center", true))
 
   local closeX = Geyser.Label:new({
     name = "MedUIOptCloseX",
@@ -356,12 +356,12 @@ function Dialog.open()
     width = 28, height = 28,
   }, title)
   closeX:setStyleSheet(closeXCSS())
-  closeX:echo(htmlLabel("&#10006;", 12, "#ffaaaa", "center", true))
+  closeX:echo(htmlLabel("&#10006;", 10, "#ffaaaa", "center", true))
   closeX:setClickCallback("MedUI.OptionsDialog.close")
   closeX:setOnEnter(function() closeX:setStyleSheet(closeXHoverCSS()) end)
   closeX:setOnLeave(function() closeX:setStyleSheet(closeXCSS()) end)
 
-  local options = getOptionsList()
+  local options = MedUI.optionsList
   local startY = TITLE_HEIGHT + 14
   for i, option in ipairs(options) do
     local yPx = startY + ((i - 1) * ROW_HEIGHT)
@@ -373,7 +373,7 @@ function Dialog.open()
     x = -130, y = -44,
     width = 112, height = 32,
   }, Dialog.panel)
-  closeBtn:echo(htmlLabel("Close", 12, "#ffffff", "center", true))
+  closeBtn:echo(htmlLabel("Close", 10, "#ffffff", "center", true))
   closeBtn:setClickCallback("MedUI.OptionsDialog.close")
   setHoverable(closeBtn, footerButtonCSS(), footerButtonHoverCSS())
 

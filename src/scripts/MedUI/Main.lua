@@ -115,6 +115,28 @@ MedUI = MedUI or {
   iconLocation = "/MedUI"
 }
 
+-- Canonical options definition. Read by both MedUI.config() (text mode)
+-- and MedUI.OptionsDialog (GUI). Keep this as the single source of truth.
+MedUI.optionsList = {
+  {key = "enableGauges",     label = "Enable Gauges",          type = "toggle",
+    helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui gauges<white>' to toggle"},
+  {key = "keepInlineMap",    label = "Keep Inline Map",        type = "toggle",
+    helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui inlinemap<white>' to toggle"},
+  {key = "enableTimestamps", label = "Enable Chat Timestamps", type = "toggle",
+    helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui timestamp<white>' to toggle"},
+  {key = "mapFontSize",      label = "Map Font Size",          type = "value", min = 6, max = 24,
+    onChange = function() if MedUI.MedMap and MedUI.MedMap.Console then MedUI.MedMap.Console:setFontSize(tonumber(MedUI.options.mapFontSize) or 9) end end,
+    helpKey = "<white>'<yellow>medui %d <size><white>' or '<yellow>medui mapFontSize <size><white>' to adjust"},
+  {key = "chatFontSize",     label = "Chat Font Size",         type = "value", min = 6, max = 24,
+    onChange = function() if MedChat and MedChat.EMCOConsole then MedChat.EMCOConsole:setFontSize(tonumber(MedUI.options.chatFontSize) or 8) end end,
+    helpKey = "<white>'<yellow>medui %d <size><white>' or '<yellow>medui chatFontSize <size><white>' to adjust"},
+  {key = "enableMultiPlay",  label = "Enable MultiPlay Module",type = "toggle",
+    helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui mp<white>' to toggle"},
+  {key = "mpGaugeMode",      label = "MultiPlay Gauge Mode",   type = "toggle",
+    onChange = function() if MPWindow then MPWindow.setDisplayMode(MedUI.options.mpGaugeMode) end end,
+    helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui mpgauges<white>' to toggle"},
+}
+
 MedUI.buffIconTable = {
     sanc =         {icon="/icons/sanc.png",            active=false, labelName="spell_label_sanc",         buffType="buff",   order=1},
     fireshield =   {icon="/icons/fireshield.png",      active=false, labelName="spell_label_fireshield",   buffType="buff",   order=2},
@@ -615,6 +637,9 @@ end
 
 function MedUI.config(arg)
 
+  -- The `medui options` alias handles the popup dialog; suppress the text page here.
+  if arg == "options" then return end
+
   if arg and arg ~= " " then
     local cols = getColumnCount("main")
     local graphicStr = "medui_110.ans"
@@ -639,22 +664,7 @@ function MedUI.config(arg)
 
   cecho("<DeepSkyBlue>MedUI by <firebrick>Kymbahl <DeepSkyBlue>& <gold>Kronos<DeepSkyBlue>, version: <orange>" .. MedUI.version .. "\n")
 
-  local optionsList = {
-    {description = "Enable Gauges", optionKey = "enableGauges", type = "toggle", helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui gauges<white>' to toggle"},
-    {description = "Keep Inline Map", optionKey = "keepInlineMap", type = "toggle", helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui inlinemap<white>' to toggle"},
-    {description = "Enable Timestamps", optionKey = "enableTimestamps", type = "toggle", helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui timestamp<white>' to toggle"},
-    {description = "Map Font Size", optionKey = "mapFontSize", type = "value",
-      specialAction = function() MedUI.MedMap.Console:setFontSize(tonumber(MedUI.options.mapFontSize) or 9) end, 
-      helpKey = "<white>'<yellow>medui %d <size><white>' or '<yellow>medui mapFontSize <size><white>' to adjust"},
-    {description = "Chat Font Size", optionKey = "chatFontSize", type = "value",
-      specialAction = function() MedChat.EMCOConsole:setFontSize(tonumber(MedUI.options.chatFontSize) or 8) end,
-      helpKey = "<white>'<yellow>medui %d <size><white>' or '<yellow>medui chatFontSize <size><white>' to adjust"},
-    {description = "Enable MultiPlay Module", optionKey = "enableMultiPlay", type = "toggle",
-      helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui mp<white>' to toggle"},
-    {description = "MultiPlay Gauge Mode", optionKey = "mpGaugeMode", type = "toggle",
-      specialAction = function() MPWindow.setDisplayMode(MedUI.options.mpGaugeMode) end,
-      helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui mpgauges<white>' to toggle"}
-  }
+  local optionsList = MedUI.optionsList
 
   local args = {}
   for a in arg:gmatch("%S+") do table.insert(args, a) end
@@ -665,16 +675,15 @@ function MedUI.config(arg)
 
     if selectedOption.type == "toggle" then
       -- Toggle the option
-      MedUI.options[selectedOption.optionKey] = not MedUI.options[selectedOption.optionKey]
+      MedUI.options[selectedOption.key] = not MedUI.options[selectedOption.key]
     else
       if args[2] then
-        MedUI.options[selectedOption.optionKey] = args[2]
+        MedUI.options[selectedOption.key] = args[2]
       end
 
     end
-    -- Execute any special action if defined
-    if selectedOption.specialAction then
-      selectedOption.specialAction()
+    if selectedOption.onChange then
+      selectedOption.onChange()
     end
   end
 
@@ -685,20 +694,20 @@ function MedUI.config(arg)
   for i, option in ipairs(optionsList) do
 
     if option.type == "toggle" then
-      local status = MedUI.options[option.optionKey] and YES or NO
+      local status = MedUI.options[option.key] and YES or NO
       str = string.format("%s\n<DeepSkyBlue>%2d] %-26s: %s     %s%s",
         str,
         i,
-        option.description,
+        option.label,
         status,
         (status == NO and " " or ""), -- Need extra space here because apparently strlen is broken with color tags
         string.format(option.helpKey, i))
     else
-      local value = MedUI.options[option.optionKey]
+      local value = MedUI.options[option.key]
       str = string.format("%s\n<DeepSkyBlue>%2d] %-26s: %s%s%s",
         str,
         i,
-        option.description,
+        option.label,
         value,
         string.rep(" ", 8 - string.len(tostring(value))),
         string.format(option.helpKey, i))
