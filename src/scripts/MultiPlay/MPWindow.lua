@@ -366,6 +366,10 @@ function MPWindow.buildPlayerFrame(index, player)
 
     -- Store references and cached display values to avoid redundant Geyser calls
     -- on subsequent updates
+    if index > MPWindow.gaugeFrameCount then
+        MPWindow.gaugeFrameCount = index
+    end
+
     MPWindow.gaugeFrames[index] = {
         row = row,
         nameLabel = nameLabel,
@@ -473,31 +477,45 @@ function MPWindow.updatePlayerFrame(index, player)
 end
 
 
---- Remove gauge frames that are no longer needed
+--- Remove gauge frames that are no longer needed. Tracks a high-water mark
+--- explicitly because #gaugeFrames is undefined once we punch nil holes.
+MPWindow.gaugeFrameCount = MPWindow.gaugeFrameCount or 0
+
 function MPWindow.cleanupGaugeFrames(playerCount)
-    for i = playerCount + 1, #MPWindow.gaugeFrames do
-        if MPWindow.gaugeFrames[i] and MPWindow.gaugeFrames[i].row then
-            MPWindow.gaugeFrames[i].row:hide()
+    for i = playerCount + 1, MPWindow.gaugeFrameCount do
+        local frame = MPWindow.gaugeFrames[i]
+        if frame and frame.row then
+            frame.row:hide()
             MPWindow.gaugeFrames[i] = nil
         end
     end
+    MPWindow.gaugeFrameCount = playerCount
 end
 
 
 --- Build the ordered list of rows to display: self first (if vitals known),
 --- then everyone else from MultiPlay.myForm. Filters self out of myForm in
 --- case it ever gets broadcast back to the originating profile.
+--- Reuses a single table across calls to avoid per-tick GC churn.
+MPWindow._displayList = MPWindow._displayList or {}
+
 function MPWindow.getDisplayList()
-    local list = {}
+    local list = MPWindow._displayList
+    local n = 0
     local self = MultiPlay.getSelfInfo()
     if self then
-        table.insert(list, self)
+        n = n + 1
+        list[n] = self
     end
     local selfKey = self and self.name and self.name:lower() or nil
     for _, p in ipairs(MultiPlay.myForm) do
         if not (selfKey and p.name and p.name:lower() == selfKey) then
-            table.insert(list, p)
+            n = n + 1
+            list[n] = p
         end
+    end
+    for i = #list, n + 1, -1 do
+        list[i] = nil
     end
     return list
 end
@@ -516,23 +534,28 @@ function MPWindow.UpdateGauges()
 end
 
 
---- Text console update
+--- Text console update. Build one combined string and cecho once instead of
+--- N round-trips through the MiniConsole.
 function MPWindow.UpdateConsole()
     MPWindow.console:clear()
 
-    for _, player in ipairs(MPWindow.getDisplayList()) do
+    local rows = MPWindow.getDisplayList()
+    local parts = {}
+    for i, player in ipairs(rows) do
         local hpColor = getBandLabelColor(player.hp, player.maxHp)
         local manaColor = getBandLabelColor(player.mana, player.maxMana)
         local mvColor = getBandLabelColor(player.mv, player.maxMv)
         local brColor = getBandLabelColor(player.br, 100)
-        local infoStr = string.format("<white>%-12s<blue>|<white>%3s<blue>|<white>%2d<blue>|<%s>%4d<blue>/<white>%4d<blue>hp <%s>%4d<blue>/<white>%4d<blue>m <%s>%4d<blue>mv <%s>%3d<blue>br\n",
+        parts[i] = string.format("<white>%-12s<blue>|<white>%3s<blue>|<white>%2d<blue>|<%s>%4d<blue>/<white>%4d<blue>hp <%s>%4d<blue>/<white>%4d<blue>m <%s>%4d<blue>mv <%s>%3d<blue>br\n",
             player.name, player.class, player.level,
             hpColor, player.hp, player.maxHp,
             manaColor, player.mana, player.maxMana,
             mvColor, player.mv,
             brColor, player.br)
+    end
 
-        MPWindow.console:cecho(infoStr)
+    if #parts > 0 then
+        MPWindow.console:cecho(table.concat(parts))
     end
 end
 
