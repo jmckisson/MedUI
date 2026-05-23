@@ -63,7 +63,7 @@
                         "type": "exactMatch"
                 }
         ],
-        "script": "map.prompt.exits = \"\"",
+        "script": "if map and map.prompt then map.prompt.exits = \"\" end",
         "children": [
             {
                 "name": "MedieviaExitLineTrigger",
