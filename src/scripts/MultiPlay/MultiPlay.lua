@@ -194,30 +194,43 @@ function MultiPlay.getSelfInfo()
 end
 
 
+-- Game-side cooldown for Char.Vitals.Get sometimes isn't cleared on
+-- profile reset, so the server never re-sends Char.Vitals/Char.Info and
+-- gmcp stays empty. When a caller needs those and they're missing, poke
+-- the server and retry the callback once after 0.5s.
+function MultiPlay.withGmcp(callback)
+    if gmcp and gmcp.Char and gmcp.Char.Vitals and gmcp.Char.Info then
+        callback()
+    else
+        sendGMCP("Char.Vitals.Get")
+        tempTimer(0.5, callback)
+    end
+end
+
+
 function MultiPlay.sendMyInfo()
+    MultiPlay.withGmcp(function()
+        local info = MultiPlay.getSelfInfo()
+        if not info or not info.hp then
+            return
+        end
 
-    -- GMCP might be off, or data might not be available yet
-    -- don't respond to requests if so
-    local info = MultiPlay.getSelfInfo()
-    if not info or not info.hp then
-        return
-    end
+        local last = MultiPlay.lastSent
+        if last
+            and last.name == info.name
+            and last.class == info.class
+            and last.level == info.level
+            and last.hp == info.hp and last.maxHp == info.maxHp
+            and last.mana == info.mana and last.maxMana == info.maxMana
+            and last.br == info.br and last.mv == info.mv and last.maxMv == info.maxMv then
+            return
+        end
 
-    local last = MultiPlay.lastSent
-    if last
-        and last.name == info.name
-        and last.class == info.class
-        and last.level == info.level
-        and last.hp == info.hp and last.maxHp == info.maxHp
-        and last.mana == info.mana and last.maxMana == info.maxMana
-        and last.br == info.br and last.mv == info.mv and last.maxMv == info.maxMv then
-        return
-    end
+        MultiPlay.lastSent = info
 
-    MultiPlay.lastSent = info
-
-    raiseGlobalEvent("MPInfoResponse", info.name, info.class, info.level,
-        info.hp, info.maxHp, info.mana, info.maxMana, info.br, info.mv, info.maxMv)
+        raiseGlobalEvent("MPInfoResponse", info.name, info.class, info.level,
+            info.hp, info.maxHp, info.mana, info.maxMana, info.br, info.mv, info.maxMv)
+    end)
 end
 
 
@@ -277,7 +290,7 @@ function MultiPlay.eventHandler(event, ...)
         raiseEvent("MultiPlayConsoleUpdate")
 
     elseif event == "MPTell" then
-        echo("got MPTell\n")
+        --echo("got MPTell\n")
         local message = arg[1]
         local profile = arg[2]
         if getProfileName() ~= profile then
@@ -286,25 +299,31 @@ function MultiPlay.eventHandler(event, ...)
         end
 
     elseif event == "MPTellPlayer" then
-        echo("got MPTellPlayer\n")
+        --echo("got MPTellPlayer\n")
         local player = arg[1]
         local message = arg[2]
         local profile = arg[3]
-        if player and MultiPlay.myPlayerName
-            and player:lower() == MultiPlay.myPlayerName:lower() then
-            echo(profile .. " < " .. MultiPlay.myPlayerName .. " << " .. message)
-            expandAlias(message)
-        end
+        -- myPlayerName derives from gmcp.Char.Info; without it we fall back to
+        -- the profile name and can miss tells addressed to our char name.
+        MultiPlay.withGmcp(function()
+            if player and MultiPlay.myPlayerName
+                and player:lower() == MultiPlay.myPlayerName:lower() then
+                echo(profile .. " < " .. MultiPlay.myPlayerName .. " << " .. message)
+                expandAlias(message)
+            end
+        end)
 
     elseif event == "MPTellClass" then
-        echo("got MPTellClass\n")
+        --echo("got MPTellClass\n")
         local class = arg[1]
         local message = arg[2]
         local profile = arg[3]
-        if gmcp and gmcp.Char and gmcp.Char.Info and gmcp.Char.Info.class == class then
-            echo(profile .. " < " .. class .. " << " .. message)
-            expandAlias(message)
-        end
+        MultiPlay.withGmcp(function()
+            if gmcp and gmcp.Char and gmcp.Char.Info and gmcp.Char.Info.class == class then
+                echo(profile .. " < " .. class .. " << " .. message)
+                expandAlias(message)
+            end
+        end)
 
     elseif event == "MPRequestInfo" then
         --echo("got MPRequestInfo\n")
@@ -359,10 +378,13 @@ function MultiPlay.eventHandler(event, ...)
         local targetName = arg[1]
         local missingHp = tonumber(arg[2])
 
-        -- Only Clerics respond to smart heal requests
-        if MultiPlay.myClass == "Cleric" then
-            MultiPlay.smartHeal(targetName, missingHp)
-        end
+        -- myClass derives from gmcp.Char.Info; without it we silently skip
+        -- heal requests even on a Cleric profile.
+        MultiPlay.withGmcp(function()
+            if MultiPlay.myClass == "Cleric" then
+                MultiPlay.smartHeal(targetName, missingHp)
+            end
+        end)
 
     end
 end
