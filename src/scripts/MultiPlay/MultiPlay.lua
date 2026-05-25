@@ -62,7 +62,15 @@ function MultiPlay.tellGroup(group, command)
     end
 end
 
+-- The TellOthers alias regex (^\-(.*)$) also matches class-prefix lines like
+-- "-m stat", so Mudlet fires both TellClass and TellOthers for the same input.
+-- TellClass runs first (earlier in aliases.json) and sets this flag; tellOthers
+-- clears it and bails out so the class command isn't double-sent to everyone.
 function MultiPlay.tellOthers(command)
+    if MultiPlay._suppressTellOthers then
+        MultiPlay._suppressTellOthers = false
+        return
+    end
     echo(MultiPlay.myPlayerName .. " > Others >> " .. command .. "\n")
     raiseGlobalEvent("MPTell", command)
 end
@@ -80,6 +88,7 @@ function MultiPlay.tellClass(class, command)
     end
     echo(MultiPlay.myPlayerName .. " > " .. classStr .. " >> " .. command .. "\n")
     raiseGlobalEvent("MPTellClass", classStr, command)
+    MultiPlay._suppressTellOthers = true
 end
 
 function MultiPlay.requestInfo()
@@ -268,29 +277,32 @@ function MultiPlay.eventHandler(event, ...)
         raiseEvent("MultiPlayConsoleUpdate")
 
     elseif event == "MPTell" then
+        echo("got MPTell\n")
         local message = arg[1]
         local profile = arg[2]
         if getProfileName() ~= profile then
-            echo(profile .. " >> " .. message)
+            echo(profile .. " << " .. message)
             expandAlias(message)
         end
 
     elseif event == "MPTellPlayer" then
+        echo("got MPTellPlayer\n")
         local player = arg[1]
         local message = arg[2]
         local profile = arg[3]
         if player and MultiPlay.myPlayerName
             and player:lower() == MultiPlay.myPlayerName:lower() then
-            echo(profile .. " >> " .. message)
+            echo(profile .. " < " .. MultiPlay.myPlayerName .. " << " .. message)
             expandAlias(message)
         end
 
     elseif event == "MPTellClass" then
+        echo("got MPTellClass\n")
         local class = arg[1]
         local message = arg[2]
         local profile = arg[3]
         if gmcp and gmcp.Char and gmcp.Char.Info and gmcp.Char.Info.class == class then
-            echo(profile .. " >> " .. message)
+            echo(profile .. " < " .. class .. " << " .. message)
             expandAlias(message)
         end
 
