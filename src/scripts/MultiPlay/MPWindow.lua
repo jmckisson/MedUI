@@ -29,6 +29,7 @@ end
     })
 
     MPWindow.window:setTitle("MultiPlay Stats")
+    if MedUI and MedUI.persistOnClose then MedUI.persistOnClose(MPWindow.window) end
 
     -- Text mode console
     MPWindow.console = MPWindow.console or Geyser.MiniConsole:new({

@@ -298,6 +298,19 @@ function MedUI.showUI()
   cecho("\n<DeepSkyBlue>MedUI: UI restored.\n")
 end
 
+-- Overrides the X-button on an AdjustableContainer to persist the hidden
+-- state immediately. AdjCont's built-in autoSave only fires on sysExitEvent,
+-- so closing a panel and then resetProfile-ing would reload the old visible
+-- state — call save() right after hiding so the new state hits disk.
+function MedUI.persistOnClose(adjCont)
+  if not adjCont or not adjCont.exitLabel then return end
+  adjCont.exitLabel:setClickCallback(function()
+    adjCont:hide()
+    adjCont:adjustBorder()
+    adjCont:save()
+  end)
+end
+
 -- Force-restore the Map / Chat / MultiPlay AdjustableContainers. Used after
 -- the user has X-closed one (which persists across sessions via AdjCont
 -- autoSave) and wants it back. Gauges are not touched — toggle those via
@@ -310,6 +323,9 @@ function MedUI.showAll()
     cont.hidden = false
     cont.auto_hidden = false
     cont:show()
+    -- Persist the restored state immediately so a resetProfile right after
+    -- showall doesn't reload the old hidden state.
+    if cont.save then cont:save() end
   end
 
   forceShow(MedUI.MedMap and MedUI.MedMap.AdjCont)
@@ -595,6 +611,7 @@ function MedUI.InitUI()
     MedUI.MedMap.AdjCont:show()
   end
   MedUI.MedMap.AdjCont:lockContainer("light")
+  MedUI.persistOnClose(MedUI.MedMap.AdjCont)
 
   -- Gauge and Buffs containers
   MedBuffsNBars.Bottom = Geyser.Label:new({
