@@ -6,32 +6,32 @@ Dialog.isOpen = false
 Dialog.rows = Dialog.rows or {}
 
 local DIALOG_WIDTH = 560
-local DIALOG_HEIGHT = 470
+local DIALOG_HEIGHT = 550
 local TITLE_HEIGHT = 44
 local ROW_HEIGHT = 38
 local SIDE_PAD = 18
 
-local function panelCSS()
-  return [[
+local function panelCSS(t)
+  return string.format([[
     background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
       stop:0 rgba(38, 38, 44, 245), stop:1 rgba(22, 22, 26, 245));
-    border: 2px solid #8b1a1a;
+    border: 2px solid %s;
     border-radius: 10px;
-  ]]
+  ]], t.accent)
 end
 
 local function backdropCSS()
   return [[background-color: rgba(0, 0, 0, 140);]]
 end
 
-local function titleCSS()
-  return [[
+local function titleCSS(t)
+  return string.format([[
     background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-      stop:0 #6b0f0f, stop:1 #3a0808);
+      stop:0 %s, stop:1 %s);
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
-    border-bottom: 1px solid #8b1a1a;
-  ]]
+    border-bottom: 1px solid %s;
+  ]], t.accentMid, t.accentDark, t.accent)
 end
 
 local function rowCSS()
@@ -120,22 +120,42 @@ local function closeXHoverCSS()
   ]]
 end
 
-local function footerButtonCSS()
-  return [[
+local function footerButtonCSS(t)
+  return string.format([[
     background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-      stop:0 #6b0f0f, stop:1 #3a0808);
-    border: 1px solid #8b1a1a;
+      stop:0 %s, stop:1 %s);
+    border: 1px solid %s;
     border-radius: 6px;
-  ]]
+  ]], t.accentMid, t.accentDark, t.accent)
 end
 
-local function footerButtonHoverCSS()
-  return [[
+local function footerButtonHoverCSS(t)
+  return string.format([[
     background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-      stop:0 #8a1818, stop:1 #4a0a0a);
-    border: 1px solid #c46666;
+      stop:0 %s, stop:1 %s);
+    border: 1px solid %s;
     border-radius: 6px;
-  ]]
+  ]], t.hoverMid, t.hoverDark, t.hoverBorder)
+end
+
+local function swatchCSS(hex)
+  return string.format([[
+    background-color: %s;
+    border: 1px solid rgba(255, 255, 255, 80);
+    border-radius: 4px;
+  ]], hex)
+end
+
+local function cmdLineCSS(t)
+  return string.format([[QLineEdit {
+    background-color: rgba(0, 0, 0, 160);
+    color: #ffffff;
+    border: 1px solid %s;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-family: 'Bitstream Vera Sans';
+    font-size: 10pt;
+  }]], t.accent)
 end
 
 local function htmlLabel(text, sizePt, color, align, bold)
@@ -198,6 +218,30 @@ function Dialog.refreshRow(key)
   end
 end
 
+function Dialog.onThemeStep(delta)
+  local order = MedUI.themeOrder
+  local current = MedUI.options.theme or "warrior"
+  local idx = 1
+  for i, k in ipairs(order) do if k == current then idx = i break end end
+  idx = ((idx - 1 + delta) % #order) + 1
+  MedUI.options.theme = order[idx]
+  MedUI.saveOptions(true)
+  Dialog.reopen()
+end
+
+function Dialog.onColorSubmit(text)
+  local hex = MedUI.normalizeHex(text)
+  if not hex then
+    cecho(string.format("\n<red>MedUI: '%s' is not a valid hex color (expected #RRGGBB)\n", tostring(text)))
+    Dialog.reopen()
+    return
+  end
+  MedUI.options.customColor = hex
+  MedUI.options.theme = "custom"
+  MedUI.saveOptions(true)
+  Dialog.reopen()
+end
+
 local function setHoverable(label, normalCSS, hoverCSS)
   label:setStyleSheet(normalCSS)
   label:setOnEnter(function()
@@ -220,22 +264,20 @@ local function setHoverable(label, normalCSS, hoverCSS)
   end)
 end
 
-local function buildRow(parent, yPx, option)
-  local row = {type = option.type, key = option.key}
-
+local function buildBaseRow(parent, yPx, key, label)
   local rowBgHeight = ROW_HEIGHT - 6
   local ctlHeight = 20
   local ctlY = math.floor((rowBgHeight - ctlHeight) / 2)
 
   local rowBg = Geyser.Label:new({
-    name = "MedUIOptRow_" .. option.key,
+    name = "MedUIOptRow_" .. key,
     x = SIDE_PAD, y = yPx,
     width = DIALOG_WIDTH - (SIDE_PAD * 2), height = rowBgHeight,
   }, parent)
   rowBg:setStyleSheet(rowCSS())
 
   local nameLabel = Geyser.Label:new({
-    name = "MedUIOptName_" .. option.key,
+    name = "MedUIOptName_" .. key,
     x = 12, y = 0,
     width = 360, height = "100%",
   }, rowBg)
@@ -244,7 +286,94 @@ local function buildRow(parent, yPx, option)
     qproperty-alignment: 'AlignVCenter | AlignLeft';
     padding-left: 4px;
   ]])
-  nameLabel:echo(htmlLabel(option.label, 10, "#e6e6e6", "left", false))
+  nameLabel:echo(htmlLabel(label, 10, "#e6e6e6", "left", false))
+
+  return rowBg, rowBgHeight, ctlHeight, ctlY
+end
+
+local function buildThemeRow(parent, yPx)
+  local row = {type = "theme", key = "theme"}
+  local rowBg, _, ctlHeight, ctlY = buildBaseRow(parent, yPx, "theme", "Color Theme")
+
+  local btnW = 22
+  local swatchW = 16
+  local nameW = 86
+  local groupW = btnW + swatchW + 4 + nameW + 4 + btnW
+  local startX = -(groupW + 12)
+
+  local prev = Geyser.Label:new({
+    name = "MedUIOptThemePrev",
+    x = startX, y = ctlY,
+    width = btnW, height = ctlHeight,
+  }, rowBg)
+  prev:echo(htmlLabel("&#9664;", 9, "#ffffff", "center", true))
+  prev:setClickCallback("MedUI.OptionsDialog.onThemeStep", -1)
+  setHoverable(prev, stepperButtonCSS(), stepperButtonHoverCSS())
+
+  local theme = MedUI.getTheme()
+
+  local swatch = Geyser.Label:new({
+    name = "MedUIOptThemeSwatch",
+    x = startX + btnW + 4, y = ctlY + 2,
+    width = swatchW, height = ctlHeight - 4,
+  }, rowBg)
+  swatch:setStyleSheet(swatchCSS(theme.accent))
+
+  local nameLabel = Geyser.Label:new({
+    name = "MedUIOptThemeName",
+    x = startX + btnW + 4 + swatchW + 4, y = ctlY,
+    width = nameW, height = ctlHeight,
+  }, rowBg)
+  nameLabel:setStyleSheet(valueDisplayCSS())
+  nameLabel:echo(htmlLabel(theme.label, 10, "#ffffff", "center", true))
+
+  local next_ = Geyser.Label:new({
+    name = "MedUIOptThemeNext",
+    x = startX + btnW + 4 + swatchW + 4 + nameW + 4, y = ctlY,
+    width = btnW, height = ctlHeight,
+  }, rowBg)
+  next_:echo(htmlLabel("&#9654;", 9, "#ffffff", "center", true))
+  next_:setClickCallback("MedUI.OptionsDialog.onThemeStep", 1)
+  setHoverable(next_, stepperButtonCSS(), stepperButtonHoverCSS())
+
+  return row
+end
+
+local function buildColorRow(parent, yPx)
+  local row = {type = "color", key = "customColor"}
+  local rowBg, _, ctlHeight, ctlY = buildBaseRow(parent, yPx, "customColor", "Custom Color (hex)")
+
+  local swatchW = 16
+  local inputW = 110
+  local groupW = swatchW + 4 + inputW
+  local startX = -(groupW + 12)
+
+  local theme = MedUI.getTheme()
+  local current = MedUI.normalizeHex(MedUI.options.customColor) or "#8b1a1a"
+
+  local swatch = Geyser.Label:new({
+    name = "MedUIOptColorSwatch",
+    x = startX, y = ctlY + 2,
+    width = swatchW, height = ctlHeight - 4,
+  }, rowBg)
+  swatch:setStyleSheet(swatchCSS(current))
+
+  local input = Geyser.CommandLine:new({
+    name = "MedUIOptColorInput",
+    x = startX + swatchW + 4, y = ctlY,
+    width = inputW, height = ctlHeight,
+  }, rowBg)
+  input:setStyleSheet(cmdLineCSS(theme))
+  input:print(current)
+  input:setAction("MedUI.OptionsDialog.onColorSubmit")
+
+  row.input = input
+  return row
+end
+
+local function buildRow(parent, yPx, option)
+  local row = {type = option.type, key = option.key}
+  local rowBg, _, ctlHeight, ctlY = buildBaseRow(parent, yPx, option.key, option.label)
 
   if option.type == "toggle" then
     local on = MedUI.options[option.key] and true or false
@@ -304,6 +433,12 @@ local function buildRow(parent, yPx, option)
 end
 
 function Dialog.close()
+  -- Geyser.CommandLine wraps a separately-created command-line widget that
+  -- isn't torn down by the parent Label's :delete(). Remove it explicitly.
+  local colorRow = Dialog.rows and Dialog.rows.customColor
+  if colorRow and colorRow.input then
+    colorRow.input:type_delete()
+  end
   if Dialog.backdrop then
     Dialog.backdrop:hide()
     Dialog.backdrop:delete()
@@ -322,6 +457,8 @@ function Dialog.open()
     return
   end
 
+  local theme = MedUI.getTheme()
+
   local sw, sh = getMainWindowSize()
   local dx = math.floor((sw - DIALOG_WIDTH) / 2)
   local dy = math.floor((sh - DIALOG_HEIGHT) / 2)
@@ -339,7 +476,7 @@ function Dialog.open()
     x = dx, y = dy,
     width = DIALOG_WIDTH, height = DIALOG_HEIGHT,
   }, Dialog.backdrop)
-  Dialog.panel:setStyleSheet(panelCSS())
+  Dialog.panel:setStyleSheet(panelCSS(theme))
   Dialog.panel:setClickCallback(eatClick)
 
   local title = Geyser.Label:new({
@@ -347,7 +484,7 @@ function Dialog.open()
     x = 0, y = 0,
     width = "100%", height = TITLE_HEIGHT,
   }, Dialog.panel)
-  title:setStyleSheet(titleCSS())
+  title:setStyleSheet(titleCSS(theme))
   title:echo(htmlLabel("MedUI Options &mdash; v" .. tostring(MedUI.version), 12, "#ffd9a0", "center", true))
 
   local closeX = Geyser.Label:new({
@@ -363,10 +500,15 @@ function Dialog.open()
 
   local options = MedUI.optionsList
   local startY = TITLE_HEIGHT + 14
+  local nextY = startY
   for i, option in ipairs(options) do
     local yPx = startY + ((i - 1) * ROW_HEIGHT)
     Dialog.rows[option.key] = buildRow(Dialog.panel, yPx, option)
+    nextY = yPx + ROW_HEIGHT
   end
+
+  Dialog.rows.theme = buildThemeRow(Dialog.panel, nextY)
+  Dialog.rows.customColor = buildColorRow(Dialog.panel, nextY + ROW_HEIGHT)
 
   local closeBtn = Geyser.Label:new({
     name = "MedUIOptCloseBtn",
@@ -375,7 +517,7 @@ function Dialog.open()
   }, Dialog.panel)
   closeBtn:echo(htmlLabel("Close", 10, "#ffffff", "center", true))
   closeBtn:setClickCallback("MedUI.OptionsDialog.close")
-  setHoverable(closeBtn, footerButtonCSS(), footerButtonHoverCSS())
+  setHoverable(closeBtn, footerButtonCSS(theme), footerButtonHoverCSS(theme))
 
   Dialog.backdrop:show()
   Dialog.isOpen = true
@@ -383,6 +525,13 @@ end
 
 function Dialog.toggle()
   if Dialog.isOpen then Dialog.close() else Dialog.open() end
+end
+
+function Dialog.reopen()
+  if Dialog.isOpen then
+    Dialog.close()
+    Dialog.open()
+  end
 end
 
 if MedUI.optionsDialogAlias then

@@ -87,6 +87,8 @@ MedUI = MedUI or {
     chatFontSize = 8,
     enableMultiPlay = false,
     mpGaugeMode = false,
+    theme = "warrior",
+    customColor = "#8b1a1a",
   },
   affTable = {
     ["Armor"]                 = "armor",
@@ -114,6 +116,77 @@ MedUI = MedUI or {
   --Use with getMudletHomeDir() to get full path
   iconLocation = "/MedUI"
 }
+
+-- Theme presets keyed by class. Each theme is a single accent hex; the rest of
+-- the palette (gradients, borders, hover states) is derived from it.
+MedUI.themes = {
+  warrior = {label = "Warrior", accent = "#8b1a1a"},
+  cleric  = {label = "Cleric",  accent = "#1f8b1a"},
+  mage    = {label = "Mage",    accent = "#1a4b8b"},
+  thief   = {label = "Thief",   accent = "#c47118"},
+  custom  = {label = "Custom",  accent = nil}, -- accent comes from options.customColor
+}
+
+MedUI.themeOrder = {"warrior", "cleric", "mage", "thief", "custom"}
+
+local function hexToRGB(hex)
+  hex = (hex or ""):gsub("#", "")
+  if #hex ~= 6 then return 139, 26, 26 end -- fallback to warrior red
+  local r = tonumber(hex:sub(1, 2), 16) or 0
+  local g = tonumber(hex:sub(3, 4), 16) or 0
+  local b = tonumber(hex:sub(5, 6), 16) or 0
+  return r, g, b
+end
+
+local function rgbToHex(r, g, b)
+  return string.format("#%02x%02x%02x",
+    math.max(0, math.min(255, math.floor(r))),
+    math.max(0, math.min(255, math.floor(g))),
+    math.max(0, math.min(255, math.floor(b))))
+end
+
+local function darken(hex, factor)
+  local r, g, b = hexToRGB(hex)
+  return rgbToHex(r * factor, g * factor, b * factor)
+end
+
+local function lighten(hex, factor)
+  local r, g, b = hexToRGB(hex)
+  return rgbToHex(r + (255 - r) * factor,
+                  g + (255 - g) * factor,
+                  b + (255 - b) * factor)
+end
+
+function MedUI.isValidHex(hex)
+  if type(hex) ~= "string" then return false end
+  return hex:match("^#?%x%x%x%x%x%x$") ~= nil
+end
+
+function MedUI.normalizeHex(hex)
+  if not MedUI.isValidHex(hex) then return nil end
+  if hex:sub(1, 1) ~= "#" then hex = "#" .. hex end
+  return string.lower(hex)
+end
+
+-- Returns the resolved palette for the currently selected theme.
+function MedUI.getTheme()
+  local key = MedUI.options.theme or "warrior"
+  local preset = MedUI.themes[key] or MedUI.themes.warrior
+  local accent = preset.accent
+  if key == "custom" then
+    accent = MedUI.normalizeHex(MedUI.options.customColor) or "#8b1a1a"
+  end
+  return {
+    key = key,
+    label = preset.label,
+    accent = accent,
+    accentMid = darken(accent, 0.75),
+    accentDark = darken(accent, 0.4),
+    hoverBorder = lighten(accent, 0.45),
+    hoverMid = lighten(accent, 0.1),
+    hoverDark = darken(accent, 0.55),
+  }
+end
 
 -- Canonical options definition. Read by both MedUI.config() (text mode)
 -- and MedUI.OptionsDialog (GUI). Keep this as the single source of truth.
@@ -795,6 +868,10 @@ function MedUI.loadOptions()
     mpGroups = {}
   }
 
+  -- Backfill defaults for options added after this character's save file was written.
+  if MedUI.options.theme == nil then MedUI.options.theme = "warrior" end
+  if MedUI.options.customColor == nil then MedUI.options.customColor = "#8b1a1a" end
+
   -- Share the persisted groups table with MultiPlay so any mutation lands in
   -- MedUI.options and gets written by the next saveOptions() call.
   MedUI.options.mpGroups = MedUI.options.mpGroups or {}
@@ -945,6 +1022,35 @@ if MedUI.mpGaugesAlias then
 end
 
 MedUI.mpGaugesAlias = tempAlias("^medui mpgauges$", [[MedUI.config("7")]])
+
+-- `medui theme <arg>` — arg is either a class name (warrior/cleric/mage/thief)
+-- or a hex color (#RRGGBB / RRGGBB), which selects the Custom theme.
+function MedUI.setTheme(arg)
+  arg = arg or ""
+  local hex = MedUI.normalizeHex(arg)
+  if hex then
+    MedUI.options.customColor = hex
+    MedUI.options.theme = "custom"
+    cecho(string.format("\n<DeepSkyBlue>MedUI: custom theme set to <yellow>%s\n", hex))
+  else
+    local name = string.lower(arg)
+    if not MedUI.themes[name] or name == "custom" then
+      cecho(string.format(
+        "\n<red>MedUI: unknown theme '%s'. Use warrior, cleric, mage, thief, or a #RRGGBB hex color.\n",
+        arg))
+      return
+    end
+    MedUI.options.theme = name
+    cecho(string.format("\n<DeepSkyBlue>MedUI: theme set to <yellow>%s\n", MedUI.themes[name].label))
+  end
+  MedUI.saveOptions(true)
+  if MedUI.OptionsDialog and MedUI.OptionsDialog.isOpen then
+    MedUI.OptionsDialog.reopen()
+  end
+end
+
+if MedUI.themeAlias then killAlias(MedUI.themeAlias) end
+MedUI.themeAlias = tempAlias("^medui theme (\\S+)$", [[MedUI.setTheme(matches[2])]])
 
 MedUI.charName = string.lower(getProfileName())
 
