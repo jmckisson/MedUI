@@ -48,7 +48,12 @@ local function medieviaTabbedChat_InitMedChat()
   }, MedChat.AdjCont)
 
   MedChat.AdjCont:connectToBorder("right")
-  MedChat.AdjCont:show()
+  -- Respect the autoloaded hidden state — if the user closed the chat AdjCont
+  -- via its X button last session, leave it closed (use `medui showall` to
+  -- bring it back). The AdjCont is shown by default for fresh installs.
+  if not MedChat.AdjCont.hidden then
+    MedChat.AdjCont:show()
+  end
   MedChat.AdjCont:lockContainer("light")
 
   -- Initialize MMCP tab if our client supports MMCP (MudMaster Chat Protocol)

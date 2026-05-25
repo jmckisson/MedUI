@@ -448,7 +448,37 @@ function Dialog.close()
   end
   Dialog.panel = nil
   Dialog.rows = {}
+  Dialog.dragging = false
   Dialog.isOpen = false
+end
+
+-- Title-bar drag handlers. The panel follows the cursor; because the title
+-- moves with the panel, mouse-move events keep firing on it during a drag.
+function Dialog.onTitleClick(event)
+  if not event or not Dialog.panel then return end
+  -- Skip when the click lands on the close X (last ~50px of the title).
+  if event.x and event.x > DIALOG_WIDTH - 50 then return end
+  -- Left-button only.
+  if event.button and event.button ~= "LeftButton" then return end
+  Dialog.dragging = true
+  Dialog.dragOffsetX = event.globalX - Dialog.panel:get_x()
+  Dialog.dragOffsetY = event.globalY - Dialog.panel:get_y()
+end
+
+function Dialog.onTitleRelease()
+  Dialog.dragging = false
+end
+
+function Dialog.onTitleMove(event)
+  if not Dialog.dragging or not Dialog.panel or not event then return end
+  local sw, sh = getMainWindowSize()
+  local newX = event.globalX - (Dialog.dragOffsetX or 0)
+  local newY = event.globalY - (Dialog.dragOffsetY or 0)
+  if newX < 0 then newX = 0 end
+  if newY < 0 then newY = 0 end
+  if newX > sw - DIALOG_WIDTH then newX = sw - DIALOG_WIDTH end
+  if newY > sh - DIALOG_HEIGHT then newY = sh - DIALOG_HEIGHT end
+  Dialog.panel:move(newX, newY)
 end
 
 local function eatClick() end
@@ -487,7 +517,10 @@ function Dialog.open()
     width = "100%", height = TITLE_HEIGHT,
   }, Dialog.panel)
   title:setStyleSheet(titleCSS(theme))
-  title:echo(htmlLabel("MedUI Options &mdash; v" .. tostring(MedUI.version), 12, "#ffd9a0", "center", true))
+  title:echo(htmlLabel("MedUI Options &mdash; v" .. tostring(MedUI.version) .. "  (drag to move)", 12, "#ffd9a0", "center", true))
+  title:setClickCallback("MedUI.OptionsDialog.onTitleClick")
+  title:setReleaseCallback("MedUI.OptionsDialog.onTitleRelease")
+  title:setMoveCallback("MedUI.OptionsDialog.onTitleMove")
 
   local closeX = Geyser.Label:new({
     name = "MedUIOptCloseX",

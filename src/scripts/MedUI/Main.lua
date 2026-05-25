@@ -298,6 +298,36 @@ function MedUI.showUI()
   cecho("\n<DeepSkyBlue>MedUI: UI restored.\n")
 end
 
+-- Force-restore the Map / Chat / MultiPlay AdjustableContainers. Used after
+-- the user has X-closed one (which persists across sessions via AdjCont
+-- autoSave) and wants it back. Gauges are not touched — toggle those via
+-- `medui gauges`.
+function MedUI.showAll()
+  local function forceShow(cont)
+    if not cont then return end
+    -- Clear both flags so :show() actually triggers show_impl (see
+    -- Geyser.Container:show — it gates show_impl on both being false).
+    cont.hidden = false
+    cont.auto_hidden = false
+    cont:show()
+  end
+
+  forceShow(MedUI.MedMap and MedUI.MedMap.AdjCont)
+  forceShow(MedChat and MedChat.AdjCont)
+  if MedUI.options.enableMultiPlay then
+    forceShow(MPWindow and MPWindow.window)
+  end
+
+  -- Re-establish the right border now that map/chat are visible again.
+  if MedUI.MedMap and MedChat and MedUI.MedMap.AdjCont and MedChat.AdjCont
+     and not MedUI.MedMap.AdjCont.hidden and not MedChat.AdjCont.hidden then
+    local w, _ = getMainWindowSize()
+    setBorderRight(w/3.3)
+  end
+
+  cecho("\n<DeepSkyBlue>MedUI: all panels restored.\n")
+end
+
 function MedUI.applyThemeToAllAdjContainers(force)
   local accent = MedUI.getTheme().accent
   if not force and accent == MedUI._lastAppliedAccent then return end
@@ -558,7 +588,12 @@ function MedUI.InitUI()
 
   MedUI.MedMap.Console:setFont("Medievia Mudlet Sans Mono")
   MedUI.MedMap.AdjCont:connectToBorder("right")
-  MedUI.MedMap.AdjCont:show()
+  -- Respect the autoloaded hidden state — if the user closed the map AdjCont
+  -- via its X button last session, leave it closed (use `medui showall` to
+  -- bring it back). The AdjCont is shown by default for fresh installs.
+  if not MedUI.MedMap.AdjCont.hidden then
+    MedUI.MedMap.AdjCont:show()
+  end
   MedUI.MedMap.AdjCont:lockContainer("light")
 
   -- Gauge and Buffs containers
@@ -835,9 +870,13 @@ function MedUI.config(arg)
   -- The `medui options` alias handles the popup dialog; suppress the text page here.
   if arg == "options" then return end
 
-  -- `medui hide` / `medui show` have dedicated aliases; suppress the catch-all
-  -- options dump so the only output is the hide/show confirmation.
-  if arg == "hide" or arg == "show" then return end
+  -- `medui hide` / `medui show` / `medui showall` have dedicated aliases;
+  -- suppress the catch-all options dump so the only output is the action's
+  -- own confirmation.
+  if arg == "hide" or arg == "show" or arg == "showall" then return end
+
+  -- `medui help` is handled by its dedicated alias.
+  if arg == "help" then return end
 
   if arg and arg ~= " " then
     local cols = getColumnCount("main")
@@ -924,6 +963,76 @@ function MedUI.config(arg)
 
   if arg and arg ~= "" then
     MedUI.saveOptions()
+  end
+end
+
+-- `medui help` — render the same config screen as bare `medui`, then
+-- print a reference of every MedUI alias / keybinding underneath.
+function MedUI.help()
+  MedUI.config("")
+
+  local sections = {
+    {"MedUI Aliases", {
+      {"medui",                     "Display config and options"},
+      {"medui help",                "Show this help screen"},
+      {"medui options",             "Open the GUI options dialog"},
+      {"medui hide / medui show",   "Hide or restore the MedUI panels"},
+      {"medui showall",             "Re-open Map/Chat/MP windows you closed via their X"},
+      {"medui theme <name|#hex>",   "Set theme (warrior/cleric/mage/thief/#RRGGBB)"},
+      {"medui gauges",              "Toggle HP/MP/MV/BR gauges"},
+      {"medui inlinemap",           "Toggle keeping inline maps in the main window"},
+      {"medui timestamp",           "Toggle chat timestamps"},
+      {"medui mapFontSize <n>",     "Set map font size"},
+      {"medui chatFontSize <n>",    "Set chat font size"},
+      {"medui mp",                  "Toggle the MultiPlay module"},
+      {"medui mpgauges",            "Toggle MultiPlay gauge display mode"},
+      {"medui autotheme",           "Toggle auto-detecting theme from class"},
+    }},
+    {"General", {
+      {"/<N> <cmd>",                "Repeat <cmd> N times ('#' is replaced with the index)"},
+    }},
+    {"MedChat (MMCP)", {
+      {"chatList",                  "List chat connections"},
+      {"chatCall <host>[:<port>]",  "Call a chat host (default port 4050)"},
+      {"chatName <name>",           "Set your chat name"},
+      {"chatAll <msg>",             "Broadcast to all chat connections"},
+      {"chatTo <name> <msg>",       "Private message a chat connection"},
+      {"emoteAll <msg>",            "Emote to all chat connections"},
+      {"chatPing <name>",           "Ping a chat connection"},
+      {"cg <group> <msg>",          "Chat to a chat group"},
+      {"setGroup <name> [members]", "Define a chat group"},
+      {"chatIgnore <name>",         "Ignore a chat connection"},
+      {"chatPeek <name>",           "Peek a chat connection"},
+      {"chatSnoop <name>",          "Snoop a chat connection"},
+      {"chatAllowSnoop <name>",     "Allow someone to snoop you"},
+      {"unChat <name>",             "Disconnect from a chat"},
+      --{"startServer [<port>]",      "Start a chat server"},
+      --{"stopServer",                "Stop the chat server"},
+    }},
+    {"MultiPlay (between Mudlet profiles)", {
+      {"+<cmd>",                    "Send <cmd> to all profiles (including self)"},
+      {"-<cmd>",                    "Send <cmd> to all other profiles"},
+      {"-<w|m|t|c> <cmd>",          "Send to one class (warrior/mage/thief/cleric)"},
+      {"#<group> <cmd>",            "Send <cmd> to a MultiPlay group"},
+      {"#+g <group>",               "Create a MultiPlay group"},
+      {"#+a <group> <player>",      "Add a player to a MultiPlay group"},
+      {"#?",                        "Show MultiPlay groups"},
+    }},
+    {"Keybindings (Numpad)", {
+      {"Arrows, Keypad 8/2/6/4",          "n/s/e/w movement"},
+      {"Home / End, Keypad 7/1",          "up / down movement"},
+      {"Ctrl+Arrows, or Keypad",          "Ethereal movement (c eth n/s/e/w)"},
+      {"Ctrl+Home / Ctrl+End, or Keypad", "Ethereal up / down"},
+      {"Clear, Keypad 5",                 "scan"},
+      {"F3",                              "c s me"},
+    }},
+  }
+
+  for _, section in ipairs(sections) do
+    cecho(string.format("\n<DeepSkyBlue>%s:\n", section[1]))
+    for _, row in ipairs(section[2]) do
+      cecho(string.format("<DeepSkyBlue>  <yellow>%-27s<DeepSkyBlue> %s\n", row[1], row[2]))
+    end
   end
 end
 
@@ -1173,6 +1282,12 @@ MedUI.hideAlias = tempAlias("^medui hide$", [[MedUI.hideUI()]])
 
 if MedUI.showAlias then killAlias(MedUI.showAlias) end
 MedUI.showAlias = tempAlias("^medui show$", [[MedUI.showUI()]])
+
+if MedUI.showAllAlias then killAlias(MedUI.showAllAlias) end
+MedUI.showAllAlias = tempAlias("^medui showall$", [[MedUI.showAll()]])
+
+if MedUI.helpAlias then killAlias(MedUI.helpAlias) end
+MedUI.helpAlias = tempAlias("^medui help$", [[MedUI.help()]])
 
 -- `medui theme <arg>` — arg is either a class name (warrior/cleric/mage/thief)
 -- or a hex color (#RRGGBB / RRGGBB), which selects the Custom theme.
