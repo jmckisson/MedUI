@@ -89,6 +89,7 @@ MedUI = MedUI or {
     mpGaugeMode = false,
     theme = "warrior",
     customColor = "#8b1a1a",
+    autoDetectTheme = false,
   },
   affTable = {
     ["Armor"]                 = "armor",
@@ -241,6 +242,9 @@ MedUI.optionsList = {
   {key = "mpGaugeMode",      label = "MultiPlay Gauge Mode",   type = "toggle",
     onChange = function() if MPWindow then MPWindow.setDisplayMode(MedUI.options.mpGaugeMode) end end,
     helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui mpgauges<white>' to toggle"},
+  {key = "autoDetectTheme",  label = "Auto-Detect Theme",      type = "toggle",
+    onChange = function() if MedUI.options.autoDetectTheme then MedUI.applyClassTheme() end end,
+    helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui autotheme<white>' to toggle"},
 }
 
 MedUI.buffIconTable = {
@@ -911,6 +915,7 @@ function MedUI.loadOptions()
   -- Backfill defaults for options added after this character's save file was written.
   if MedUI.options.theme == nil then MedUI.options.theme = "warrior" end
   if MedUI.options.customColor == nil then MedUI.options.customColor = "#8b1a1a" end
+  if MedUI.options.autoDetectTheme == nil then MedUI.options.autoDetectTheme = false end
 
   -- Share the persisted groups table with MultiPlay so any mutation lands in
   -- MedUI.options and gets written by the next saveOptions() call.
@@ -967,6 +972,8 @@ function MedUI.eventHandler(event, ...)
         stopNamedEventHandler("MedUI", "MedUILoad")
         stopNamedEventHandler("MedUI", "MedUIInstall")
         stopNamedEventHandler("MedUI", "MedUIUninstall")
+        stopNamedEventHandler("MedUI", "MedLoginHandler")
+        stopNamedEventHandler("MedUI", "MedClassThemeHandler")
         stopNamedEventHandler("MedUI", "MedBuffsNBars")
         if MedChat and MedChat.AdjCont then
           MedChat.AdjCont:delete()
@@ -1063,6 +1070,9 @@ end
 
 MedUI.mpGaugesAlias = tempAlias("^medui mpgauges$", [[MedUI.config("7")]])
 
+if MedUI.autoThemeAlias then killAlias(MedUI.autoThemeAlias) end
+MedUI.autoThemeAlias = tempAlias("^medui autotheme$", [[MedUI.config("8")]])
+
 -- `medui theme <arg>` — arg is either a class name (warrior/cleric/mage/thief)
 -- or a hex color (#RRGGBB / RRGGBB), which selects the Custom theme.
 function MedUI.setTheme(arg)
@@ -1093,6 +1103,32 @@ end
 if MedUI.themeAlias then killAlias(MedUI.themeAlias) end
 MedUI.themeAlias = tempAlias("^medui theme (\\S+)$", [[MedUI.setTheme(matches[2])]])
 
+-- Maps gmcp.Char.Info.class values to theme keys. Unknown classes are ignored
+-- (auto-detect leaves the current theme alone rather than guessing).
+MedUI.classToTheme = {
+  warrior = "warrior",
+  cleric  = "cleric",
+  mage    = "mage",
+  thief   = "thief",
+}
+
+-- Fires from the gmcp.Char.Info handler. Silent (no cecho) since this runs
+-- automatically on each Char.Info push — log spam is not what we want.
+function MedUI.applyClassTheme()
+  if not MedUI.options or not MedUI.options.autoDetectTheme then return end
+  if not gmcp or not gmcp.Char or not gmcp.Char.Info then return end
+  local class = gmcp.Char.Info.class
+  if type(class) ~= "string" then return end
+  local key = MedUI.classToTheme[string.lower(class)]
+  if not key or MedUI.options.theme == key then return end
+  MedUI.options.theme = key
+  MedUI.saveOptions(true)
+  MedUI.applyThemeToAllAdjContainers()
+  if MedUI.OptionsDialog and MedUI.OptionsDialog.isOpen then
+    MedUI.OptionsDialog.reopen()
+  end
+end
+
 MedUI.charName = string.lower(getProfileName())
 
 local setupComplete = false
@@ -1114,3 +1150,4 @@ function MedUI.doConnectionSetup()
 end
 
 registerNamedEventHandler("MedUI", "MedLoginHandler", "gmcp.Char.Info", "MedUI.doConnectionSetup")
+registerNamedEventHandler("MedUI", "MedClassThemeHandler", "gmcp.Char.Info", "MedUI.applyClassTheme")
