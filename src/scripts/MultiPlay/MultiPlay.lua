@@ -1,8 +1,8 @@
 
--- Char.Info.name is server-authoritative and properly cased; Char.Vitals.name
--- has been observed in lowercase, and getCharacterName() reflects whatever the
--- user typed in Mudlet's profile dialog. Capitalize the profile-name fallback
--- so the multiplay window doesn't render lowercased rows before Char.Info arrives.
+-- Char.Info.name is server-authoritative and properly cased; getCharacterName()
+-- reflects whatever the user typed in Mudlet's profile dialog. Capitalize the
+-- profile-name fallback so the multiplay window doesn't render lowercased rows
+-- before Char.Info arrives.
 local function capitalizeFirst(s)
     if not s or s == "" then return nil end
     return s:sub(1, 1):upper() .. s:sub(2)
@@ -40,8 +40,9 @@ MultiPlay = {
 -- Tell all others to execute a command
 function MultiPlay.tellAll(command)
     raiseGlobalEvent("MPTell", command)
-    raiseEvent("MPTell", command, getProfileName())
+    --raiseEvent("MPTell", command, getProfileName())
     -- could just send() it to ourself
+    send(command)
 end
 
 function MultiPlay.tellPlayer(player, command)
@@ -55,9 +56,25 @@ function MultiPlay.tellGroup(group, command)
             raiseGlobalEvent("MPTellPlayer", player, command)
             raiseEvent("MPTellPlayer", player, command, getProfileName())
         end
-    --raiseGlobalEvent("MPTellGroup", group, command)
-    --raiseEvent("MPTellGroup", group, command, getProfileName())
     end
+end
+
+function MultiPlay.tellOthers(command)
+    raiseGlobalEvent("MPTell", command)
+end
+
+function MultiPlay.tellClass(class, command)
+    local classStr
+    if class == "w" then
+        classStr = "Warrior"
+    elseif class == "m" then
+        classStr = "Mage"
+    elseif class == "t" then
+        classStr = "Thief"
+    else
+        classStr = "Cleric"
+    end
+    raiseGlobalEvent("MPTellClass", classStr, command)
 end
 
 function MultiPlay.requestInfo()
@@ -119,8 +136,8 @@ function MultiPlay.showGroups()
 end
 
 
---- Build a player-info table for the current profile in the same shape as
---- entries in MultiPlay.myForm. Returns nil if vitals haven't arrived yet.
+-- Build a player-info table for the current profile in the same shape as
+-- entries in MultiPlay.myForm. Returns nil if vitals haven't arrived yet.
 function MultiPlay.getSelfInfo()
 
     if gmcp and gmcp.Char then
@@ -248,8 +265,10 @@ function MultiPlay.eventHandler(event, ...)
     elseif event == "MPTell" then
         local message = arg[1]
         local profile = arg[2]
-        echo(profile .. " >> " .. message)
-        expandAlias(message)
+        if getProfileName() ~= profile then
+            echo(profile .. " >> " .. message)
+            expandAlias(message)
+        end
 
     elseif event == "MPTellPlayer" then
         local player = arg[1]
@@ -261,16 +280,14 @@ function MultiPlay.eventHandler(event, ...)
             expandAlias(message)
         end
 
-    --[[
-    elseif event == "MPTellGroup" then
-        local group = arg[1]
+    elseif event == "MPTellClass" then
+        local class = arg[1]
         local message = arg[2]
         local profile = arg[3]
-        if (table.index_of(MultiPlay.myGroups, group) ~= nil) then
+        if gmcp and gmcp.Char and gmcp.Char.Info and gmcp.Char.Info.class == class then
             echo(profile .. " >> " .. message)
             expandAlias(message)
         end
-    --]]
 
     elseif event == "MPRequestInfo" then
         --echo("got MPRequestInfo\n")
@@ -334,9 +351,9 @@ function MultiPlay.eventHandler(event, ...)
 end
 
 
---- Smart heal stub - called on Cleric profiles when a heal is requested
---- @param targetName string  The name of the player to heal
---- @param missingHp number   The amount of HP the target is missing
+-- Smart heal stub - called on Cleric profiles when a heal is requested
+-- @param targetName string  The name of the player to heal
+-- @param missingHp number   The amount of HP the target is missing
 function MultiPlay.smartHeal(targetName, missingHp)
     if MultiPlay.myClass ~= "Cleric" then
         return

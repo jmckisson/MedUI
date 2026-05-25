@@ -2,7 +2,21 @@
        {
               "name": "TellAll",
               "isActive": "yes",
-              "regex": "^# (.*)$",
+              "regex": "^\\+(.*)$",
+              "script": "",
+              "isFolder": "no"
+       },
+       {
+              "name": "TellOthers",
+              "isActive": "yes",
+              "regex": "^\\-(.*)$",
+              "script": "",
+              "isFolder": "no"
+       },
+       {
+              "name": "TellClass",
+              "isActive": "yes",
+              "regex": "^\\-(w|m|t|c) (.*)$",
               "script": "",
               "isFolder": "no"
        },
