@@ -393,6 +393,7 @@ end
 MultiPlay.eventHandlerIDs = {
     registerAnonymousEventHandler("MPTell", "MultiPlay.eventHandler"),
     registerAnonymousEventHandler("MPTellPlayer", "MultiPlay.eventHandler"),
+    registerAnonymousEventHandler("MPTellClass", "MultiPlay.eventHandler"),
     registerAnonymousEventHandler("MPRequestInfo", "MultiPlay.eventHandler"),
     registerAnonymousEventHandler("MPInfoResponse", "MultiPlay.eventHandler"),
     registerAnonymousEventHandler("gmcp.Char.Vitals", "MultiPlay.eventHandler"),
