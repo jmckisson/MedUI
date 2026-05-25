@@ -39,6 +39,7 @@ MultiPlay = {
 
 -- Tell all others to execute a command
 function MultiPlay.tellAll(command)
+    echo(MultiPlay.myPlayerName .. " > All >> " .. command .. "\n")
     raiseGlobalEvent("MPTell", command)
     --raiseEvent("MPTell", command, getProfileName())
     -- could just send() it to ourself
@@ -46,12 +47,14 @@ function MultiPlay.tellAll(command)
 end
 
 function MultiPlay.tellPlayer(player, command)
+    echo(MultiPlay.myPlayerName .. " > " .. player .. " >> " .. command .. "\n")
     raiseGlobalEvent("MPTellPlayer", player, command)
     raiseEvent("MPTellPlayer", player, command, getProfileName())
 end
 
 function MultiPlay.tellGroup(group, command)
     if MultiPlay.myGroups[group] then
+        echo(MultiPlay.myPlayerName .. " > Grp:" .. group .. " >> " .. command .. "\n")
         for _, player in ipairs(MultiPlay.myGroups[group]) do
             raiseGlobalEvent("MPTellPlayer", player, command)
             raiseEvent("MPTellPlayer", player, command, getProfileName())
@@ -60,6 +63,7 @@ function MultiPlay.tellGroup(group, command)
 end
 
 function MultiPlay.tellOthers(command)
+    echo(MultiPlay.myPlayerName .. " > Others >> " .. command .. "\n")
     raiseGlobalEvent("MPTell", command)
 end
 
@@ -74,6 +78,7 @@ function MultiPlay.tellClass(class, command)
     else
         classStr = "Cleric"
     end
+    echo(MultiPlay.myPlayerName .. " > " .. classStr .. " >> " .. command .. "\n")
     raiseGlobalEvent("MPTellClass", classStr, command)
 end
 

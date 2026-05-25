@@ -7,16 +7,16 @@
               "isFolder": "no"
        },
        {
-              "name": "TellOthers",
+              "name": "TellClass",
               "isActive": "yes",
-              "regex": "^\\-(.*)$",
+              "regex": "^\\-(w|m|t|c) (.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "TellClass",
+              "name": "TellOthers",
               "isActive": "yes",
-              "regex": "^\\-(w|m|t|c) (.*)$",
+              "regex": "^\\-(.*)$",
               "script": "",
               "isFolder": "no"
        },
