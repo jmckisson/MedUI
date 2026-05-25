@@ -226,6 +226,7 @@ function Dialog.onThemeStep(delta)
   idx = ((idx - 1 + delta) % #order) + 1
   MedUI.options.theme = order[idx]
   MedUI.saveOptions(true)
+  MedUI.applyThemeToAllAdjContainers()
   Dialog.reopen()
 end
 
@@ -239,6 +240,7 @@ function Dialog.onColorSubmit(text)
   MedUI.options.customColor = hex
   MedUI.options.theme = "custom"
   MedUI.saveOptions(true)
+  MedUI.applyThemeToAllAdjContainers()
   Dialog.reopen()
 end
 

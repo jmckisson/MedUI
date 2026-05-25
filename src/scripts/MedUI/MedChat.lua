@@ -18,7 +18,7 @@ local function medieviaTabbedChat_InitMedChat()
     width = "30.303%",
     height = "50%",
     lockStyle = "border",
-    adjLabelstyle = "background-color:darkred; border: 0; padding: 1px;",
+    adjLabelstyle = MedUI.themedAdjLabelStyle(),
     autoLoad = true,
     autoSave = true,
   })

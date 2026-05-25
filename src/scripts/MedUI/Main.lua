@@ -188,6 +188,39 @@ function MedUI.getTheme()
   }
 end
 
+-- Stylesheet for an Adjustable.Container's title bar, derived from the current
+-- theme. Matches the trailing `qproperty-alignment` that the AdjContainer
+-- constructor appends so re-applying preserves header alignment.
+function MedUI.themedAdjLabelStyle()
+  local t = MedUI.getTheme()
+  return string.format([[
+    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+      stop:0 %s, stop:1 %s);
+    border: 1px solid %s;
+    padding: 1px; qproperty-alignment: 'AlignLeft | AlignTop';]],
+    t.accentMid, t.accentDark, t.accent)
+end
+
+function MedUI.applyThemeToAdjContainer(adjCont)
+  if not adjCont or not adjCont.adjLabel then return end
+  adjCont.adjLabelstyle = MedUI.themedAdjLabelStyle()
+  adjCont.adjLabel:setStyleSheet(adjCont.adjLabelstyle)
+end
+
+-- Tracks the resolved accent that was last pushed to the containers so a
+-- redundant click (cycling back to the same theme, reconfigure with no theme
+-- change, etc.) is a no-op instead of re-stringing CSS and re-calling Qt.
+MedUI._lastAppliedAccent = nil
+
+function MedUI.applyThemeToAllAdjContainers(force)
+  local accent = MedUI.getTheme().accent
+  if not force and accent == MedUI._lastAppliedAccent then return end
+  MedUI._lastAppliedAccent = accent
+  if MedUI.MedMap and MedUI.MedMap.AdjCont then MedUI.applyThemeToAdjContainer(MedUI.MedMap.AdjCont) end
+  if MedChat and MedChat.AdjCont then MedUI.applyThemeToAdjContainer(MedChat.AdjCont) end
+  if MPWindow and MPWindow.window then MedUI.applyThemeToAdjContainer(MPWindow.window) end
+end
+
 -- Canonical options definition. Read by both MedUI.config() (text mode)
 -- and MedUI.OptionsDialog (GUI). Keep this as the single source of truth.
 MedUI.optionsList = {
@@ -417,7 +450,7 @@ function MedUI.InitUI()
     width = "30.303%",
     height = "50%",
     lockStyle = "border",
-    adjLabelstyle = "background-color:darkred; border: 0; padding: 1px;",
+    adjLabelstyle = MedUI.themedAdjLabelStyle(),
     autoLoad = true,
     autoSave = true
   })
@@ -844,6 +877,8 @@ function MedUI.reconfigure()
       MPWindow.setDisplayMode(MedUI.options.mpGaugeMode)
     end
 
+    MedUI.applyThemeToAllAdjContainers()
+
 end
 
 function MedUI.loadOptions()
@@ -1044,6 +1079,7 @@ function MedUI.setTheme(arg)
     cecho(string.format("\n<DeepSkyBlue>MedUI: theme set to <yellow>%s\n", MedUI.themes[name].label))
   end
   MedUI.saveOptions(true)
+  MedUI.applyThemeToAllAdjContainers()
   if MedUI.OptionsDialog and MedUI.OptionsDialog.isOpen then
     MedUI.OptionsDialog.reopen()
   end
