@@ -822,6 +822,11 @@ function MedUI.config(arg)
   str = string.format("%s\n", str)
   cecho(str)
 
+  cecho("<DeepSkyBlue>    ")
+  cechoLink("<yellow>\"Options GUI\"", [[MedUI.OptionsDialog.toggle()]],
+    "Click to open the MedUI Options dialog", true)
+  cecho("<DeepSkyBlue> - Click here or type '<yellow>medui options<DeepSkyBlue>'\n")
+
   MedUI.reconfigure()
 
   if arg and arg ~= "" then
