@@ -90,6 +90,7 @@ MedUI = MedUI or {
     theme = "warrior",
     customColor = "#8b1a1a",
     autoDetectTheme = false,
+    uiHidden = false,
   },
   affTable = {
     ["Armor"]                 = "armor",
@@ -212,6 +213,90 @@ end
 -- redundant click (cycling back to the same theme, reconfigure with no theme
 -- change, etc.) is a no-op instead of re-stringing CSS and re-calling Qt.
 MedUI._lastAppliedAccent = nil
+
+-- Hides or restores every MedUI surface (map, chat, gauges, buffs, MultiPlay
+-- window) plus the bottom/right Mudlet borders. Honors the per-feature option
+-- flags when restoring so we don't re-show a panel the user has explicitly
+-- disabled (e.g. gauges off, MultiPlay off).
+--
+-- NOTE: the MultiPlay window is the only piece whose backing module keeps
+-- running while the window is hidden. enableModule()/disableModule() are not
+-- called here, so MultiPlay aliases/triggers stay enabled and the gmcp.Char.Vitals
+-- handler continues to broadcast MPInfoResponse to other profiles.
+function MedUI.applyUIVisibility()
+  local hidden = MedUI.options.uiHidden
+
+  if MedUI.MedMap and MedUI.MedMap.AdjCont then
+    if hidden then MedUI.MedMap.AdjCont:hide() else MedUI.MedMap.AdjCont:show() end
+  end
+
+  if MedChat and MedChat.AdjCont then
+    if hidden then MedChat.AdjCont:hide() else MedChat.AdjCont:show() end
+  end
+
+  if MedBuffsNBars.Bottom then
+    if hidden then
+      MedBuffsNBars.Bottom:hide()
+    elseif MedUI.options.enableGauges then
+      MedBuffsNBars.Bottom:show()
+    end
+  end
+
+  if MedBuffsNBars.BuffBox then
+    if hidden then
+      MedUI.clearAffects()
+      MedBuffsNBars.BuffBox:hide()
+    elseif MedUI.options.enableGauges then
+      MedBuffsNBars.BuffBox:show()
+      MedUI.updateAffects()
+    end
+  end
+
+  if MPWindow and MPWindow.window then
+    if hidden then
+      MPWindow.window:hide()
+    elseif MedUI.options.enableMultiPlay then
+      MPWindow.window:show()
+    end
+  end
+
+  if hidden then
+    setBorderRight(0)
+    setBorderBottom(0)
+  else
+    if MedUI.MedMap and MedChat and MedUI.MedMap.AdjCont and MedChat.AdjCont
+       and not MedUI.MedMap.AdjCont["hidden"] and not MedChat.AdjCont["hidden"] then
+      local w, _ = getMainWindowSize()
+      setBorderRight(w/3.3)
+    end
+    if MedUI.options.enableGauges and MedBuffsNBars.Bottom and MedBuffsNBars.BuffBox then
+      local totalHeight = math.ceil(tonumber(MedBuffsNBars.BuffBox:get_height()) + tonumber(MedBuffsNBars.Bottom:get_height()))
+      setBorderBottom(totalHeight)
+    end
+  end
+end
+
+function MedUI.hideUI()
+  if MedUI.options.uiHidden then
+    cecho("\n<DeepSkyBlue>MedUI: UI already hidden. Type '<yellow>medui show<DeepSkyBlue>' to restore.\n")
+    return
+  end
+  MedUI.options.uiHidden = true
+  MedUI.applyUIVisibility()
+  MedUI.saveOptions(true)
+  cecho("\n<DeepSkyBlue>MedUI: UI hidden. Type '<yellow>medui show<DeepSkyBlue>' to restore.\n")
+end
+
+function MedUI.showUI()
+  if not MedUI.options.uiHidden then
+    cecho("\n<DeepSkyBlue>MedUI: UI is already visible.\n")
+    return
+  end
+  MedUI.options.uiHidden = false
+  MedUI.applyUIVisibility()
+  MedUI.saveOptions(true)
+  cecho("\n<DeepSkyBlue>MedUI: UI restored.\n")
+end
 
 function MedUI.applyThemeToAllAdjContainers(force)
   local accent = MedUI.getTheme().accent
@@ -750,6 +835,10 @@ function MedUI.config(arg)
   -- The `medui options` alias handles the popup dialog; suppress the text page here.
   if arg == "options" then return end
 
+  -- `medui hide` / `medui show` have dedicated aliases; suppress the catch-all
+  -- options dump so the only output is the hide/show confirmation.
+  if arg == "hide" or arg == "show" then return end
+
   if arg and arg ~= " " then
     local cols = getColumnCount("main")
     local graphicStr = "medui_110.ans"
@@ -888,6 +977,11 @@ function MedUI.reconfigure()
 
     MedUI.applyThemeToAllAdjContainers()
 
+    -- Re-assert hidden state last so it overrides the show()/border calls above.
+    -- Skipped when not hidden — reconfigure already left everything visible.
+    if MedUI.options.uiHidden then
+      MedUI.applyUIVisibility()
+    end
 end
 
 function MedUI.loadOptions()
@@ -916,6 +1010,7 @@ function MedUI.loadOptions()
   if MedUI.options.theme == nil then MedUI.options.theme = "warrior" end
   if MedUI.options.customColor == nil then MedUI.options.customColor = "#8b1a1a" end
   if MedUI.options.autoDetectTheme == nil then MedUI.options.autoDetectTheme = false end
+  if MedUI.options.uiHidden == nil then MedUI.options.uiHidden = false end
 
   -- Share the persisted groups table with MultiPlay so any mutation lands in
   -- MedUI.options and gets written by the next saveOptions() call.
@@ -1072,6 +1167,12 @@ MedUI.mpGaugesAlias = tempAlias("^medui mpgauges$", [[MedUI.config("7")]])
 
 if MedUI.autoThemeAlias then killAlias(MedUI.autoThemeAlias) end
 MedUI.autoThemeAlias = tempAlias("^medui autotheme$", [[MedUI.config("8")]])
+
+if MedUI.hideAlias then killAlias(MedUI.hideAlias) end
+MedUI.hideAlias = tempAlias("^medui hide$", [[MedUI.hideUI()]])
+
+if MedUI.showAlias then killAlias(MedUI.showAlias) end
+MedUI.showAlias = tempAlias("^medui show$", [[MedUI.showUI()]])
 
 -- `medui theme <arg>` — arg is either a class name (warrior/cleric/mage/thief)
 -- or a hex color (#RRGGBB / RRGGBB), which selects the Custom theme.
