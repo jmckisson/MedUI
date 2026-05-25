@@ -1137,6 +1137,8 @@ function MedUI.loadOptions()
   if MedUI.options.customColor == nil then MedUI.options.customColor = "#8b1a1a" end
   if MedUI.options.autoDetectTheme == nil then MedUI.options.autoDetectTheme = false end
   if MedUI.options.uiHidden == nil then MedUI.options.uiHidden = false end
+  if MedUI.options.mpSortDir == nil then MedUI.options.mpSortDir = "asc" end
+  MedUI.options.mpHiddenColumns = MedUI.options.mpHiddenColumns or {}
 
   -- Share the persisted groups table with MultiPlay so any mutation lands in
   -- MedUI.options and gets written by the next saveOptions() call.

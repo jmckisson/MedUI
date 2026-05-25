@@ -101,9 +101,83 @@ local function getBandLabelColor(current, max)
 end
 
 local rowHeight = 25
+local headerHeight = 24
+local arrowStripWidth = 14
 
 local cellStyle = "background-color: #222222; border: 1px solid #444444; padding: 2px;"
 local cellStyleAlt = "background-color: #333333; border: 1px solid #444444; padding: 2px;"
+
+-- Ordered column metadata for the gauge view. The header and player rows both
+-- iterate this list, so visibility/sort options work the same way everywhere.
+MPWindow.columnDefs = {
+    {key = "name",  label = "Name",  gaugeWidth = 90,  cellKind = "name",  style = cellStyle},
+    {key = "hp",    label = "HP",    gaugeWidth = 120, cellKind = "hpGauge"},
+    {key = "mana",  label = "Mana",  gaugeWidth = 120, cellKind = "manaGauge"},
+    {key = "mv",    label = "MV",    gaugeWidth = 40,  cellKind = "mvLabel",    style = cellStyle},
+    {key = "br",    label = "BR",    gaugeWidth = 40,  cellKind = "brLabel",    style = cellStyle},
+    {key = "class", label = "Class", gaugeWidth = 50,  cellKind = "classLabel", style = cellStyleAlt},
+    {key = "level", label = "Lvl",   gaugeWidth = 40,  cellKind = "levelLabel", style = cellStyleAlt},
+    {key = "group", label = "Group", gaugeWidth = 65,  cellKind = "groupLabel", style = cellStyleAlt},
+}
+
+-- Map key -> def for O(1) lookups
+MPWindow.columnDefByKey = {}
+for _, def in ipairs(MPWindow.columnDefs) do
+    MPWindow.columnDefByKey[def.key] = def
+end
+
+-- Subset of columns shown in the text-console view, in display order. group
+-- isn't included because the text view doesn't emit a group field today.
+MPWindow.textColumnOrder = {"name", "class", "level", "hp", "mana", "mv", "br"}
+
+-- Per-column metadata for the text view: column width in characters (used for
+-- header padding) and the separator emitted before the column's data.
+MPWindow.textColumnInfo = {
+    name  = {width = 12, sep = ""},
+    class = {width = 3,  sep = "<blue>|"},
+    level = {width = 2,  sep = "<blue>|"},
+    hp    = {width = 11, sep = "<blue>|"},
+    mana  = {width = 10, sep = " "},
+    mv    = {width = 6,  sep = " "},
+    br    = {width = 5,  sep = " "},
+}
+
+local function colHidden(key)
+    return MedUI and MedUI.options and MedUI.options.mpHiddenColumns
+        and MedUI.options.mpHiddenColumns[key] or false
+end
+
+local function getSortKey()
+    return MedUI and MedUI.options and MedUI.options.mpSortKey or nil
+end
+
+local function getSortDir()
+    return MedUI and MedUI.options and MedUI.options.mpSortDir or "asc"
+end
+
+-- Returns a comparable value for the given player + column key. Vitals
+-- columns sort by percent-of-max so a level-1 with full HP doesn't outrank a
+-- level-50 just because they have more max HP.
+local function sortValue(player, key)
+    if key == "name" then
+        return tostring(player.name or ""):lower()
+    elseif key == "class" then
+        return tostring(player.class or ""):lower()
+    elseif key == "level" then
+        return tonumber(player.level) or 0
+    elseif key == "hp" then
+        return (player.maxHp and player.maxHp > 0) and (player.hp / player.maxHp) or 0
+    elseif key == "mana" then
+        return (player.maxMana and player.maxMana > 0) and (player.mana / player.maxMana) or 0
+    elseif key == "mv" then
+        return (player.maxMv and player.maxMv > 0) and (player.mv / player.maxMv) or 0
+    elseif key == "br" then
+        return tonumber(player.br) or 0
+    elseif key == "group" then
+        return MPWindow.getPlayerGroup(player.name or ""):lower()
+    end
+    return 0
+end
 
 -- Hidden auto-categories based on class (internal only, not shown to user)
 local classToCategory = {
@@ -295,6 +369,222 @@ function MPWindow.setupGaugeContainer()
 end
 
 
+-- Styles for the gauge-mode header cells. Hidden columns get a dimmed look so
+-- the user can still find and click them to bring the column back.
+local headerNameStyle = "background-color: #1f1f2a; border: 1px solid #444444; padding: 1px;"
+local headerNameStyleHidden = "background-color: #161618; border: 1px solid #2a2a2a; padding: 1px;"
+local headerArrowStyle = "background-color: #1f1f2a; border: 1px solid #444444;"
+local headerArrowStyleActive = "background-color: #2e6a2e; border: 1px solid #66cc66;"
+
+MPWindow.headerCells = MPWindow.headerCells or {}
+
+
+--- Refresh header label colors/styles to reflect current sort + visibility.
+function MPWindow.updateGaugeHeader()
+    local sortKey = getSortKey()
+    local sortDir = getSortDir()
+
+    for _, col in ipairs(MPWindow.columnDefs) do
+        local h = MPWindow.headerCells[col.key]
+        if h then
+            local hidden = colHidden(col.key)
+            h.name:setStyleSheet(hidden and headerNameStyleHidden or headerNameStyle)
+            h.name:echo(col.label, hidden and "#777777" or "white", "c")
+
+            local upActive = (sortKey == col.key and sortDir == "asc")
+            local downActive = (sortKey == col.key and sortDir == "desc")
+            h.up:setStyleSheet(upActive and headerArrowStyleActive or headerArrowStyle)
+            h.up:echo("▲", upActive and "#a8ffa8" or "#888888", "c")
+            h.down:setStyleSheet(downActive and headerArrowStyleActive or headerArrowStyle)
+            h.down:echo("▼", downActive and "#a8ffa8" or "#888888", "c")
+        end
+    end
+end
+
+
+--- Build the clickable header row above the gauge rows. Done once.
+function MPWindow.setupGaugeHeader()
+    if MPWindow.headerRow then
+        MPWindow.updateGaugeHeader()
+        return
+    end
+
+    MPWindow.headerRow = Geyser.HBox:new({
+        name = "MPHeaderRow",
+        x = 0, y = 0,
+        width = "100%", height = headerHeight,
+    }, MPWindow.gaugeContainer)
+
+    for _, col in ipairs(MPWindow.columnDefs) do
+        local cellName = "mpheader_" .. col.key
+        local cell = Geyser.Container:new({
+            name = cellName,
+            width = col.gaugeWidth, height = headerHeight,
+        }, MPWindow.headerRow)
+
+        local nameWidth = col.gaugeWidth - arrowStripWidth
+        local nameLabel = Geyser.Label:new({
+            name = cellName .. "_name",
+            x = 0, y = 0,
+            width = nameWidth, height = headerHeight,
+        }, cell)
+        nameLabel:setFontSize(9)
+
+        local arrowH = math.floor(headerHeight / 2)
+        local upArrow = Geyser.Label:new({
+            name = cellName .. "_up",
+            x = nameWidth, y = 0,
+            width = arrowStripWidth, height = arrowH,
+        }, cell)
+        upArrow:setFontSize(7)
+
+        local downArrow = Geyser.Label:new({
+            name = cellName .. "_down",
+            x = nameWidth, y = arrowH,
+            width = arrowStripWidth, height = headerHeight - arrowH,
+        }, cell)
+        downArrow:setFontSize(7)
+
+        local key = col.key
+        nameLabel:setClickCallback(function() MPWindow.toggleColumnVisibility(key) end)
+        upArrow:setClickCallback(function() MPWindow.setSort(key, "asc") end)
+        downArrow:setClickCallback(function() MPWindow.setSort(key, "desc") end)
+
+        MPWindow.headerCells[col.key] = {
+            cell = cell, name = nameLabel, up = upArrow, down = downArrow,
+        }
+    end
+
+    MPWindow.updateGaugeHeader()
+end
+
+
+--- Set the active sort column + direction (or clear it when clicking the
+--- currently-active arrow a second time).
+function MPWindow.setSort(key, dir)
+    if not MedUI or not MedUI.options then return end
+    if MedUI.options.mpSortKey == key and MedUI.options.mpSortDir == dir then
+        MedUI.options.mpSortKey = nil
+        MedUI.options.mpSortDir = "asc"
+    else
+        MedUI.options.mpSortKey = key
+        MedUI.options.mpSortDir = dir
+    end
+    if MedUI.saveOptions then MedUI.saveOptions(true) end
+    if MPWindow.headerRow then MPWindow.updateGaugeHeader() end
+    MPWindow.Update()
+end
+
+
+--- Toggle whether a column's data is displayed. The header stays visible
+--- (dimmed) so the user can always click it back on. Rows are rebuilt because
+--- their HBox layout depends on which cells exist.
+function MPWindow.toggleColumnVisibility(key)
+    if not MedUI or not MedUI.options then return end
+    MedUI.options.mpHiddenColumns = MedUI.options.mpHiddenColumns or {}
+    MedUI.options.mpHiddenColumns[key] = not MedUI.options.mpHiddenColumns[key] or nil
+    if MedUI.saveOptions then MedUI.saveOptions(true) end
+    MPWindow.rebuildGaugeFrames()
+    if MPWindow.headerRow then MPWindow.updateGaugeHeader() end
+    MPWindow.Update()
+end
+
+
+--- Tear down all gauge-mode player frames so the next Update() rebuilds them
+--- with the current column visibility.
+function MPWindow.rebuildGaugeFrames()
+    for i = 1, MPWindow.gaugeFrameCount or 0 do
+        local frame = MPWindow.gaugeFrames[i]
+        if frame and frame.row then frame.row:hide() end
+        MPWindow.gaugeFrames[i] = nil
+    end
+    MPWindow.gaugeFrameCount = 0
+end
+
+
+-- Construct the single Geyser widget that represents `col` for player `player`
+-- inside the given row HBox. Returns the widget plus its initial display state
+-- so updatePlayerFrame can dedup later. Returns nil if the column is hidden.
+local function buildColumnCell(col, row, frameName, player, frameIndex)
+    if colHidden(col.key) then return nil end
+    local cellName = frameName .. "_" .. col.key
+    local width = col.gaugeWidth
+
+    if col.cellKind == "name" then
+        local label = Geyser.Label:new({name = cellName, width = width, height = "100%"}, row)
+        label:setStyleSheet(col.style)
+        label:echo(player.name, "white", "l")
+        label:setFontSize(10)
+        return label, {shownName = player.name}
+
+    elseif col.cellKind == "hpGauge" then
+        local gauge = Geyser.Gauge:new({name = cellName, width = width, height = "100%"}, row)
+        gauge.back:setStyleSheet(backStyleSheet)
+        local band = getGaugeBand(player.hp, player.maxHp)
+        local info = gaugeBands[band]
+        gauge.front:setStyleSheet(info.sheet)
+        gauge:setValue(player.hp, player.maxHp,
+            string.format("<b><font color='%s'>%d HP</font></b>", info.textColor, player.hp))
+        gauge.front:setClickCallback(function()
+            local frame = MPWindow.gaugeFrames[frameIndex]
+            if not frame or not frame.player then return end
+            local p = frame.player
+            local missingHp = p.maxHp - p.hp
+            if missingHp > 0 then
+                MPWindow.requestHeal(p.name, missingHp)
+            end
+        end)
+        return gauge, {shownHp = player.hp, shownMaxHp = player.maxHp, hpBand = band}
+
+    elseif col.cellKind == "manaGauge" then
+        local gauge = Geyser.Gauge:new({name = cellName, width = width, height = "100%"}, row)
+        gauge.back:setStyleSheet(backStyleSheet)
+        local band = getGaugeBand(player.mana, player.maxMana)
+        local info = gaugeBands[band]
+        gauge.front:setStyleSheet(info.sheet)
+        gauge:setValue(player.mana, player.maxMana,
+            string.format("<b><font color='%s'>%d MN</font></b>", info.textColor, player.mana))
+        return gauge, {shownMana = player.mana, shownMaxMana = player.maxMana, manaBand = band}
+
+    elseif col.cellKind == "mvLabel" then
+        local label = Geyser.Label:new({name = cellName, width = width, height = "100%"}, row)
+        label:setStyleSheet(col.style)
+        label:echo(tostring(player.mv), getBandLabelColor(player.mv, player.maxMv), "c")
+        label:setFontSize(9)
+        return label, {shownMv = player.mv, shownMaxMv = player.maxMv}
+
+    elseif col.cellKind == "brLabel" then
+        local label = Geyser.Label:new({name = cellName, width = width, height = "100%"}, row)
+        label:setStyleSheet(col.style)
+        label:echo(tostring(player.br), getBandLabelColor(player.br, 100), "c")
+        label:setFontSize(9)
+        return label, {shownBr = player.br}
+
+    elseif col.cellKind == "classLabel" then
+        local label = Geyser.Label:new({name = cellName, width = width, height = "100%"}, row)
+        label:setStyleSheet(col.style)
+        label:echo(tostring(player.class), "cyan", "c")
+        label:setFontSize(9)
+        return label, {shownClass = player.class}
+
+    elseif col.cellKind == "levelLabel" then
+        local label = Geyser.Label:new({name = cellName, width = width, height = "100%"}, row)
+        label:setStyleSheet(col.style)
+        label:echo(tostring(player.level), "yellow", "c")
+        label:setFontSize(9)
+        return label, {shownLevel = player.level}
+
+    elseif col.cellKind == "groupLabel" then
+        local label = Geyser.Label:new({name = cellName, width = width, height = "100%"}, row)
+        label:setStyleSheet(col.style)
+        local groupName = MPWindow.getPlayerGroup(player.name)
+        label:echo(groupName, "orange", "c")
+        label:setFontSize(9)
+        return label, {shownGroup = groupName}
+    end
+end
+
+
 --- Build or update a single horizontal player frame at the given row index
 function MPWindow.buildPlayerFrame(index, player)
     local frameName = "mpframe_" .. index
@@ -305,7 +595,7 @@ function MPWindow.buildPlayerFrame(index, player)
         return
     end
 
-    local yPos = (index - 1) * rowHeight
+    local yPos = headerHeight + (index - 1) * rowHeight
 
     -- Row container (HBox for horizontal layout)
     local row = Geyser.HBox:new({
@@ -314,138 +604,40 @@ function MPWindow.buildPlayerFrame(index, player)
         width = "100%", height = rowHeight,
     }, MPWindow.gaugeContainer)
 
-    -- Player Name label
-    local nameLabel = Geyser.Label:new({
-        name = frameName .. "_name",
-        width = 90, height = "100%",
-    }, row)
-    nameLabel:setStyleSheet(cellStyle)
-    nameLabel:echo(player.name, "white", "l")
-    nameLabel:setFontSize(10)
+    local frame = {
+        row = row,
+        cells = {},
+        player = player,
+        playerName = player.name,
+        menuVersion = MPWindow.groupVersion,
+    }
 
-    -- HP Gauge
-    local hpGauge = Geyser.Gauge:new({
-        name = frameName .. "_hp",
-        width = 120, height = "100%",
-    }, row)
-    hpGauge.back:setStyleSheet(backStyleSheet)
-    local hpBand = getGaugeBand(player.hp, player.maxHp)
-    local hpInfo = gaugeBands[hpBand]
-    hpGauge.front:setStyleSheet(hpInfo.sheet)
-    hpGauge:setValue(player.hp, player.maxHp, string.format("<b><font color='%s'>%d HP</font></b>", hpInfo.textColor, player.hp))
-
-    -- Click on HP gauge to request smart heal from Clerics.
-    -- Look up the live player off the frame instead of rescanning the display
-    -- list — the frame's .player ref is refreshed each update.
-    local frameIndex = index
-    hpGauge.front:setClickCallback(function()
-        local frame = MPWindow.gaugeFrames[frameIndex]
-        if not frame or not frame.player then return end
-        local p = frame.player
-        local missingHp = p.maxHp - p.hp
-        if missingHp > 0 then
-            MPWindow.requestHeal(p.name, missingHp)
+    for _, col in ipairs(MPWindow.columnDefs) do
+        local widget, state = buildColumnCell(col, row, frameName, player, index)
+        if widget then
+            frame.cells[col.key] = widget
+            if state then
+                for k, v in pairs(state) do frame[k] = v end
+            end
         end
-    end)
+    end
 
-    -- Mana Gauge
-    local manaGauge = Geyser.Gauge:new({
-        name = frameName .. "_mana",
-        width = 120, height = "100%",
-    }, row)
-    manaGauge.back:setStyleSheet(backStyleSheet)
-    local manaBand = getGaugeBand(player.mana, player.maxMana)
-    local manaInfo = gaugeBands[manaBand]
-    manaGauge.front:setStyleSheet(manaInfo.sheet)
-    manaGauge:setValue(player.mana, player.maxMana, string.format("<b><font color='%s'>%d MN</font></b>", manaInfo.textColor, player.mana))
+    -- Right-click menu hangs off the name label when that column is visible.
+    if frame.cells.name then
+        MPWindow.setupGroupMenu(frame.cells.name, player.name)
+    end
 
-    -- MV label
-    local mvLabel = Geyser.Label:new({
-        name = frameName .. "_mv",
-        width = 30, height = "100%",
-    }, row)
-    mvLabel:setStyleSheet(cellStyle)
-    mvLabel:echo(tostring(player.mv), getBandLabelColor(player.mv, player.maxMv), "c")
-    mvLabel:setFontSize(9)
-
-    -- BR label
-    local brLabel = Geyser.Label:new({
-        name = frameName .. "_br",
-        width = 30, height = "100%",
-    }, row)
-    brLabel:setStyleSheet(cellStyle)
-    brLabel:echo(tostring(player.br), getBandLabelColor(player.br, 100), "c")
-    brLabel:setFontSize(9)
-
-    -- Class label
-    local classLabel = Geyser.Label:new({
-        name = frameName .. "_class",
-        width = 25, height = "100%",
-    }, row)
-    classLabel:setStyleSheet(cellStyleAlt)
-    classLabel:echo(tostring(player.class), "cyan", "c")
-    classLabel:setFontSize(9)
-
-    -- Level label
-    local levelLabel = Geyser.Label:new({
-        name = frameName .. "_level",
-        width = 25, height = "100%",
-    }, row)
-    levelLabel:setStyleSheet(cellStyleAlt)
-    levelLabel:echo(tostring(player.level), "yellow", "c")
-    levelLabel:setFontSize(9)
-
-    -- Group label
-    local groupLabel = Geyser.Label:new({
-        name = frameName .. "_group",
-        width = 55, height = "100%",
-    }, row)
-    groupLabel:setStyleSheet(cellStyleAlt)
-    local groupName = MPWindow.getPlayerGroup(player.name)
-    groupLabel:echo(groupName, "orange", "c")
-    groupLabel:setFontSize(9)
-
-    -- Right-click menu on the row name label
-    MPWindow.setupGroupMenu(nameLabel, player.name)
-
-    -- Store references and cached display values to avoid redundant Geyser calls
-    -- on subsequent updates
     if index > MPWindow.gaugeFrameCount then
         MPWindow.gaugeFrameCount = index
     end
 
-    MPWindow.gaugeFrames[index] = {
-        row = row,
-        nameLabel = nameLabel,
-        hpGauge = hpGauge,
-        manaGauge = manaGauge,
-        mvLabel = mvLabel,
-        brLabel = brLabel,
-        classLabel = classLabel,
-        levelLabel = levelLabel,
-        groupLabel = groupLabel,
-        player = player,
-        playerName = player.name,
-        shownName = player.name,
-        shownHp = player.hp,
-        shownMaxHp = player.maxHp,
-        shownMana = player.mana,
-        shownMaxMana = player.maxMana,
-        shownMv = player.mv,
-        shownMaxMv = player.maxMv,
-        shownBr = player.br,
-        shownClass = player.class,
-        shownLevel = player.level,
-        shownGroup = groupName,
-        hpBand = hpBand,
-        manaBand = manaBand,
-        menuVersion = MPWindow.groupVersion,
-    }
+    MPWindow.gaugeFrames[index] = frame
 end
 
 
 --- Update an existing player frame with new data, skipping any Geyser calls
---- whose displayed value hasn't changed since the last update.
+--- whose displayed value hasn't changed since the last update. Cells for
+--- hidden columns are skipped automatically because frame.cells lacks them.
 function MPWindow.updatePlayerFrame(index, player)
     local frame = MPWindow.gaugeFrames[index]
     if not frame then return end
@@ -454,66 +646,70 @@ function MPWindow.updatePlayerFrame(index, player)
     -- up-to-date vitals without rescanning the display list.
     frame.player = player
 
-    if frame.shownName ~= player.name then
-        frame.nameLabel:echo(player.name, "white", "l")
+    local cells = frame.cells
+
+    if cells.name and frame.shownName ~= player.name then
+        cells.name:echo(player.name, "white", "l")
         frame.shownName = player.name
     end
 
-    if frame.shownHp ~= player.hp or frame.shownMaxHp ~= player.maxHp then
+    if cells.hp and (frame.shownHp ~= player.hp or frame.shownMaxHp ~= player.maxHp) then
         local hpBand = getGaugeBand(player.hp, player.maxHp)
         local hpInfo = gaugeBands[hpBand]
         if frame.hpBand ~= hpBand then
-            frame.hpGauge.front:setStyleSheet(hpInfo.sheet)
+            cells.hp.front:setStyleSheet(hpInfo.sheet)
             frame.hpBand = hpBand
         end
-        frame.hpGauge:setValue(player.hp, player.maxHp, string.format("<b><font color='%s'>%d HP</font></b>", hpInfo.textColor, player.hp))
+        cells.hp:setValue(player.hp, player.maxHp, string.format("<b><font color='%s'>%d HP</font></b>", hpInfo.textColor, player.hp))
         frame.shownHp = player.hp
         frame.shownMaxHp = player.maxHp
     end
 
-    if frame.shownMana ~= player.mana or frame.shownMaxMana ~= player.maxMana then
+    if cells.mana and (frame.shownMana ~= player.mana or frame.shownMaxMana ~= player.maxMana) then
         local manaBand = getGaugeBand(player.mana, player.maxMana)
         local manaInfo = gaugeBands[manaBand]
         if frame.manaBand ~= manaBand then
-            frame.manaGauge.front:setStyleSheet(manaInfo.sheet)
+            cells.mana.front:setStyleSheet(manaInfo.sheet)
             frame.manaBand = manaBand
         end
-        frame.manaGauge:setValue(player.mana, player.maxMana, string.format("<b><font color='%s'>%d MN</font></b>", manaInfo.textColor, player.mana))
+        cells.mana:setValue(player.mana, player.maxMana, string.format("<b><font color='%s'>%d MN</font></b>", manaInfo.textColor, player.mana))
         frame.shownMana = player.mana
         frame.shownMaxMana = player.maxMana
     end
 
-    if frame.shownMv ~= player.mv or frame.shownMaxMv ~= player.maxMv then
-        frame.mvLabel:echo(tostring(player.mv), getBandLabelColor(player.mv, player.maxMv), "c")
+    if cells.mv and (frame.shownMv ~= player.mv or frame.shownMaxMv ~= player.maxMv) then
+        cells.mv:echo(tostring(player.mv), getBandLabelColor(player.mv, player.maxMv), "c")
         frame.shownMv = player.mv
         frame.shownMaxMv = player.maxMv
     end
 
-    if frame.shownBr ~= player.br then
-        frame.brLabel:echo(tostring(player.br), getBandLabelColor(player.br, 100), "c")
+    if cells.br and frame.shownBr ~= player.br then
+        cells.br:echo(tostring(player.br), getBandLabelColor(player.br, 100), "c")
         frame.shownBr = player.br
     end
 
-    if frame.shownClass ~= player.class then
-        frame.classLabel:echo(tostring(player.class), "cyan", "c")
+    if cells.class and frame.shownClass ~= player.class then
+        cells.class:echo(tostring(player.class), "cyan", "c")
         frame.shownClass = player.class
     end
 
-    if frame.shownLevel ~= player.level then
-        frame.levelLabel:echo(tostring(player.level), "yellow", "c")
+    if cells.level and frame.shownLevel ~= player.level then
+        cells.level:echo(tostring(player.level), "yellow", "c")
         frame.shownLevel = player.level
     end
 
-    local groupName = MPWindow.getPlayerGroup(player.name)
-    if frame.shownGroup ~= groupName then
-        frame.groupLabel:echo(groupName, "orange", "c")
-        frame.shownGroup = groupName
+    if cells.group then
+        local groupName = MPWindow.getPlayerGroup(player.name)
+        if frame.shownGroup ~= groupName then
+            cells.group:echo(groupName, "orange", "c")
+            frame.shownGroup = groupName
+        end
     end
 
     -- Only rebuild the right-click menu when group membership has actually
     -- changed, not on every vitals tick.
-    if frame.menuVersion ~= MPWindow.groupVersion then
-        MPWindow.setupGroupMenu(frame.nameLabel, player.name)
+    if cells.name and frame.menuVersion ~= MPWindow.groupVersion then
+        MPWindow.setupGroupMenu(cells.name, player.name)
         frame.menuVersion = MPWindow.groupVersion
     end
 
@@ -561,6 +757,20 @@ function MPWindow.getDisplayList()
     for i = #list, n + 1, -1 do
         list[i] = nil
     end
+
+    -- Apply user-selected sort. When no sort is active the natural order is
+    -- self-first then form-order, which we already produced above.
+    local sortKey = getSortKey()
+    if sortKey and MPWindow.columnDefByKey[sortKey] then
+        local dir = getSortDir()
+        table.sort(list, function(a, b)
+            local va, vb = sortValue(a, sortKey), sortValue(b, sortKey)
+            if va == vb then return false end
+            if dir == "desc" then return va > vb end
+            return va < vb
+        end)
+    end
+
     return list
 end
 
@@ -568,6 +778,7 @@ end
 --- Update the gauge display with current player data
 function MPWindow.UpdateGauges()
     MPWindow.setupGaugeContainer()
+    MPWindow.setupGaugeHeader()
 
     local rows = MPWindow.getDisplayList()
     for id, player in ipairs(rows) do
@@ -578,24 +789,99 @@ function MPWindow.UpdateGauges()
 end
 
 
---- Text console update. Build one combined string and cecho once instead of
---- N round-trips through the MiniConsole.
+-- Format the data portion of one column in text mode. Returns nil for hidden
+-- columns so the caller can skip the separator too.
+local function renderTextCell(key, player)
+    if colHidden(key) then return nil end
+    if key == "name" then
+        return string.format("<white>%-12s", player.name or "")
+    elseif key == "class" then
+        return string.format("<white>%3s", player.class or "")
+    elseif key == "level" then
+        return string.format("<white>%2d", tonumber(player.level) or 0)
+    elseif key == "hp" then
+        local c = getBandLabelColor(player.hp, player.maxHp)
+        return string.format("<%s>%4d<blue>/<white>%4d<blue>hp", c, player.hp or 0, player.maxHp or 0)
+    elseif key == "mana" then
+        local c = getBandLabelColor(player.mana, player.maxMana)
+        return string.format("<%s>%4d<blue>/<white>%4d<blue>m", c, player.mana or 0, player.maxMana or 0)
+    elseif key == "mv" then
+        local c = getBandLabelColor(player.mv, player.maxMv)
+        return string.format("<%s>%4d<blue>mv", c, player.mv or 0)
+    elseif key == "br" then
+        local c = getBandLabelColor(player.br, 100)
+        return string.format("<%s>%3d<blue>br", c, player.br or 0)
+    end
+end
+
+
+-- Emit the column header line into the text console. Each header label is
+-- clickable (toggles visibility) and each ▲/▼ arrow is clickable (sorts).
+local function emitTextHeader()
+    local sortKey = getSortKey()
+    local sortDir = getSortDir()
+    local console = MPWindow.console
+    local first = true
+
+    for _, key in ipairs(MPWindow.textColumnOrder) do
+        local info = MPWindow.textColumnInfo[key]
+        local def = MPWindow.columnDefByKey[key]
+        if info and def then
+            local hidden = colHidden(key)
+            if not first and info.sep ~= "" then
+                console:cecho(info.sep)
+            end
+            first = false
+
+            local labelColor = hidden and "#666666" or "white"
+            local label = def.label
+            -- Pad/truncate so the header label fits in the column's data width.
+            -- This keeps subsequent columns roughly aligned with the data rows.
+            if #label > info.width then label = label:sub(1, info.width) end
+            local padded = label .. string.rep(" ", math.max(0, info.width - #label))
+
+            console:cechoLink(string.format("<%s>%s", labelColor, padded),
+                function() MPWindow.toggleColumnVisibility(key) end,
+                "Click to toggle column", true)
+
+            local upActive = (sortKey == key and sortDir == "asc")
+            local downActive = (sortKey == key and sortDir == "desc")
+            console:cechoLink(string.format("<%s>▲", upActive and "#a8ffa8" or "#666666"),
+                function() MPWindow.setSort(key, "asc") end,
+                "Sort " .. def.label .. " ascending", true)
+            console:cechoLink(string.format("<%s>▼", downActive and "#a8ffa8" or "#666666"),
+                function() MPWindow.setSort(key, "desc") end,
+                "Sort " .. def.label .. " descending", true)
+        end
+    end
+    console:echo("\n")
+end
+
+
+--- Text console update. Emits a clickable header line followed by one row
+--- per player using only the visible columns.
 function MPWindow.UpdateConsole()
     MPWindow.console:clear()
+    emitTextHeader()
 
     local rows = MPWindow.getDisplayList()
     local parts = {}
-    for i, player in ipairs(rows) do
-        local hpColor = getBandLabelColor(player.hp, player.maxHp)
-        local manaColor = getBandLabelColor(player.mana, player.maxMana)
-        local mvColor = getBandLabelColor(player.mv, player.maxMv)
-        local brColor = getBandLabelColor(player.br, 100)
-        parts[i] = string.format("<white>%-12s<blue>|<white>%3s<blue>|<white>%2d<blue>|<%s>%4d<blue>/<white>%4d<blue>hp <%s>%4d<blue>/<white>%4d<blue>m <%s>%4d<blue>mv <%s>%3d<blue>br\n",
-            player.name, player.class, player.level,
-            hpColor, player.hp, player.maxHp,
-            manaColor, player.mana, player.maxMana,
-            mvColor, player.mv,
-            brColor, player.br)
+    for _, player in ipairs(rows) do
+        local rowParts = {}
+        local first = true
+        for _, key in ipairs(MPWindow.textColumnOrder) do
+            local cell = renderTextCell(key, player)
+            if cell then
+                local sep = MPWindow.textColumnInfo[key].sep
+                if not first and sep ~= "" then
+                    table.insert(rowParts, sep)
+                end
+                first = false
+                table.insert(rowParts, cell)
+            end
+        end
+        table.insert(rowParts, "\n")
+        table.insert(parts, table.concat(rowParts))
     end
 
     if #parts > 0 then
