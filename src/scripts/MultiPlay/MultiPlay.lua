@@ -46,8 +46,25 @@ MultiPlay = {
     lastSent = nil
 }
 
+-- Set while a received MPTell/MPTellPlayer/MPTellClass is being expanded
+-- locally. The tell* helpers check this and bail out, so a broadcast whose
+-- payload itself matches another MultiPlay alias (e.g. someone types `-+foo`,
+-- or has a local alias that calls tellAll) is not re-broadcast by every
+-- receiver — which would amplify into an exponential message storm.
+MultiPlay._handlingBroadcast = false
+
+local function runReceivedCommand(message)
+    MultiPlay._handlingBroadcast = true
+    local ok, err = pcall(expandAlias, message)
+    MultiPlay._handlingBroadcast = false
+    if not ok then
+        cecho(string.format("\n<red>MultiPlay: error expanding received command: %s\n", tostring(err)))
+    end
+end
+
 -- Tell all others to execute a command
 function MultiPlay.tellAll(command)
+    if MultiPlay._handlingBroadcast then return end
     echo(MultiPlay.myPlayerName .. " > All >> " .. command .. "\n")
     raiseGlobalEvent("MPTell", command)
     --raiseEvent("MPTell", command, getProfileName())
@@ -56,12 +73,14 @@ function MultiPlay.tellAll(command)
 end
 
 function MultiPlay.tellPlayer(player, command)
+    if MultiPlay._handlingBroadcast then return end
     echo(MultiPlay.myPlayerName .. " > " .. player .. " >> " .. command .. "\n")
     raiseGlobalEvent("MPTellPlayer", player, command)
     raiseEvent("MPTellPlayer", player, command, getProfileName())
 end
 
 function MultiPlay.tellGroup(group, command)
+    if MultiPlay._handlingBroadcast then return end
     if MultiPlay.myGroups[group] then
         echo(MultiPlay.myPlayerName .. " > Grp:" .. group .. " >> " .. command .. "\n")
         for _, player in ipairs(MultiPlay.myGroups[group]) do
@@ -80,11 +99,13 @@ function MultiPlay.tellOthers(command)
         MultiPlay._suppressTellOthers = false
         return
     end
+    if MultiPlay._handlingBroadcast then return end
     echo(MultiPlay.myPlayerName .. " > Others >> " .. command .. "\n")
     raiseGlobalEvent("MPTell", command)
 end
 
 function MultiPlay.tellClass(class, command)
+    if MultiPlay._handlingBroadcast then return end
     local classStr
     if class == "w" then
         classStr = "Warrior"
@@ -513,7 +534,7 @@ function MultiPlay.eventHandler(event, ...)
         local profile = arg[2]
         if getProfileName() ~= profile then
             echo(profile .. " << " .. message)
-            expandAlias(message)
+            runReceivedCommand(message)
         end
 
     elseif event == "MPTellPlayer" then
@@ -527,7 +548,7 @@ function MultiPlay.eventHandler(event, ...)
             if player and MultiPlay.myPlayerName
                 and player:lower() == MultiPlay.myPlayerName:lower() then
                 echo(profile .. " < " .. MultiPlay.myPlayerName .. " << " .. message)
-                expandAlias(message)
+                runReceivedCommand(message)
             end
         end)
 
@@ -539,7 +560,7 @@ function MultiPlay.eventHandler(event, ...)
         MultiPlay.withGmcp(function()
             if gmcp and gmcp.Char and gmcp.Char.Info and gmcp.Char.Info.class == class then
                 echo(profile .. " < " .. class .. " << " .. message)
-                expandAlias(message)
+                runReceivedCommand(message)
             end
         end)
 
