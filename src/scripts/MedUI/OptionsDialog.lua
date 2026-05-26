@@ -6,9 +6,10 @@ Dialog.isOpen = false
 Dialog.rows = Dialog.rows or {}
 
 local DIALOG_WIDTH = 560
-local DIALOG_HEIGHT = 550
+local DIALOG_HEIGHT = 610
 local TITLE_HEIGHT = 44
 local ROW_HEIGHT = 38
+local COLUMNS_ROW_HEIGHT = 60
 local SIDE_PAD = 18
 
 local function panelCSS(t)
@@ -434,6 +435,82 @@ local function buildRow(parent, yPx, option)
   return row
 end
 
+local function buildColumnVisibilityRow(parent, yPx)
+  -- Custom row: a label across the top, then a horizontal strip of mini
+  -- toggle buttons (one per MultiPlay column). Each button is green when
+  -- the column is visible, red when hidden.
+  local row = {type = "columns", key = "mpColumns", buttons = {}}
+  local rowBgHeight = COLUMNS_ROW_HEIGHT - 6
+
+  local rowBg = Geyser.Label:new({
+    name = "MedUIOptRow_mpColumns",
+    x = SIDE_PAD, y = yPx,
+    width = DIALOG_WIDTH - (SIDE_PAD * 2), height = rowBgHeight,
+  }, parent)
+  rowBg:setStyleSheet(rowCSS())
+
+  local nameLabel = Geyser.Label:new({
+    name = "MedUIOptName_mpColumns",
+    x = 12, y = 4,
+    width = DIALOG_WIDTH - (SIDE_PAD * 2) - 24, height = 18,
+  }, rowBg)
+  nameLabel:setStyleSheet([[
+    background-color: transparent;
+    qproperty-alignment: 'AlignVCenter | AlignLeft';
+    padding-left: 4px;
+  ]])
+  nameLabel:echo(htmlLabel("MultiPlay Columns (click to toggle)", 10, "#e6e6e6", "left", false))
+
+  local cols = (MPWindow and MPWindow.columnDefs) or {}
+  local count = #cols
+  if count == 0 then return row end
+
+  local btnW = 56
+  local btnH = 24
+  local gap = 4
+  local groupW = (count * btnW) + ((count - 1) * gap)
+  local startX = math.floor((DIALOG_WIDTH - (SIDE_PAD * 2) - groupW) / 2)
+  local btnY = 28
+
+  for i, col in ipairs(cols) do
+    local x = startX + ((i - 1) * (btnW + gap))
+    local btn = Geyser.Label:new({
+      name = "MedUIOptCol_" .. col.key,
+      x = x, y = btnY,
+      width = btnW, height = btnH,
+    }, rowBg)
+    local visible = not (MedUI.options.mpHiddenColumns and MedUI.options.mpHiddenColumns[col.key])
+    btn.onState = visible
+    btn:setStyleSheet(visible and toggleOnCSS() or toggleOffCSS())
+    btn:echo(htmlLabel(col.label, 9, "#ffffff", "center", true))
+    btn:setClickCallback("MedUI.OptionsDialog.onColumnToggle", col.key)
+    local boundBtn = btn
+    btn:setOnEnter(function()
+      boundBtn:setStyleSheet(boundBtn.onState and toggleOnHoverCSS() or toggleOffHoverCSS())
+    end)
+    btn:setOnLeave(function()
+      boundBtn:setStyleSheet(boundBtn.onState and toggleOnCSS() or toggleOffCSS())
+    end)
+    row.buttons[col.key] = btn
+  end
+
+  return row
+end
+
+
+function Dialog.onColumnToggle(key)
+  if MPWindow and MPWindow.toggleColumnVisibility then
+    MPWindow.toggleColumnVisibility(key)
+  end
+  local row = Dialog.rows and Dialog.rows.mpColumns
+  if not row or not row.buttons or not row.buttons[key] then return end
+  local btn = row.buttons[key]
+  local visible = not (MedUI.options.mpHiddenColumns and MedUI.options.mpHiddenColumns[key])
+  btn.onState = visible
+  btn:setStyleSheet(visible and toggleOnCSS() or toggleOffCSS())
+end
+
+
 function Dialog.close()
   -- Geyser.CommandLine wraps a separately-created command-line widget that
   -- isn't torn down by the parent Label's :delete(). Remove it explicitly.
@@ -541,6 +618,9 @@ function Dialog.open()
     Dialog.rows[option.key] = buildRow(Dialog.panel, yPx, option)
     nextY = yPx + ROW_HEIGHT
   end
+
+  Dialog.rows.mpColumns = buildColumnVisibilityRow(Dialog.panel, nextY)
+  nextY = nextY + COLUMNS_ROW_HEIGHT
 
   Dialog.rows.theme = buildThemeRow(Dialog.panel, nextY)
   Dialog.rows.customColor = buildColorRow(Dialog.panel, nextY + ROW_HEIGHT)

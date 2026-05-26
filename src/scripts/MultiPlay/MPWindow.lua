@@ -102,23 +102,28 @@ end
 
 local rowHeight = 25
 local headerHeight = 24
-local arrowStripWidth = 14
 
 local cellStyle = "background-color: #222222; border: 1px solid #444444; padding: 2px;"
 local cellStyleAlt = "background-color: #333333; border: 1px solid #444444; padding: 2px;"
 
--- Ordered column metadata for the gauge view. The header and player rows both
--- iterate this list, so visibility/sort options work the same way everywhere.
+-- Ordered column metadata for the gauge view. gaugePolicy controls HBox
+-- behavior: "fixed" keeps the column at gaugeWidth pixels; "dynamic" lets the
+-- column stretch to fill leftover horizontal space so HP/mana grow when the
+-- window is widened and shrink gracefully on small monitors.
 MPWindow.columnDefs = {
-    {key = "name",  label = "Name",  gaugeWidth = 90,  cellKind = "name",  style = cellStyle},
-    {key = "hp",    label = "HP",    gaugeWidth = 120, cellKind = "hpGauge"},
-    {key = "mana",  label = "Mana",  gaugeWidth = 120, cellKind = "manaGauge"},
-    {key = "mv",    label = "MV",    gaugeWidth = 40,  cellKind = "mvLabel",    style = cellStyle},
-    {key = "br",    label = "BR",    gaugeWidth = 40,  cellKind = "brLabel",    style = cellStyle},
-    {key = "class", label = "Class", gaugeWidth = 50,  cellKind = "classLabel", style = cellStyleAlt},
-    {key = "level", label = "Lvl",   gaugeWidth = 40,  cellKind = "levelLabel", style = cellStyleAlt},
-    {key = "group", label = "Group", gaugeWidth = 65,  cellKind = "groupLabel", style = cellStyleAlt},
+    {key = "name",  label = "Name",  gaugeWidth = 90,  gaugePolicy = "fixed",   cellKind = "name",       style = cellStyle},
+    {key = "hp",    label = "HP",    gaugeWidth = 120, gaugePolicy = "dynamic", cellKind = "hpGauge"},
+    {key = "mana",  label = "Mana",  gaugeWidth = 120, gaugePolicy = "dynamic", cellKind = "manaGauge"},
+    {key = "mv",    label = "MV",    gaugeWidth = 40,  gaugePolicy = "fixed",   cellKind = "mvLabel",    style = cellStyle},
+    {key = "br",    label = "BR",    gaugeWidth = 40,  gaugePolicy = "fixed",   cellKind = "brLabel",    style = cellStyle},
+    {key = "class", label = "Class", gaugeWidth = 50,  gaugePolicy = "fixed",   cellKind = "classLabel", style = cellStyleAlt},
+    {key = "level", label = "Lvl",   gaugeWidth = 40,  gaugePolicy = "fixed",   cellKind = "levelLabel", style = cellStyleAlt},
+    {key = "group", label = "Group", gaugeWidth = 65,  gaugePolicy = "fixed",   cellKind = "groupLabel", style = cellStyleAlt},
 }
+
+local function colHPolicy(col)
+    return col.gaugePolicy == "dynamic" and Geyser.Dynamic or Geyser.Fixed
+end
 
 -- Map key -> def for O(1) lookups
 MPWindow.columnDefByKey = {}
@@ -369,40 +374,33 @@ function MPWindow.setupGaugeContainer()
 end
 
 
--- Styles for the gauge-mode header cells. Hidden columns get a dimmed look so
--- the user can still find and click them to bring the column back.
-local headerNameStyle = "background-color: #1f1f2a; border: 1px solid #444444; padding: 1px;"
-local headerNameStyleHidden = "background-color: #161618; border: 1px solid #2a2a2a; padding: 1px;"
-local headerArrowStyle = "background-color: #1f1f2a; border: 1px solid #444444;"
-local headerArrowStyleActive = "background-color: #2e6a2e; border: 1px solid #66cc66;"
+-- Header cell styles. Active = column currently being sorted by.
+local headerStyle = "background-color: #1f1f2a; border: 1px solid #444444; padding: 1px;"
+local headerStyleActive = "background-color: #2e6a2e; border: 1px solid #66cc66; padding: 1px;"
 
 MPWindow.headerCells = MPWindow.headerCells or {}
 
 
---- Refresh header label colors/styles to reflect current sort + visibility.
+--- Refresh header labels to reflect the current sort column + direction.
 function MPWindow.updateGaugeHeader()
     local sortKey = getSortKey()
     local sortDir = getSortDir()
 
     for _, col in ipairs(MPWindow.columnDefs) do
-        local h = MPWindow.headerCells[col.key]
-        if h then
-            local hidden = colHidden(col.key)
-            h.name:setStyleSheet(hidden and headerNameStyleHidden or headerNameStyle)
-            h.name:echo(col.label, hidden and "#777777" or "white", "c")
-
-            local upActive = (sortKey == col.key and sortDir == "asc")
-            local downActive = (sortKey == col.key and sortDir == "desc")
-            h.up:setStyleSheet(upActive and headerArrowStyleActive or headerArrowStyle)
-            h.up:echo("▲", upActive and "#a8ffa8" or "#888888", "c")
-            h.down:setStyleSheet(downActive and headerArrowStyleActive or headerArrowStyle)
-            h.down:echo("▼", downActive and "#a8ffa8" or "#888888", "c")
+        local cell = MPWindow.headerCells[col.key]
+        if cell then
+            local active = (sortKey == col.key)
+            local arrow = active and (sortDir == "desc" and " ▼" or " ▲") or ""
+            cell:setStyleSheet(active and headerStyleActive or headerStyle)
+            cell:echo(col.label .. arrow, "white", "c")
         end
     end
 end
 
 
---- Build the clickable header row above the gauge rows. Done once.
+--- Build the clickable header row above the gauge rows. Headers for hidden
+--- columns are skipped entirely — visibility is controlled from the MedUI
+--- Options dialog, not from the header.
 function MPWindow.setupGaugeHeader()
     if MPWindow.headerRow then
         MPWindow.updateGaugeHeader()
@@ -416,62 +414,37 @@ function MPWindow.setupGaugeHeader()
     }, MPWindow.gaugeContainer)
 
     for _, col in ipairs(MPWindow.columnDefs) do
-        local cellName = "mpheader_" .. col.key
-        -- h_policy=Fixed keeps HBox from stretching this cell to an equal share;
-        -- we want each header column to be the exact width of its data column.
-        local cell = Geyser.Container:new({
-            name = cellName,
-            h_policy = Geyser.Fixed,
-            width = col.gaugeWidth, height = headerHeight,
-        }, MPWindow.headerRow)
-
-        local nameWidth = col.gaugeWidth - arrowStripWidth
-        local nameLabel = Geyser.Label:new({
-            name = cellName .. "_name",
-            x = 0, y = 0,
-            width = nameWidth, height = headerHeight,
-        }, cell)
-        nameLabel:setFontSize(9)
-
-        local arrowH = math.floor(headerHeight / 2)
-        local upArrow = Geyser.Label:new({
-            name = cellName .. "_up",
-            x = nameWidth, y = 0,
-            width = arrowStripWidth, height = arrowH,
-        }, cell)
-        upArrow:setFontSize(7)
-
-        local downArrow = Geyser.Label:new({
-            name = cellName .. "_down",
-            x = nameWidth, y = arrowH,
-            width = arrowStripWidth, height = headerHeight - arrowH,
-        }, cell)
-        downArrow:setFontSize(7)
-
-        local key = col.key
-        nameLabel:setClickCallback(function() MPWindow.toggleColumnVisibility(key) end)
-        upArrow:setClickCallback(function() MPWindow.setSort(key, "asc") end)
-        downArrow:setClickCallback(function() MPWindow.setSort(key, "desc") end)
-
-        MPWindow.headerCells[col.key] = {
-            cell = cell, name = nameLabel, up = upArrow, down = downArrow,
-        }
+        if not colHidden(col.key) then
+            local cellName = "mpheader_" .. col.key
+            local cell = Geyser.Label:new({
+                name = cellName,
+                h_policy = colHPolicy(col),
+                width = col.gaugeWidth, height = headerHeight,
+            }, MPWindow.headerRow)
+            cell:setFontSize(9)
+            local key = col.key
+            cell:setClickCallback(function() MPWindow.cycleSort(key) end)
+            MPWindow.headerCells[col.key] = cell
+        end
     end
 
     MPWindow.updateGaugeHeader()
 end
 
 
---- Set the active sort column + direction (or clear it when clicking the
---- currently-active arrow a second time).
-function MPWindow.setSort(key, dir)
+--- Cycle through sort states for a column: not-sorted → asc → desc → not-sorted.
+function MPWindow.cycleSort(key)
     if not MedUI or not MedUI.options then return end
-    if MedUI.options.mpSortKey == key and MedUI.options.mpSortDir == dir then
+    local curKey = MedUI.options.mpSortKey
+    local curDir = MedUI.options.mpSortDir or "asc"
+    if curKey ~= key then
+        MedUI.options.mpSortKey = key
+        MedUI.options.mpSortDir = "asc"
+    elseif curDir == "asc" then
+        MedUI.options.mpSortDir = "desc"
+    else
         MedUI.options.mpSortKey = nil
         MedUI.options.mpSortDir = "asc"
-    else
-        MedUI.options.mpSortKey = key
-        MedUI.options.mpSortDir = dir
     end
     if MedUI.saveOptions then MedUI.saveOptions(true) end
     if MPWindow.headerRow then MPWindow.updateGaugeHeader() end
@@ -479,17 +452,28 @@ function MPWindow.setSort(key, dir)
 end
 
 
---- Toggle whether a column's data is displayed. The header stays visible
---- (dimmed) so the user can always click it back on. Rows are rebuilt because
---- their HBox layout depends on which cells exist.
+--- Toggle whether a column is shown. Called from the MedUI Options dialog.
+--- The header HBox and the player-row HBoxes both depend on which cells
+--- exist, so tear them down and let the next Update() rebuild them.
 function MPWindow.toggleColumnVisibility(key)
     if not MedUI or not MedUI.options then return end
     MedUI.options.mpHiddenColumns = MedUI.options.mpHiddenColumns or {}
     MedUI.options.mpHiddenColumns[key] = not MedUI.options.mpHiddenColumns[key] or nil
     if MedUI.saveOptions then MedUI.saveOptions(true) end
+    MPWindow.rebuildGaugeHeader()
     MPWindow.rebuildGaugeFrames()
-    if MPWindow.headerRow then MPWindow.updateGaugeHeader() end
     MPWindow.Update()
+end
+
+
+--- Tear down the gauge header so setupGaugeHeader rebuilds it with the
+--- current visibility set.
+function MPWindow.rebuildGaugeHeader()
+    MPWindow.headerCells = {}
+    if MPWindow.headerRow then
+        MPWindow.headerRow:hide()
+        MPWindow.headerRow = nil
+    end
 end
 
 
@@ -508,22 +492,23 @@ end
 -- Construct the single Geyser widget that represents `col` for player `player`
 -- inside the given row HBox. Returns the widget plus its initial display state
 -- so updatePlayerFrame can dedup later. Returns nil if the column is hidden.
--- h_policy=Fixed keeps HBox from stretching every child to an equal share, so
--- per-column widths defined in columnDefs are preserved (and match the header).
+-- Fixed-policy columns keep their gaugeWidth in pixels; Dynamic-policy columns
+-- (HP/mana) share the leftover space so they grow/shrink with the window.
 local function buildColumnCell(col, row, frameName, player, frameIndex)
     if colHidden(col.key) then return nil end
     local cellName = frameName .. "_" .. col.key
     local width = col.gaugeWidth
+    local policy = colHPolicy(col)
 
     if col.cellKind == "name" then
-        local label = Geyser.Label:new({name = cellName, h_policy = Geyser.Fixed, width = width, height = "100%"}, row)
+        local label = Geyser.Label:new({name = cellName, h_policy = policy, width = width, height = "100%"}, row)
         label:setStyleSheet(col.style)
         label:echo(player.name, "white", "l")
         label:setFontSize(10)
         return label, {shownName = player.name}
 
     elseif col.cellKind == "hpGauge" then
-        local gauge = Geyser.Gauge:new({name = cellName, h_policy = Geyser.Fixed, width = width, height = "100%"}, row)
+        local gauge = Geyser.Gauge:new({name = cellName, h_policy = policy, width = width, height = "100%"}, row)
         gauge.back:setStyleSheet(backStyleSheet)
         local band = getGaugeBand(player.hp, player.maxHp)
         local info = gaugeBands[band]
@@ -542,7 +527,7 @@ local function buildColumnCell(col, row, frameName, player, frameIndex)
         return gauge, {shownHp = player.hp, shownMaxHp = player.maxHp, hpBand = band}
 
     elseif col.cellKind == "manaGauge" then
-        local gauge = Geyser.Gauge:new({name = cellName, h_policy = Geyser.Fixed, width = width, height = "100%"}, row)
+        local gauge = Geyser.Gauge:new({name = cellName, h_policy = policy, width = width, height = "100%"}, row)
         gauge.back:setStyleSheet(backStyleSheet)
         local band = getGaugeBand(player.mana, player.maxMana)
         local info = gaugeBands[band]
@@ -552,35 +537,35 @@ local function buildColumnCell(col, row, frameName, player, frameIndex)
         return gauge, {shownMana = player.mana, shownMaxMana = player.maxMana, manaBand = band}
 
     elseif col.cellKind == "mvLabel" then
-        local label = Geyser.Label:new({name = cellName, h_policy = Geyser.Fixed, width = width, height = "100%"}, row)
+        local label = Geyser.Label:new({name = cellName, h_policy = policy, width = width, height = "100%"}, row)
         label:setStyleSheet(col.style)
         label:echo(tostring(player.mv), getBandLabelColor(player.mv, player.maxMv), "c")
         label:setFontSize(9)
         return label, {shownMv = player.mv, shownMaxMv = player.maxMv}
 
     elseif col.cellKind == "brLabel" then
-        local label = Geyser.Label:new({name = cellName, h_policy = Geyser.Fixed, width = width, height = "100%"}, row)
+        local label = Geyser.Label:new({name = cellName, h_policy = policy, width = width, height = "100%"}, row)
         label:setStyleSheet(col.style)
         label:echo(tostring(player.br), getBandLabelColor(player.br, 100), "c")
         label:setFontSize(9)
         return label, {shownBr = player.br}
 
     elseif col.cellKind == "classLabel" then
-        local label = Geyser.Label:new({name = cellName, h_policy = Geyser.Fixed, width = width, height = "100%"}, row)
+        local label = Geyser.Label:new({name = cellName, h_policy = policy, width = width, height = "100%"}, row)
         label:setStyleSheet(col.style)
         label:echo(tostring(player.class), "cyan", "c")
         label:setFontSize(9)
         return label, {shownClass = player.class}
 
     elseif col.cellKind == "levelLabel" then
-        local label = Geyser.Label:new({name = cellName, h_policy = Geyser.Fixed, width = width, height = "100%"}, row)
+        local label = Geyser.Label:new({name = cellName, h_policy = policy, width = width, height = "100%"}, row)
         label:setStyleSheet(col.style)
         label:echo(tostring(player.level), "yellow", "c")
         label:setFontSize(9)
         return label, {shownLevel = player.level}
 
     elseif col.cellKind == "groupLabel" then
-        local label = Geyser.Label:new({name = cellName, h_policy = Geyser.Fixed, width = width, height = "100%"}, row)
+        local label = Geyser.Label:new({name = cellName, h_policy = policy, width = width, height = "100%"}, row)
         label:setStyleSheet(col.style)
         local groupName = MPWindow.getPlayerGroup(player.name)
         label:echo(groupName, "orange", "c")
@@ -820,8 +805,10 @@ local function renderTextCell(key, player)
 end
 
 
--- Emit the column header line into the text console. Each header label is
--- clickable (toggles visibility) and each ▲/▼ arrow is clickable (sorts).
+-- Emit the column header line into the text console. Each visible column's
+-- header is one clickable element that cycles the sort state. The active sort
+-- direction is shown as a ▲/▼ next to the column label. Hidden columns are
+-- skipped entirely (toggled from the MedUI Options dialog).
 local function emitTextHeader()
     local sortKey = getSortKey()
     local sortDir = getSortDir()
@@ -831,34 +818,21 @@ local function emitTextHeader()
     for _, key in ipairs(MPWindow.textColumnOrder) do
         local info = MPWindow.textColumnInfo[key]
         local def = MPWindow.columnDefByKey[key]
-        if info and def then
-            local hidden = colHidden(key)
+        if info and def and not colHidden(key) then
             if not first and info.sep ~= "" then
                 console:cecho(info.sep)
             end
             first = false
 
-            -- cecho/cechoLink parses named colors from color_table; <#hex> tags
-            -- aren't recognized here, so use names that match the gauge-mode look.
-            local labelColor = hidden and "DimGray" or "white"
-            local label = def.label
-            -- Pad/truncate so the header label fits in the column's data width.
-            -- This keeps subsequent columns roughly aligned with the data rows.
+            local active = (sortKey == key)
+            local arrow = active and (sortDir == "desc" and "▼" or "▲") or ""
+            local label = def.label .. arrow
             if #label > info.width then label = label:sub(1, info.width) end
             local padded = label .. string.rep(" ", math.max(0, info.width - #label))
 
-            console:cechoLink(string.format("<%s>%s", labelColor, padded),
-                function() MPWindow.toggleColumnVisibility(key) end,
-                "Click to toggle column", true)
-
-            local upActive = (sortKey == key and sortDir == "asc")
-            local downActive = (sortKey == key and sortDir == "desc")
-            console:cechoLink(string.format("<%s>▲", upActive and "LightGreen" or "DimGray"),
-                function() MPWindow.setSort(key, "asc") end,
-                "Sort " .. def.label .. " ascending", true)
-            console:cechoLink(string.format("<%s>▼", downActive and "LightGreen" or "DimGray"),
-                function() MPWindow.setSort(key, "desc") end,
-                "Sort " .. def.label .. " descending", true)
+            console:cechoLink(string.format("<%s>%s", active and "LightGreen" or "white", padded),
+                function() MPWindow.cycleSort(key) end,
+                "Click to sort by " .. def.label, true)
         end
     end
     console:echo("\n")
