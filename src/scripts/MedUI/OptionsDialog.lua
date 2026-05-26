@@ -6,10 +6,10 @@ Dialog.isOpen = false
 Dialog.rows = Dialog.rows or {}
 
 local DIALOG_WIDTH = 560
-local DIALOG_HEIGHT = 610
+local DIALOG_HEIGHT = 638
 local TITLE_HEIGHT = 44
 local ROW_HEIGHT = 38
-local COLUMNS_ROW_HEIGHT = 60
+local COLUMNS_ROW_HEIGHT = 88
 local SIDE_PAD = 18
 
 local function panelCSS(t)
@@ -465,18 +465,25 @@ local function buildColumnVisibilityRow(parent, yPx)
   local count = #cols
   if count == 0 then return row end
 
-  local btnW = 56
+  local btnW = 48
   local btnH = 24
   local gap = 4
-  local groupW = (count * btnW) + ((count - 1) * gap)
-  local startX = math.floor((DIALOG_WIDTH - (SIDE_PAD * 2) - groupW) / 2)
-  local btnY = 28
+  local rowGap = 4
+  local btnY0 = 26
+  -- Split into exactly 2 rows so the strip stays compact on smaller monitors.
+  local perRow = math.ceil(count / 2)
 
   for i, col in ipairs(cols) do
-    local x = startX + ((i - 1) * (btnW + gap))
+    local rowIdx = math.ceil(i / perRow)
+    local posInRow = ((i - 1) % perRow) + 1
+    local btnsThisRow = math.min(count - ((rowIdx - 1) * perRow), perRow)
+    local thisRowW = (btnsThisRow * btnW) + ((btnsThisRow - 1) * gap)
+    local rowStartX = math.floor((DIALOG_WIDTH - (SIDE_PAD * 2) - thisRowW) / 2)
+    local x = rowStartX + ((posInRow - 1) * (btnW + gap))
+    local y = btnY0 + ((rowIdx - 1) * (btnH + rowGap))
     local btn = Geyser.Label:new({
       name = "MedUIOptCol_" .. col.key,
-      x = x, y = btnY,
+      x = x, y = y,
       width = btnW, height = btnH,
     }, rowBg)
     local visible = not (MedUI.options.mpHiddenColumns and MedUI.options.mpHiddenColumns[col.key])

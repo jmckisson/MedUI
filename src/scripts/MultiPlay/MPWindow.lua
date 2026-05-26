@@ -119,6 +119,10 @@ MPWindow.columnDefs = {
     {key = "class", label = "Class", gaugeWidth = 50,  gaugePolicy = "fixed",   cellKind = "classLabel", style = cellStyleAlt},
     {key = "level", label = "Lvl",   gaugeWidth = 40,  gaugePolicy = "fixed",   cellKind = "levelLabel", style = cellStyleAlt},
     {key = "group", label = "Group", gaugeWidth = 65,  gaugePolicy = "fixed",   cellKind = "groupLabel", style = cellStyleAlt},
+    -- Keep SIF as the final/rightmost column. It is intentionally very narrow
+    -- because it shows only active spell letters (Sanc/Iceshield/Fireshield),
+    -- not tick numbers.
+    {key = "buffs", label = "SIF",   gaugeWidth = 42,  gaugePolicy = "fixed",   cellKind = "buffLabel",  style = cellStyleAlt},
 }
 
 local function colHPolicy(col)
@@ -133,7 +137,7 @@ end
 
 -- Subset of columns shown in the text-console view, in display order. group
 -- isn't included because the text view doesn't emit a group field today.
-MPWindow.textColumnOrder = {"name", "class", "level", "hp", "mana", "mv", "br"}
+MPWindow.textColumnOrder = {"name", "class", "level", "hp", "mana", "mv", "br", "buffs"}
 
 -- Per-column metadata for the text view: column width in characters (used for
 -- header padding) and the separator emitted before the column's data.
@@ -145,6 +149,7 @@ MPWindow.textColumnInfo = {
     mana  = {width = 10, sep = " "},
     mv    = {width = 6,  sep = " "},
     br    = {width = 5,  sep = " "},
+    buffs = {width = 5,  sep = " "},
 }
 
 local function colHidden(key)
@@ -185,6 +190,8 @@ local function sortValue(player, key)
         return tonumber(player.mv) or 0
     elseif key == "br" then
         return tonumber(player.br) or 0
+    elseif key == "buffs" then
+        return (tonumber(player.sanc) or 0) + (tonumber(player.ice) or 0) + (tonumber(player.fire) or 0)
     elseif key == "group" then
         return MPWindow.getPlayerGroup(player.name or ""):lower()
     end
@@ -496,6 +503,39 @@ function MPWindow.rebuildGaugeFrames()
 end
 
 
+local function activeBuffFlagValue(value)
+    return (tonumber(value) or 0) > 0
+end
+
+-- Compact "SIF" string of just the active letters, used as the dedup key
+-- for updatePlayerFrame so we only re-echo when the visible state changes.
+local function buffTextState(player)
+    local s = activeBuffFlagValue(player.sanc) and "S" or ""
+    local i = activeBuffFlagValue(player.ice) and "I" or ""
+    local f = activeBuffFlagValue(player.fire) and "F" or ""
+    return s .. i .. f
+end
+
+-- HTML for the gauge view's SIF label. <span> with inline color keeps the
+-- letters colored without needing a Geyser color arg per element.
+local function buffGaugeHtml(player)
+    local parts = {}
+    if activeBuffFlagValue(player.sanc) then table.insert(parts, "<span style='color:white;'>S</span>") end
+    if activeBuffFlagValue(player.ice) then table.insert(parts, "<span style='color:cyan;'>I</span>") end
+    if activeBuffFlagValue(player.fire) then table.insert(parts, "<span style='color:red;'>F</span>") end
+    return "<nobr>" .. table.concat(parts, " ") .. "</nobr>"
+end
+
+local function buffConsoleText(player)
+    local parts = {}
+    if activeBuffFlagValue(player.sanc) then table.insert(parts, "<white>S") end
+    if activeBuffFlagValue(player.ice) then table.insert(parts, "<cyan>I") end
+    if activeBuffFlagValue(player.fire) then table.insert(parts, "<red>F") end
+    if #parts == 0 then return "" end
+    return table.concat(parts, " ")
+end
+
+
 -- Construct the single Geyser widget that represents `col` for player `player`
 -- inside the given row HBox. Returns the widget plus its initial display state
 -- so updatePlayerFrame can dedup later. Returns nil if the column is hidden.
@@ -556,6 +596,13 @@ local function buildColumnCell(col, row, frameName, player, frameIndex)
         label:echo(tostring(player.br), getBandLabelColor(player.br, 100), "c")
         label:setFontSize(9)
         return label, {shownBr = player.br}
+
+    elseif col.cellKind == "buffLabel" then
+        local label = Geyser.Label:new({name = cellName, h_policy = policy, width = width, height = "100%"}, row)
+        label:setStyleSheet(col.style)
+        label:echo(buffGaugeHtml(player), "white", "c")
+        label:setFontSize(8)
+        return label, {shownBuffs = buffTextState(player)}
 
     elseif col.cellKind == "classLabel" then
         local label = Geyser.Label:new({name = cellName, h_policy = policy, width = width, height = "100%"}, row)
@@ -685,6 +732,14 @@ function MPWindow.updatePlayerFrame(index, player)
         frame.shownBr = player.br
     end
 
+    if cells.buffs then
+        local state = buffTextState(player)
+        if frame.shownBuffs ~= state then
+            cells.buffs:echo(buffGaugeHtml(player), "white", "c")
+            frame.shownBuffs = state
+        end
+    end
+
     if cells.class and frame.shownClass ~= player.class then
         cells.class:echo(tostring(player.class), "cyan", "c")
         frame.shownClass = player.class
@@ -808,6 +863,8 @@ local function renderTextCell(key, player)
     elseif key == "br" then
         local c = getBandLabelColor(player.br, 100)
         return string.format("<%s>%3d<blue>br", c, player.br or 0)
+    elseif key == "buffs" then
+        return buffConsoleText(player)
     end
 end
 

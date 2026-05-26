@@ -343,27 +343,28 @@ function MedUI.persistOnClose(adjCont)
   end)
 end
 
+-- Force-restore an AdjustableContainer even after its X button has set the
+-- persistent hidden flags. Plain :show() is not enough in that state because
+-- Geyser.Container:show gates show_impl on hidden/auto_hidden already being
+-- false. Also persists the cleared state so a resetProfile right after won't
+-- reload the old hidden state.
+function MedUI.forceShowAdjContainer(cont)
+  if not cont then return end
+  cont.hidden = false
+  cont.auto_hidden = false
+  cont:show()
+  if cont.save then cont:save() end
+end
+
 -- Force-restore the Map / Chat / MultiPlay AdjustableContainers. Used after
 -- the user has X-closed one (which persists across sessions via AdjCont
 -- autoSave) and wants it back. Gauges are not touched — toggle those via
 -- `medui gauges`.
 function MedUI.showAll()
-  local function forceShow(cont)
-    if not cont then return end
-    -- Clear both flags so :show() actually triggers show_impl (see
-    -- Geyser.Container:show — it gates show_impl on both being false).
-    cont.hidden = false
-    cont.auto_hidden = false
-    cont:show()
-    -- Persist the restored state immediately so a resetProfile right after
-    -- showall doesn't reload the old hidden state.
-    if cont.save then cont:save() end
-  end
-
-  forceShow(MedUI.MedMap and MedUI.MedMap.AdjCont)
-  forceShow(MedChat and MedChat.AdjCont)
+  MedUI.forceShowAdjContainer(MedUI.MedMap and MedUI.MedMap.AdjCont)
+  MedUI.forceShowAdjContainer(MedChat and MedChat.AdjCont)
   if MedUI.options.enableMultiPlay then
-    forceShow(MPWindow and MPWindow.window)
+    MedUI.forceShowAdjContainer(MPWindow and MPWindow.window)
   end
 
   -- If the global UI was hidden (via `medui hide`), clear that too so the

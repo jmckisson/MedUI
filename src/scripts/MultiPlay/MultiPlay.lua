@@ -30,6 +30,15 @@ MultiPlay = {
         mv = -1,
         maxMv = -1
     },
+    myBuffs = {
+        sanc = 0,
+        ice = 0,
+        fire = 0,
+    },
+    -- Buff-only broadcasts can arrive before the matching full MPInfoResponse
+    -- row. Keep them here and merge them into the row as soon as the full
+    -- info arrives.
+    pendingBuffs = {},
     eventHandlerIDs = {},
     -- Snapshot of the last broadcast payload; sendMyInfo skips the global
     -- event when nothing has changed to keep N profiles from producing N^2
@@ -150,6 +159,133 @@ function MultiPlay.showGroups()
 end
 
 
+-- Track the three high-value defensive affects for MultiPlay. GMCP sends
+-- gmcp.Char.Afflictions.Add = { name = "Iceshield", ticks = 4 } and/or
+-- gmcp.Char.Afflictions.Remove = "Sanctuary".
+local buffNameToKey = {
+    Sanctuary = "sanc",
+    Iceshield = "ice",
+    Fireshield = "fire",
+}
+
+local function normalizeBuffTicks(ticks)
+    ticks = tonumber(ticks) or 0
+    if ticks < 1 then return 0 end
+    if ticks > 35 then return 35 end
+    return ticks
+end
+
+local function buffActiveFlag(ticks)
+    return normalizeBuffTicks(ticks) > 0 and 1 or 0
+end
+
+local function getPlayerKey(name)
+    return name and tostring(name):lower() or ""
+end
+
+function MultiPlay.updateBuffsFromGmcp()
+    if not gmcp or not gmcp.Char or not gmcp.Char.Afflictions then return false end
+
+    local changed = false
+    local aff = gmcp.Char.Afflictions
+
+    local added = aff.Add
+    if added and added.name and buffNameToKey[added.name] then
+        local key = buffNameToKey[added.name]
+        local ticks = normalizeBuffTicks(added.ticks)
+        if MultiPlay.myBuffs[key] ~= ticks then
+            MultiPlay.myBuffs[key] = ticks
+            changed = true
+        end
+    end
+
+    local removed = aff.Remove
+    if removed and buffNameToKey[removed] then
+        local key = buffNameToKey[removed]
+        if MultiPlay.myBuffs[key] ~= 0 then
+            MultiPlay.myBuffs[key] = 0
+            changed = true
+        end
+    end
+
+    return changed
+end
+
+function MultiPlay.getBuffFlags()
+    return {
+        sanc = buffActiveFlag(MultiPlay.myBuffs.sanc),
+        ice = buffActiveFlag(MultiPlay.myBuffs.ice),
+        fire = buffActiveFlag(MultiPlay.myBuffs.fire),
+    }
+end
+
+function MultiPlay.applyBuffFlagsToPlayer(player, sanc, ice, fire)
+    if not player then return end
+    player.sanc = tonumber(sanc) or 0
+    player.ice = tonumber(ice) or 0
+    player.fire = tonumber(fire) or 0
+end
+
+function MultiPlay.sendMyBuffs()
+    local name = MultiPlay.myPlayerName
+    if gmcp and gmcp.Char and gmcp.Char.Info and gmcp.Char.Info.name then
+        name = gmcp.Char.Info.name
+        MultiPlay.myPlayerName = name
+    end
+    if not name or name == "" then
+        name = capitalizeFirst(getCharacterName()) or "<Unknown>"
+        MultiPlay.myPlayerName = name
+    end
+
+    local buffs = MultiPlay.getBuffFlags()
+    raiseGlobalEvent("MPBuffResponse", name, buffs.sanc, buffs.ice, buffs.fire)
+end
+
+function MultiPlay.updateStoredPlayerBuffs(name, sanc, ice, fire)
+    local key = getPlayerKey(name)
+    if key == "" then return false end
+
+    local found = false
+    for _, player in ipairs(MultiPlay.myForm) do
+        if getPlayerKey(player.name) == key then
+            MultiPlay.applyBuffFlagsToPlayer(player, sanc, ice, fire)
+            found = true
+            break
+        end
+    end
+
+    if not found then
+        MultiPlay.pendingBuffs[key] = {
+            sanc = tonumber(sanc) or 0,
+            ice = tonumber(ice) or 0,
+            fire = tonumber(fire) or 0,
+        }
+    end
+
+    return found
+end
+
+-- Full MPInfoResponse messages are primarily for vitals. Buff state can change
+-- faster than vitals broadcasts and some profiles/packages may send MPInfo
+-- without SIF fields, which previously overwrote an active letter with 0 and
+-- made it flash/disappear. Treat MPBuffResponse as authoritative for clearing
+-- SIF; MPInfoResponse may add positive flags, but it should not clear an
+-- already-active flag from an existing row.
+function MultiPlay.preserveExistingBuffFlags(playerInfo, existingPlayer)
+    if not playerInfo or not existingPlayer then return end
+
+    if (tonumber(playerInfo.sanc) or 0) <= 0 and (tonumber(existingPlayer.sanc) or 0) > 0 then
+        playerInfo.sanc = existingPlayer.sanc
+    end
+    if (tonumber(playerInfo.ice) or 0) <= 0 and (tonumber(existingPlayer.ice) or 0) > 0 then
+        playerInfo.ice = existingPlayer.ice
+    end
+    if (tonumber(playerInfo.fire) or 0) <= 0 and (tonumber(existingPlayer.fire) or 0) > 0 then
+        playerInfo.fire = existingPlayer.fire
+    end
+end
+
+
 -- Build a player-info table for the current profile in the same shape as
 -- entries in MultiPlay.myForm. Returns nil if vitals haven't arrived yet.
 function MultiPlay.getSelfInfo()
@@ -183,6 +319,7 @@ function MultiPlay.getSelfInfo()
     end
 
     local v = MultiPlay.myVitals
+    local buffs = MultiPlay.getBuffFlags()
     return {
         name = MultiPlay.myPlayerName,
         class = classToCode[MultiPlay.myClass] or "???",
@@ -190,6 +327,12 @@ function MultiPlay.getSelfInfo()
         hp = v.hp, maxHp = v.maxHp,
         mana = v.mana, maxMana = v.maxMana,
         br = v.br, mv = v.mv, maxMv = v.maxMv,
+        -- MultiPlay only displays whether these affects are active. Do not
+        -- broadcast tick counts; Medievia does not provide dynamic decrement
+        -- updates here, and stale tick numbers are misleading.
+        sanc = buffs.sanc,
+        ice = buffs.ice,
+        fire = buffs.fire,
     }
 end
 
@@ -222,14 +365,16 @@ function MultiPlay.sendMyInfo()
             and last.level == info.level
             and last.hp == info.hp and last.maxHp == info.maxHp
             and last.mana == info.mana and last.maxMana == info.maxMana
-            and last.br == info.br and last.mv == info.mv and last.maxMv == info.maxMv then
+            and last.br == info.br and last.mv == info.mv and last.maxMv == info.maxMv
+            and last.sanc == info.sanc and last.ice == info.ice and last.fire == info.fire then
             return
         end
 
         MultiPlay.lastSent = info
 
         raiseGlobalEvent("MPInfoResponse", info.name, info.class, info.level,
-            info.hp, info.maxHp, info.mana, info.maxMana, info.br, info.mv, info.maxMv)
+            info.hp, info.maxHp, info.mana, info.maxMana, info.br, info.mv, info.maxMv,
+            info.sanc, info.ice, info.fire)
     end)
 end
 
@@ -237,11 +382,15 @@ end
 function MultiPlay.enableModule()
     enableAlias("MultiPlay")
     enableTrigger("MultiPlay")
-    -- Use auto-show so we clear our own auto_hidden flag without clobbering
-    -- the user's hidden flag (set when they X-close the window). If they
-    -- previously X-closed, hidden=true keeps it closed; show(true) will
-    -- only actually display the window when both flags are clear.
-    MPWindow.window:show(true)
+    -- Toggling MultiPlay back on should always re-open the stats window,
+    -- even if the user previously X-closed it (which sets the persistent
+    -- hidden flag). forceShowAdjContainer clears both flags and persists
+    -- the cleared state.
+    if MedUI and MedUI.forceShowAdjContainer then
+        MedUI.forceShowAdjContainer(MPWindow and MPWindow.window)
+    elseif MPWindow and MPWindow.window then
+        MPWindow.window:show(true)
+    end
 
     -- On package install/load the gmcp tree may already be populated from
     -- earlier in the session, so no Char.Vitals/Char.Info event will fire to
@@ -295,6 +444,16 @@ function MultiPlay.eventHandler(event, ...)
 
         raiseEvent("MultiPlayConsoleUpdate")
 
+    elseif event == "gmcp.Char.Afflictions" then
+        if MultiPlay.updateBuffsFromGmcp() then
+            MultiPlay.lastSent = nil
+            if MedUI and MedUI.options.enableMultiPlay then
+                MultiPlay.sendMyInfo()
+                MultiPlay.sendMyBuffs()
+            end
+            raiseEvent("MultiPlayConsoleUpdate")
+        end
+
     elseif event == "MPTell" then
         --echo("got MPTell\n")
         local message = arg[1]
@@ -338,6 +497,18 @@ function MultiPlay.eventHandler(event, ...)
             -- record of us, so dedup against lastSent must not suppress this.
             MultiPlay.lastSent = nil
             MultiPlay.sendMyInfo()
+            MultiPlay.sendMyBuffs()
+        end
+
+    elseif event == "MPBuffResponse" then
+        local name = arg[1]
+        local sanc = tonumber(arg[2]) or 0
+        local ice = tonumber(arg[3]) or 0
+        local fire = tonumber(arg[4]) or 0
+
+        if getPlayerKey(name) ~= getPlayerKey(MultiPlay.myPlayerName) then
+            MultiPlay.updateStoredPlayerBuffs(name, sanc, ice, fire)
+            raiseEvent("MultiPlayConsoleUpdate")
         end
 
     elseif event == "MPInfoResponse" then
@@ -353,11 +524,23 @@ function MultiPlay.eventHandler(event, ...)
             maxMana = arg[7],
             br = arg[8],
             mv = arg[9],
-            maxMv = arg[10]
+            maxMv = arg[10],
+            sanc = tonumber(arg[11]) or 0,
+            ice = tonumber(arg[12]) or 0,
+            fire = tonumber(arg[13]) or 0
         }
 
-        local profile = arg[11]
+        local profile = arg[14]
         --echo("Received info from [" .. profile .. "] ".. playerInfo.name .. " (Class: " .. playerInfo.class .. ", Level: " .. playerInfo.level .. ")\n")
+
+        -- Buff broadcasts can race ahead of the first full info row. Merge any
+        -- pending flags so the row shows the correct SIF on first paint.
+        local pendingKey = getPlayerKey(playerInfo.name)
+        local pendingBuffs = MultiPlay.pendingBuffs[pendingKey]
+        if pendingBuffs then
+            MultiPlay.applyBuffFlagsToPlayer(playerInfo, pendingBuffs.sanc, pendingBuffs.ice, pendingBuffs.fire)
+            MultiPlay.pendingBuffs[pendingKey] = nil
+        end
 
         local found = false
 
@@ -367,6 +550,7 @@ function MultiPlay.eventHandler(event, ...)
         local incomingKey = playerInfo.name and playerInfo.name:lower() or ""
         for id, player in ipairs(MultiPlay.myForm) do
             if player.name and player.name:lower() == incomingKey then
+                MultiPlay.preserveExistingBuffFlags(playerInfo, player)
                 MultiPlay.myForm[id] = playerInfo
                 found = true
                 break
@@ -424,7 +608,9 @@ MultiPlay.eventHandlerIDs = {
     registerAnonymousEventHandler("MPTellClass", "MultiPlay.eventHandler"),
     registerAnonymousEventHandler("MPRequestInfo", "MultiPlay.eventHandler"),
     registerAnonymousEventHandler("MPInfoResponse", "MultiPlay.eventHandler"),
+    registerAnonymousEventHandler("MPBuffResponse", "MultiPlay.eventHandler"),
     registerAnonymousEventHandler("gmcp.Char.Vitals", "MultiPlay.eventHandler"),
     registerAnonymousEventHandler("gmcp.Char.Info", "MultiPlay.eventHandler"),
+    registerAnonymousEventHandler("gmcp.Char.Afflictions", "MultiPlay.eventHandler"),
     registerAnonymousEventHandler("MPSmartHeal", "MultiPlay.eventHandler")
 }
