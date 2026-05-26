@@ -52,7 +52,7 @@ function MultiPlay.tellAll(command)
     raiseGlobalEvent("MPTell", command)
     --raiseEvent("MPTell", command, getProfileName())
     -- could just send() it to ourself
-    send(command)
+    expandAlias(command)
 end
 
 function MultiPlay.tellPlayer(player, command)
