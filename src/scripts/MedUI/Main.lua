@@ -373,9 +373,15 @@ MedUI.optionsList = {
   {key = "mpGaugeMode",      label = "MultiPlay Gauge Mode",   type = "toggle",
     onChange = function() if MPWindow then MPWindow.setDisplayMode(MedUI.options.mpGaugeMode) end end,
     helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui mpgauges<white>' to toggle"},
+  -- Indexes 1..8 above are referenced by hardcoded `medui ...` aliases
+  -- (medui gauges = 1, ..., medui autotheme = 8). New entries must be added
+  -- after autoDetectTheme so those aliases keep targeting the correct option.
   {key = "autoDetectTheme",  label = "Auto-Detect Theme",      type = "toggle",
     onChange = function() if MedUI.options.autoDetectTheme then MedUI.applyClassTheme() end end,
     helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui autotheme<white>' to toggle"},
+  {key = "mpSortByPercent",  label = "Sort HP/Mana by %",      type = "toggle",
+    onChange = function() if MPWindow and MPWindow.Update then MPWindow.Update() end end,
+    helpKey = "<white>'<yellow>medui %d<white>' to toggle (off = sort by raw value)"},
 }
 
 MedUI.buffIconTable = {
@@ -1138,6 +1144,7 @@ function MedUI.loadOptions()
   if MedUI.options.autoDetectTheme == nil then MedUI.options.autoDetectTheme = false end
   if MedUI.options.uiHidden == nil then MedUI.options.uiHidden = false end
   if MedUI.options.mpSortDir == nil then MedUI.options.mpSortDir = "asc" end
+  if MedUI.options.mpSortByPercent == nil then MedUI.options.mpSortByPercent = false end
   MedUI.options.mpHiddenColumns = MedUI.options.mpHiddenColumns or {}
 
   -- Share the persisted groups table with MultiPlay so any mutation lands in

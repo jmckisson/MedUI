@@ -160,9 +160,16 @@ local function getSortDir()
     return MedUI and MedUI.options and MedUI.options.mpSortDir or "asc"
 end
 
--- Returns a comparable value for the given player + column key. Vitals
--- columns sort by percent-of-max so a level-1 with full HP doesn't outrank a
--- level-50 just because they have more max HP.
+local function sortHpMana(cur, max)
+    if MedUI and MedUI.options and MedUI.options.mpSortByPercent then
+        return (max and max > 0) and (cur / max) or 0
+    end
+    return tonumber(cur) or 0
+end
+
+-- Returns a comparable value for the given player + column key. HP and Mana
+-- honor the mpSortByPercent option (raw value by default — percentages all
+-- tie at 1.0 when everyone is at full health and produce no visible reorder).
 local function sortValue(player, key)
     if key == "name" then
         return tostring(player.name or ""):lower()
@@ -171,11 +178,11 @@ local function sortValue(player, key)
     elseif key == "level" then
         return tonumber(player.level) or 0
     elseif key == "hp" then
-        return (player.maxHp and player.maxHp > 0) and (player.hp / player.maxHp) or 0
+        return sortHpMana(player.hp, player.maxHp)
     elseif key == "mana" then
-        return (player.maxMana and player.maxMana > 0) and (player.mana / player.maxMana) or 0
+        return sortHpMana(player.mana, player.maxMana)
     elseif key == "mv" then
-        return (player.maxMv and player.maxMv > 0) and (player.mv / player.maxMv) or 0
+        return tonumber(player.mv) or 0
     elseif key == "br" then
         return tonumber(player.br) or 0
     elseif key == "group" then
@@ -830,7 +837,7 @@ local function emitTextHeader()
             if #label > info.width then label = label:sub(1, info.width) end
             local padded = label .. string.rep(" ", math.max(0, info.width - #label))
 
-            console:cechoLink(string.format("<%s>%s", active and "LightGreen" or "white", padded),
+            console:cechoLink(string.format("<%s>%s", active and "LawnGreen" or "white", padded),
                 function() MPWindow.cycleSort(key) end,
                 "Click to sort by " .. def.label, true)
         end
