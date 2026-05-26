@@ -1291,8 +1291,10 @@ function MedUI.eventHandler(event, ...)
 end
 
 
-for k, v in pairs(MedUI.configAliases) do
-  killAlias(k)
+if MedUI.configAliases then
+  for _, id in ipairs(MedUI.configAliases) do
+    killAlias(id)
+  end
 end
 
 MedUI.configAliases = {
@@ -1312,48 +1314,6 @@ MedUI.configAliases = {
   tempAlias("^medui help$", [[MedUI.help()]]),
   tempAlias("^medui theme (\\S+)$", [[MedUI.setTheme(matches[2])]])
 }
-
--- if MedUI.configAlias then killAlias(MedUI.configAlias) end
--- MedUI.configAlias = tempAlias("^medui\\s*(.*)?$", [[MedUI.config(matches[2])]])
-
--- if MedUI.gaugeAlias then killAlias(MedUI.gaugeAlias) end
--- MedUI.gaugeAlias = tempAlias("^medui gauges$", [[MedUI.config(1)]])
-
--- if MedUI.inlineMapAlias then killAlias(MedUI.inlineMapAlias) end
--- MedUI.inlineMapAlias = tempAlias("^medui inlinemap$", [[MedUI.config(2)]])
-
--- if MedUI.timestampAlias then killAlias(MedUI.timestampAlias) end
--- MedUI.timestampAlias = tempAlias("^medui timestamp$", [[MedUI.config(3)]])
-
--- if MedUI.mapFontAlias then killAlias(MedUI.mapFontAlias) end
--- MedUI.mapFontAlias = tempAlias("^medui mapFontSize (\\d+)$", [[MedUI.config("4 " .. matches[2])]])
-
--- if MedUI.chatFontAlias then killAlias(MedUI.chatFontAlias) end
--- MedUI.chatFontAlias = tempAlias("^medui chatFontSize (\\d+)$", [[MedUI.config("5 " .. matches[2])]])
-
--- if MedUI.multiPlayAlias then killAlias(MedUI.multiPlayAlias) end
--- MedUI.multiPlayAlias = tempAlias("^medui mp$", [[MedUI.config("6")]])
-
--- if MedUI.mpGaugesAlias then killAlias(MedUI.mpGaugesAlias) end
--- MedUI.mpGaugesAlias = tempAlias("^medui mpgauges$", [[MedUI.config("7")]])
-
--- if MedUI.autoThemeAlias then killAlias(MedUI.autoThemeAlias) end
--- MedUI.autoThemeAlias = tempAlias("^medui autotheme$", [[MedUI.config("8")]])
-
--- if MedUI.sortPctAlias then killAlias(MedUI.sortPctAlias) end
--- MedUI.sortPctAlias = tempAlias("^medui sortPct$", [[MedUI.config("9")]])
-
--- if MedUI.hideAlias then killAlias(MedUI.hideAlias) end
--- MedUI.hideAlias = tempAlias("^medui hide$", [[MedUI.hideUI()]])
-
--- if MedUI.showAlias then killAlias(MedUI.showAlias) end
--- MedUI.showAlias = tempAlias("^medui show$", [[MedUI.showUI()]])
-
--- if MedUI.showAllAlias then killAlias(MedUI.showAllAlias) end
--- MedUI.showAllAlias = tempAlias("^medui showall$", [[MedUI.showAll()]])
-
--- if MedUI.helpAlias then killAlias(MedUI.helpAlias) end
--- MedUI.helpAlias = tempAlias("^medui help$", [[MedUI.help()]])
 
 -- `medui theme <arg>` — arg is either a class name (warrior/cleric/mage/thief)
 -- or a hex color (#RRGGBB / RRGGBB), which selects the Custom theme.
@@ -1382,8 +1342,6 @@ function MedUI.setTheme(arg)
   end
 end
 
---if MedUI.themeAlias then killAlias(MedUI.themeAlias) end
---MedUI.themeAlias = tempAlias("^medui theme (\\S+)$", [[MedUI.setTheme(matches[2])]])
 
 -- Maps gmcp.Char.Info.class values to theme keys. Unknown classes are ignored
 -- (auto-detect leaves the current theme alone rather than guessing).
