@@ -226,12 +226,16 @@ MedUI._lastAppliedAccent = nil
 function MedUI.applyUIVisibility()
   local hidden = MedUI.options.uiHidden
 
+  -- Use the auto=true variants of hide/show on AdjustableContainers so we
+  -- don't clobber the user's hidden flag (set when they X-close a panel).
+  -- show(true) will only display when both hidden and auto_hidden are clear,
+  -- so an X-closed panel stays closed across `medui hide`/`medui show`.
   if MedUI.MedMap and MedUI.MedMap.AdjCont then
-    if hidden then MedUI.MedMap.AdjCont:hide() else MedUI.MedMap.AdjCont:show() end
+    if hidden then MedUI.MedMap.AdjCont:hide(true) else MedUI.MedMap.AdjCont:show(true) end
   end
 
   if MedChat and MedChat.AdjCont then
-    if hidden then MedChat.AdjCont:hide() else MedChat.AdjCont:show() end
+    if hidden then MedChat.AdjCont:hide(true) else MedChat.AdjCont:show(true) end
   end
 
   if MedBuffsNBars.Bottom then
@@ -254,9 +258,9 @@ function MedUI.applyUIVisibility()
 
   if MPWindow and MPWindow.window then
     if hidden then
-      MPWindow.window:hide()
+      MPWindow.window:hide(true)
     elseif MedUI.options.enableMultiPlay then
-      MPWindow.window:show()
+      MPWindow.window:show(true)
     end
   end
 
@@ -334,11 +338,21 @@ function MedUI.showAll()
     forceShow(MPWindow and MPWindow.window)
   end
 
-  -- Re-establish the right border now that map/chat are visible again.
-  if MedUI.MedMap and MedChat and MedUI.MedMap.AdjCont and MedChat.AdjCont
-     and not MedUI.MedMap.AdjCont.hidden and not MedChat.AdjCont.hidden then
-    local w, _ = getMainWindowSize()
-    setBorderRight(w/3.3)
+  -- If the global UI was hidden (via `medui hide`), clear that too so the
+  -- gauges/buffs and borders come back. applyUIVisibility handles the borders
+  -- and re-shows the secondary widgets without disturbing the AdjConts we
+  -- just force-restored (their auto_hidden flag is now false).
+  if MedUI.options.uiHidden then
+    MedUI.options.uiHidden = false
+    MedUI.applyUIVisibility()
+    MedUI.saveOptions(true)
+  else
+    -- Re-establish the right border now that map/chat are visible again.
+    if MedUI.MedMap and MedChat and MedUI.MedMap.AdjCont and MedChat.AdjCont
+       and not MedUI.MedMap.AdjCont.hidden and not MedChat.AdjCont.hidden then
+      local w, _ = getMainWindowSize()
+      setBorderRight(w/3.3)
+    end
   end
 
   cecho("\n<DeepSkyBlue>MedUI: all panels restored.\n")
@@ -381,7 +395,7 @@ MedUI.optionsList = {
     helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui autotheme<white>' to toggle"},
   {key = "mpSortByPercent",  label = "Sort HP/Mana by %",      type = "toggle",
     onChange = function() if MPWindow and MPWindow.Update then MPWindow.Update() end end,
-    helpKey = "<white>'<yellow>medui %d<white>' to toggle (off = sort by raw value)"},
+    helpKey = "<white>'<yellow>medui %d<white>' or '<yellow>medui sortpct<white>' to toggle (off = sort by raw value)"},
 }
 
 MedUI.buffIconTable = {
@@ -998,8 +1012,8 @@ function MedUI.help()
     {"MedUI Aliases", {
       {"medui",                     "Display config and options"},
       {"medui help",                "Show this help screen"},
-      {"medui options",             "Open the GUI options dialog"},
-      {"medui hide / medui show",   "Hide or restore the MedUI panels"},
+      {"medui options",             "Open/Close the GUI options dialog"},
+      {"medui hide / medui show",   "Hide or restore the MedUI panels (for MP chars)"},
       {"medui showall",             "Re-open Map/Chat/MP windows you closed via their X"},
       {"medui theme <name|#hex>",   "Set theme (warrior/cleric/mage/thief/#RRGGBB)"},
       {"medui gauges",              "Toggle HP/MP/MV/BR gauges"},
@@ -1042,12 +1056,12 @@ function MedUI.help()
       {"#?",                        "Show MultiPlay groups"},
     }},
     {"Keybindings (Numpad)", {
-      {"Arrows, Keypad 8/2/6/4",          "n/s/e/w movement"},
-      {"Home / End, Keypad 7/1",          "up / down movement"},
-      {"Ctrl+Arrows, or Keypad",          "Ethereal movement (c eth n/s/e/w)"},
-      {"Ctrl+Home / Ctrl+End, or Keypad", "Ethereal up / down"},
-      {"Clear, Keypad 5",                 "scan"},
-      {"F3",                              "c s me"},
+      {"Arrows, Keypad 8/2/6/4",    "n/s/e/w movement"},
+      {"Home/End, Keypad 7/1",      "up / down movement"},
+      {"Ctrl+Arrows, or Keypad",    "Ethereal movement (c eth n/s/e/w)"},
+      {"Ctrl+Home/End, or Keypad",  "Ethereal up / down"},
+      {"Clear, Keypad 5",           "scan"},
+      {"F3",                        "c s me"},
     }},
   }
 
@@ -1252,56 +1266,35 @@ registerNamedEventHandler("MedUI", "MedUILoad", "sysLoadEvent", "MedUI.eventHand
 registerNamedEventHandler("MedUI", "MedUIInstall", "sysInstallPackage", "MedUI.eventHandler")
 registerNamedEventHandler("MedUI", "MedUIUninstall", "sysUninstallPackage", "MedUI.eventHandler")
 
-if MedUI.configAlias then
-  killAlias(MedUI.configAlias)
-end
-
+if MedUI.configAlias then killAlias(MedUI.configAlias) end
 MedUI.configAlias = tempAlias("^medui\\s*(.*)?$", [[MedUI.config(matches[2])]])
 
-if MedUI.gaugeAlias then
-  killAlias(MedUI.gaugeAlias)
-end
-
+if MedUI.gaugeAlias then killAlias(MedUI.gaugeAlias) end
 MedUI.gaugeAlias = tempAlias("^medui gauges$", [[MedUI.config(1)]])
 
-if MedUI.inlineMapAlias then
-  killAlias(MedUI.inlineMapAlias)
-end
-
+if MedUI.inlineMapAlias then killAlias(MedUI.inlineMapAlias) end
 MedUI.inlineMapAlias = tempAlias("^medui inlinemap$", [[MedUI.config(2)]])
 
-if MedUI.timestampAlias then
-  killAlias(MedUI.timestampAlias)
-end
-
+if MedUI.timestampAlias then killAlias(MedUI.timestampAlias) end
 MedUI.timestampAlias = tempAlias("^medui timestamp$", [[MedUI.config(3)]])
 
-if MedUI.mapFontAlias then
-  killAlias(MedUI.mapFontAlias)
-end
-
+if MedUI.mapFontAlias then killAlias(MedUI.mapFontAlias) end
 MedUI.mapFontAlias = tempAlias("^medui mapFontSize (\\d+)$", [[MedUI.config("4 " .. matches[2])]])
 
-if MedUI.chatFontAlias then
-  killAlias(MedUI.chatFontAlias)
-end
-
+if MedUI.chatFontAlias then killAlias(MedUI.chatFontAlias) end
 MedUI.chatFontAlias = tempAlias("^medui chatFontSize (\\d+)$", [[MedUI.config("5 " .. matches[2])]])
 
-if MedUI.multiPlayAlias then
-  killAlias(MedUI.multiPlayAlias)
-end
-
+if MedUI.multiPlayAlias then killAlias(MedUI.multiPlayAlias) end
 MedUI.multiPlayAlias = tempAlias("^medui mp$", [[MedUI.config("6")]])
 
-if MedUI.mpGaugesAlias then
-  killAlias(MedUI.mpGaugesAlias)
-end
-
+if MedUI.mpGaugesAlias then killAlias(MedUI.mpGaugesAlias) end
 MedUI.mpGaugesAlias = tempAlias("^medui mpgauges$", [[MedUI.config("7")]])
 
 if MedUI.autoThemeAlias then killAlias(MedUI.autoThemeAlias) end
 MedUI.autoThemeAlias = tempAlias("^medui autotheme$", [[MedUI.config("8")]])
+
+if MedUI.sortPctAlias then killAlias(MedUI.sortPctAlias) end
+MedUI.sortPctAlias = tempAlias("^medui sortPct$", [[MedUI.config("9")]])
 
 if MedUI.hideAlias then killAlias(MedUI.hideAlias) end
 MedUI.hideAlias = tempAlias("^medui hide$", [[MedUI.hideUI()]])

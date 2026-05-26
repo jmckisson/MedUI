@@ -237,12 +237,11 @@ end
 function MultiPlay.enableModule()
     enableAlias("MultiPlay")
     enableTrigger("MultiPlay")
-    -- Respect the autoloaded hidden state — if the user closed the MP window
-    -- via its X button last session, leave it closed (use `medui showall` to
-    -- bring it back).
-    if not MPWindow.window.hidden then
-        MPWindow.window:show()
-    end
+    -- Use auto-show so we clear our own auto_hidden flag without clobbering
+    -- the user's hidden flag (set when they X-close the window). If they
+    -- previously X-closed, hidden=true keeps it closed; show(true) will
+    -- only actually display the window when both flags are clear.
+    MPWindow.window:show(true)
 
     -- On package install/load the gmcp tree may already be populated from
     -- earlier in the session, so no Char.Vitals/Char.Info event will fire to
@@ -259,7 +258,9 @@ end
 function MultiPlay.disableModule()
     disableAlias("MultiPlay")
     disableTrigger("MultiPlay")
-    MPWindow.window:hide()
+    -- Auto-hide so re-enabling the module restores visibility without
+    -- requiring `medui showall`. The user's X-close hidden flag is preserved.
+    MPWindow.window:hide(true)
 end
 
 
