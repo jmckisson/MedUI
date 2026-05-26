@@ -601,7 +601,7 @@ function Dialog.open()
     width = "100%", height = TITLE_HEIGHT,
   }, Dialog.panel)
   title:setStyleSheet(titleCSS(theme))
-  title:echo(htmlLabel("MedUI Options &mdash; v" .. tostring(MedUI.version) .. "  (drag to move)", 12, "#ffd9a0", "center", true))
+  title:echo(htmlLabel("MedUI Options &mdash; v" .. tostring(MedUI.version), 12, "#ffd9a0", "center", true))
   title:setClickCallback("MedUI.OptionsDialog.onTitleClick")
   title:setReleaseCallback("MedUI.OptionsDialog.onTitleRelease")
   title:setMoveCallback("MedUI.OptionsDialog.onTitleMove")
