@@ -815,7 +815,13 @@ function MedUI.enableGauges()
   MedUI.createGauges()
 
   registerNamedEventHandler("MedUI", "MedBuffsNBars", "gmcp.Char.Vitals", "MedUI.updateVitals")
-  registerNamedEventHandler("MedUI", "MedBuffs", "gmcp.Char.Afflictions", "MedUI.updateAfflictions")
+  -- Older versions of this script registered a single "MedBuffs" handler on
+  -- the parent gmcp.Char.Afflictions event. Clean it up so a reinstall on top
+  -- of an older version doesn't leave a dangling handler firing on Add/Remove.
+  stopNamedEventHandler("MedUI", "MedBuffs")
+  registerNamedEventHandler("MedUI", "MedBuffsAdd",    "gmcp.Char.Afflictions.Add",    "MedUI.updateAfflictionAdd")
+  registerNamedEventHandler("MedUI", "MedBuffsRemove", "gmcp.Char.Afflictions.Remove", "MedUI.updateAfflictionRemove")
+  registerNamedEventHandler("MedUI", "MedBuffsList",   "gmcp.Char.Afflictions.List",   "MedUI.updateAfflictionsList")
 
   tempTimer(.1, function()
     MedBuffsNBars.Bottom:show()
@@ -861,34 +867,72 @@ function MedUI.disableMultiPlay()
 end
 
 
-function MedUI.updateAfflictions()
-  if not MedUI.options.enableGauges then
-    return
+-- Case-insensitive lookup into MedUI.affTable. GMCP delivers affliction
+-- names inconsistently: TitleCase in Add/Remove ("Iceshield"), UPPERCASE in
+-- List ("ICESHIELD"). Builds a lazy lowercase index so the affTable
+-- definition stays human-readable.
+local function affShortName(name)
+  if type(name) ~= "string" then return nil end
+  local direct = MedUI.affTable[name]
+  if direct then return direct end
+  if not MedUI._affTableLower then
+    local lower = {}
+    for k, v in pairs(MedUI.affTable) do
+      lower[k:lower()] = v
+    end
+    MedUI._affTableLower = lower
   end
+  return MedUI._affTableLower[name:lower()]
+end
 
+
+function MedUI.updateAfflictionAdd()
+  if not MedUI.options.enableGauges then return end
+  if not gmcp.Char or not gmcp.Char.Afflictions then return end
   local added = gmcp.Char.Afflictions.Add
-
-  if added and added.name then
-      local affName = added.name
-      local affTicks = added.ticks
-      local shortName = MedUI.affTable[affName]
-      if shortName then
-        if MedUI.options.enableGauges then
-          MedUI.buffIconTable[shortName].active = true
-          MedUI.updateAffects()
-        end
-      end
+  if not added or not added.name then return end
+  local shortName = affShortName(added.name)
+  if shortName and MedUI.buffIconTable[shortName] then
+    MedUI.buffIconTable[shortName].active = true
+    MedUI.updateAffects()
   end
+end
 
+
+function MedUI.updateAfflictionRemove()
+  if not MedUI.options.enableGauges then return end
+  if not gmcp.Char or not gmcp.Char.Afflictions then return end
   local removed = gmcp.Char.Afflictions.Remove
+  if not removed then return end
+  local shortName = affShortName(removed)
+  if shortName and MedUI.buffIconTable[shortName] then
+    MedUI.buffIconTable[shortName].active = false
+    MedUI.updateAffects()
+  end
+end
 
-  if removed then
-    local shortName = MedUI.affTable[removed]
-    if shortName and MedUI.options.enableGauges then
-      MedUI.buffIconTable[shortName].active = false
-      MedUI.updateAffects()
+
+-- Full-list snapshot (gmcp.Char.Afflictions.List). Authoritative for
+-- affTable-managed buffs. Only resets entries that affTable knows about, so
+-- debuffs/states driven by other paths (triggers, etc.) aren't cleared.
+function MedUI.updateAfflictionsList()
+  if not MedUI.options.enableGauges then return end
+  if not gmcp.Char or not gmcp.Char.Afflictions or not gmcp.Char.Afflictions.List then return end
+  local entries = gmcp.Char.Afflictions.List.afflictions
+  if type(entries) ~= "table" then return end
+
+  for _, short in pairs(MedUI.affTable) do
+    if MedUI.buffIconTable[short] then
+      MedUI.buffIconTable[short].active = false
     end
   end
+  for _, entry in ipairs(entries) do
+    local shortName = entry and affShortName(entry.name)
+    if shortName and MedUI.buffIconTable[shortName] then
+      MedUI.buffIconTable[shortName].active = true
+    end
+  end
+  MedUI.updateAffects()
 end
 
 
@@ -1248,6 +1292,9 @@ function MedUI.eventHandler(event, ...)
         stopNamedEventHandler("MedUI", "MedLoginHandler")
         stopNamedEventHandler("MedUI", "MedClassThemeHandler")
         stopNamedEventHandler("MedUI", "MedBuffsNBars")
+        stopNamedEventHandler("MedUI", "MedBuffsAdd")
+        stopNamedEventHandler("MedUI", "MedBuffsRemove")
+        stopNamedEventHandler("MedUI", "MedBuffsList")
         if MedChat and MedChat.AdjCont then
           MedChat.AdjCont:delete()
           MedChat.AdjCont = nil

@@ -159,20 +159,36 @@ function MultiPlay.showGroups()
 end
 
 
--- Track the three high-value defensive affects for MultiPlay. GMCP sends
--- gmcp.Char.Afflictions.Add = { name = "Iceshield", ticks = 4 } and/or
--- gmcp.Char.Afflictions.Remove = "Sanctuary".
+-- Track the three high-value defensive affects for MultiPlay. GMCP delivers
+-- names with inconsistent casing depending on the message:
+--   Add/Remove: "Iceshield" (TitleCase)
+--   List:      "ICESHIELD" (UPPERCASE, often equipment-sourced)
+-- so we key the lookup by lowercased name.
 local buffNameToKey = {
-    Sanctuary = "sanc",
-    Iceshield = "ice",
-    Fireshield = "fire",
+    sanctuary = "sanc",
+    iceshield = "ice",
+    fireshield = "fire",
 }
+
+local function buffKeyForName(name)
+    if type(name) ~= "string" then return nil end
+    return buffNameToKey[name:lower()]
+end
 
 local function normalizeBuffTicks(ticks)
     ticks = tonumber(ticks) or 0
     if ticks < 1 then return 0 end
     if ticks > 35 then return 35 end
     return ticks
+end
+
+-- Equipment-sourced buffs report ticks as a non-numeric string like
+-- "From Equipment". Treat any present entry as active by clamping to the max
+-- tick value when we couldn't parse a number out of it.
+local function ticksFromListEntry(rawTicks)
+    local n = normalizeBuffTicks(rawTicks)
+    if n > 0 then return n end
+    return 35
 end
 
 local function buffActiveFlag(ticks)
@@ -183,31 +199,69 @@ local function getPlayerKey(name)
     return name and tostring(name):lower() or ""
 end
 
-function MultiPlay.updateBuffsFromGmcp()
+function MultiPlay.applyAfflictionAdd()
     if not gmcp or not gmcp.Char or not gmcp.Char.Afflictions then return false end
+    local added = gmcp.Char.Afflictions.Add
+    if not added then return false end
+
+    local key = buffKeyForName(added.name)
+    if not key then return false end
+
+    local ticks = normalizeBuffTicks(added.ticks)
+    if MultiPlay.myBuffs[key] == ticks then return false end
+    MultiPlay.myBuffs[key] = ticks
+    return true
+end
+
+function MultiPlay.applyAfflictionRemove()
+    if not gmcp or not gmcp.Char or not gmcp.Char.Afflictions then return false end
+    local removed = gmcp.Char.Afflictions.Remove
+    if not removed then return false end
+
+    local key = buffKeyForName(removed)
+    if not key or MultiPlay.myBuffs[key] == 0 then return false end
+    MultiPlay.myBuffs[key] = 0
+    return true
+end
+
+-- Shared post-change path for all three Afflictions paths (Add/Remove/List).
+-- Clears the dedup snapshot so the next sendMyInfo broadcasts, fans the
+-- update out to other profiles, and queues a local repaint.
+function MultiPlay.onBuffsChanged()
+    MultiPlay.lastSent = nil
+    if MedUI and MedUI.options.enableMultiPlay then
+        MultiPlay.sendMyInfo()
+        MultiPlay.sendMyBuffs()
+    end
+    raiseEvent("MultiPlayConsoleUpdate")
+end
+
+-- Full-list snapshot (gmcp.Char.Afflictions.List). Authoritative: anything
+-- not in the list is treated as inactive. Typically fires on login.
+function MultiPlay.applyAfflictionsList()
+    if not gmcp or not gmcp.Char or not gmcp.Char.Afflictions
+        or not gmcp.Char.Afflictions.List then
+        return false
+    end
+
+    local entries = gmcp.Char.Afflictions.List.afflictions
+    if type(entries) ~= "table" then return false end
+
+    local newState = {sanc = 0, ice = 0, fire = 0}
+    for _, entry in ipairs(entries) do
+        local key = entry and buffKeyForName(entry.name)
+        if key then
+            newState[key] = ticksFromListEntry(entry.ticks)
+        end
+    end
 
     local changed = false
-    local aff = gmcp.Char.Afflictions
-
-    local added = aff.Add
-    if added and added.name and buffNameToKey[added.name] then
-        local key = buffNameToKey[added.name]
-        local ticks = normalizeBuffTicks(added.ticks)
-        if MultiPlay.myBuffs[key] ~= ticks then
-            MultiPlay.myBuffs[key] = ticks
+    for k, v in pairs(newState) do
+        if MultiPlay.myBuffs[k] ~= v then
+            MultiPlay.myBuffs[k] = v
             changed = true
         end
     end
-
-    local removed = aff.Remove
-    if removed and buffNameToKey[removed] then
-        local key = buffNameToKey[removed]
-        if MultiPlay.myBuffs[key] ~= 0 then
-            MultiPlay.myBuffs[key] = 0
-            changed = true
-        end
-    end
-
     return changed
 end
 
@@ -444,15 +498,14 @@ function MultiPlay.eventHandler(event, ...)
 
         raiseEvent("MultiPlayConsoleUpdate")
 
-    elseif event == "gmcp.Char.Afflictions" then
-        if MultiPlay.updateBuffsFromGmcp() then
-            MultiPlay.lastSent = nil
-            if MedUI and MedUI.options.enableMultiPlay then
-                MultiPlay.sendMyInfo()
-                MultiPlay.sendMyBuffs()
-            end
-            raiseEvent("MultiPlayConsoleUpdate")
-        end
+    elseif event == "gmcp.Char.Afflictions.Add" then
+        if MultiPlay.applyAfflictionAdd() then MultiPlay.onBuffsChanged() end
+
+    elseif event == "gmcp.Char.Afflictions.Remove" then
+        if MultiPlay.applyAfflictionRemove() then MultiPlay.onBuffsChanged() end
+
+    elseif event == "gmcp.Char.Afflictions.List" then
+        if MultiPlay.applyAfflictionsList() then MultiPlay.onBuffsChanged() end
 
     elseif event == "MPTell" then
         --echo("got MPTell\n")
@@ -611,6 +664,8 @@ MultiPlay.eventHandlerIDs = {
     registerAnonymousEventHandler("MPBuffResponse", "MultiPlay.eventHandler"),
     registerAnonymousEventHandler("gmcp.Char.Vitals", "MultiPlay.eventHandler"),
     registerAnonymousEventHandler("gmcp.Char.Info", "MultiPlay.eventHandler"),
-    registerAnonymousEventHandler("gmcp.Char.Afflictions", "MultiPlay.eventHandler"),
+    registerAnonymousEventHandler("gmcp.Char.Afflictions.Add", "MultiPlay.eventHandler"),
+    registerAnonymousEventHandler("gmcp.Char.Afflictions.Remove", "MultiPlay.eventHandler"),
+    registerAnonymousEventHandler("gmcp.Char.Afflictions.List", "MultiPlay.eventHandler"),
     registerAnonymousEventHandler("MPSmartHeal", "MultiPlay.eventHandler")
 }
