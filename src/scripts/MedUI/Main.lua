@@ -228,6 +228,23 @@ function MedUI.applyMedUILockStyle(adjCont)
   end)
   adjCont.sidePad = adjCont.sidePad or MedUI.defaultSidePad
   adjCont.topPad  = adjCont.topPad  or MedUI.defaultTopPad
+
+  -- Geyser's default unlockContainer hardcodes the inner geometry back to
+  -- (padding, padding*2), ignoring our asymmetric values. Chain through it
+  -- (so menus close, buttons reveal, locked flag flips) then re-apply medui
+  -- geometry so the inset stays consistent while dragging/resizing.
+  if not adjCont._meduiUnlockPatched then
+    adjCont._meduiUnlockPatched = true
+    local origUnlock = Adjustable.Container.unlockContainer
+    function adjCont:unlockContainer()
+      origUnlock(self)
+      local side = self.sidePad or MedUI.defaultSidePad
+      local top  = self.topPad  or MedUI.defaultTopPad
+      self.Inside:resize("-"..side, "-"..side)
+      self.Inside:move(side, top)
+    end
+  end
+
   adjCont:lockContainer("medui")
 end
 
@@ -235,6 +252,28 @@ function MedUI.tunePadding(adjCont, top, side)
   if not adjCont then return end
   adjCont.topPad, adjCont.sidePad = top, side
   adjCont:lockContainer("medui")
+end
+
+-- Live-tune all MedUI AdjContainers at once. Pass nil to leave a dimension
+-- at its current per-container value. Echoes the resolved values so you can
+-- see what got applied when iterating from the command line.
+function MedUI.tunePaddingAll(top, side)
+  MedUI.defaultTopPad  = top  or MedUI.defaultTopPad
+  MedUI.defaultSidePad = side or MedUI.defaultSidePad
+  local targets = {
+    {name = "MedMap",    adj = MedUI.MedMap and MedUI.MedMap.AdjCont},
+    {name = "MedChat",   adj = MedChat and MedChat.AdjCont},
+    {name = "MultiPlay", adj = MPWindow and MPWindow.window},
+  }
+  for _, t in ipairs(targets) do
+    if t.adj then
+      if top  then t.adj.topPad  = top  end
+      if side then t.adj.sidePad = side end
+      t.adj:lockContainer("medui")
+    end
+  end
+  cecho(string.format("\n<cyan>MedUI padding: top=%s side=%s\n",
+    tostring(MedUI.defaultTopPad), tostring(MedUI.defaultSidePad)))
 end
 
 -- Tracks the resolved accent that was last pushed to the containers so a
