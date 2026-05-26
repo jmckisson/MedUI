@@ -54,7 +54,7 @@ local function medieviaTabbedChat_InitMedChat()
   if not MedChat.AdjCont.hidden then
     MedChat.AdjCont:show()
   end
-  MedChat.AdjCont:lockContainer("light")
+  MedUI.applyMedUILockStyle(MedChat.AdjCont)
   if MedUI and MedUI.persistOnClose then MedUI.persistOnClose(MedChat.AdjCont) end
 
   -- Initialize MMCP tab if our client supports MMCP (MudMaster Chat Protocol)

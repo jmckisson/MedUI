@@ -209,6 +209,34 @@ function MedUI.applyThemeToAdjContainer(adjCont)
   adjCont.adjLabel:setStyleSheet(adjCont.adjLabelstyle)
 end
 
+-- Custom lockStyle that decouples the title-area inset from the side/bottom
+-- inset so the inner console can sit closer to the frame without clipping the
+-- title text. Reads sidePad/topPad off the container each call, so live tweaks
+-- via MedUI.tunePadding take effect on the next re-lock without re-registering.
+MedUI.defaultSidePad = 3
+MedUI.defaultTopPad = 20
+
+function MedUI.applyMedUILockStyle(adjCont)
+  if not adjCont then return end
+  adjCont:newLockStyle("medui", function(s)
+    s:setTitle()
+    local side = s.sidePad or MedUI.defaultSidePad
+    local top  = s.topPad  or MedUI.defaultTopPad
+    s.Inside:resize("-"..side, "-"..side)
+    s.Inside:move(side, top)
+    s.adjLabel:setStyleSheet(s.adjLabelstyle)
+  end)
+  adjCont.sidePad = adjCont.sidePad or MedUI.defaultSidePad
+  adjCont.topPad  = adjCont.topPad  or MedUI.defaultTopPad
+  adjCont:lockContainer("medui")
+end
+
+function MedUI.tunePadding(adjCont, top, side)
+  if not adjCont then return end
+  adjCont.topPad, adjCont.sidePad = top, side
+  adjCont:lockContainer("medui")
+end
+
 -- Tracks the resolved accent that was last pushed to the containers so a
 -- redundant click (cycling back to the same theme, reconfigure with no theme
 -- change, etc.) is a no-op instead of re-stringing CSS and re-calling Qt.
@@ -630,7 +658,7 @@ function MedUI.InitUI()
   if not MedUI.MedMap.AdjCont.hidden then
     MedUI.MedMap.AdjCont:show()
   end
-  MedUI.MedMap.AdjCont:lockContainer("light")
+  MedUI.applyMedUILockStyle(MedUI.MedMap.AdjCont)
   MedUI.persistOnClose(MedUI.MedMap.AdjCont)
 
   -- Gauge and Buffs containers
@@ -1261,52 +1289,70 @@ function MedUI.eventHandler(event, ...)
     end
 end
 
-registerNamedEventHandler("MedUI", "MedUIResize", "sysWindowResizeEvent", "MedUI.eventHandler")
-registerNamedEventHandler("MedUI", "MedUILoad", "sysLoadEvent", "MedUI.eventHandler")
-registerNamedEventHandler("MedUI", "MedUIInstall", "sysInstallPackage", "MedUI.eventHandler")
-registerNamedEventHandler("MedUI", "MedUIUninstall", "sysUninstallPackage", "MedUI.eventHandler")
 
-if MedUI.configAlias then killAlias(MedUI.configAlias) end
-MedUI.configAlias = tempAlias("^medui\\s*(.*)?$", [[MedUI.config(matches[2])]])
+for k, v in pairs(MedUI.configAliases) do
+  killAlias(k)
+end
 
-if MedUI.gaugeAlias then killAlias(MedUI.gaugeAlias) end
-MedUI.gaugeAlias = tempAlias("^medui gauges$", [[MedUI.config(1)]])
+MedUI.configAliases = {
+  tempAlias("^medui\\s*(.*)?$", [[MedUI.config(matches[2])]]),
+  tempAlias("^medui gauges$", [[MedUI.config(1)]]),
+  tempAlias("^medui inlinemap$", [[MedUI.config(2)]]),
+  tempAlias("^medui timestamp$", [[MedUI.config(3)]]),
+  tempAlias("^medui mapFontSize (\\d+)$", [[MedUI.config("4 " .. matches[2])]]),
+  tempAlias("^medui chatFontSize (\\d+)$", [[MedUI.config("5 " .. matches[2])]]),
+  tempAlias("^medui mp$", [[MedUI.config("6")]]),
+  tempAlias("^medui mpgauges$", [[MedUI.config("7")]]),
+  tempAlias("^medui autotheme$", [[MedUI.config("8")]]),
+  tempAlias("^medui sortPct$", [[MedUI.config("9")]]),
+  tempAlias("^medui hide$", [[MedUI.hideUI()]]),
+  tempAlias("^medui show$", [[MedUI.showUI()]]),
+  tempAlias("^medui showall$", [[MedUI.showAll()]]),
+  tempAlias("^medui help$", [[MedUI.help()]]),
+  tempAlias("^medui theme (\\S+)$", [[MedUI.setTheme(matches[2])]])
+}
 
-if MedUI.inlineMapAlias then killAlias(MedUI.inlineMapAlias) end
-MedUI.inlineMapAlias = tempAlias("^medui inlinemap$", [[MedUI.config(2)]])
+-- if MedUI.configAlias then killAlias(MedUI.configAlias) end
+-- MedUI.configAlias = tempAlias("^medui\\s*(.*)?$", [[MedUI.config(matches[2])]])
 
-if MedUI.timestampAlias then killAlias(MedUI.timestampAlias) end
-MedUI.timestampAlias = tempAlias("^medui timestamp$", [[MedUI.config(3)]])
+-- if MedUI.gaugeAlias then killAlias(MedUI.gaugeAlias) end
+-- MedUI.gaugeAlias = tempAlias("^medui gauges$", [[MedUI.config(1)]])
 
-if MedUI.mapFontAlias then killAlias(MedUI.mapFontAlias) end
-MedUI.mapFontAlias = tempAlias("^medui mapFontSize (\\d+)$", [[MedUI.config("4 " .. matches[2])]])
+-- if MedUI.inlineMapAlias then killAlias(MedUI.inlineMapAlias) end
+-- MedUI.inlineMapAlias = tempAlias("^medui inlinemap$", [[MedUI.config(2)]])
 
-if MedUI.chatFontAlias then killAlias(MedUI.chatFontAlias) end
-MedUI.chatFontAlias = tempAlias("^medui chatFontSize (\\d+)$", [[MedUI.config("5 " .. matches[2])]])
+-- if MedUI.timestampAlias then killAlias(MedUI.timestampAlias) end
+-- MedUI.timestampAlias = tempAlias("^medui timestamp$", [[MedUI.config(3)]])
 
-if MedUI.multiPlayAlias then killAlias(MedUI.multiPlayAlias) end
-MedUI.multiPlayAlias = tempAlias("^medui mp$", [[MedUI.config("6")]])
+-- if MedUI.mapFontAlias then killAlias(MedUI.mapFontAlias) end
+-- MedUI.mapFontAlias = tempAlias("^medui mapFontSize (\\d+)$", [[MedUI.config("4 " .. matches[2])]])
 
-if MedUI.mpGaugesAlias then killAlias(MedUI.mpGaugesAlias) end
-MedUI.mpGaugesAlias = tempAlias("^medui mpgauges$", [[MedUI.config("7")]])
+-- if MedUI.chatFontAlias then killAlias(MedUI.chatFontAlias) end
+-- MedUI.chatFontAlias = tempAlias("^medui chatFontSize (\\d+)$", [[MedUI.config("5 " .. matches[2])]])
 
-if MedUI.autoThemeAlias then killAlias(MedUI.autoThemeAlias) end
-MedUI.autoThemeAlias = tempAlias("^medui autotheme$", [[MedUI.config("8")]])
+-- if MedUI.multiPlayAlias then killAlias(MedUI.multiPlayAlias) end
+-- MedUI.multiPlayAlias = tempAlias("^medui mp$", [[MedUI.config("6")]])
 
-if MedUI.sortPctAlias then killAlias(MedUI.sortPctAlias) end
-MedUI.sortPctAlias = tempAlias("^medui sortPct$", [[MedUI.config("9")]])
+-- if MedUI.mpGaugesAlias then killAlias(MedUI.mpGaugesAlias) end
+-- MedUI.mpGaugesAlias = tempAlias("^medui mpgauges$", [[MedUI.config("7")]])
 
-if MedUI.hideAlias then killAlias(MedUI.hideAlias) end
-MedUI.hideAlias = tempAlias("^medui hide$", [[MedUI.hideUI()]])
+-- if MedUI.autoThemeAlias then killAlias(MedUI.autoThemeAlias) end
+-- MedUI.autoThemeAlias = tempAlias("^medui autotheme$", [[MedUI.config("8")]])
 
-if MedUI.showAlias then killAlias(MedUI.showAlias) end
-MedUI.showAlias = tempAlias("^medui show$", [[MedUI.showUI()]])
+-- if MedUI.sortPctAlias then killAlias(MedUI.sortPctAlias) end
+-- MedUI.sortPctAlias = tempAlias("^medui sortPct$", [[MedUI.config("9")]])
 
-if MedUI.showAllAlias then killAlias(MedUI.showAllAlias) end
-MedUI.showAllAlias = tempAlias("^medui showall$", [[MedUI.showAll()]])
+-- if MedUI.hideAlias then killAlias(MedUI.hideAlias) end
+-- MedUI.hideAlias = tempAlias("^medui hide$", [[MedUI.hideUI()]])
 
-if MedUI.helpAlias then killAlias(MedUI.helpAlias) end
-MedUI.helpAlias = tempAlias("^medui help$", [[MedUI.help()]])
+-- if MedUI.showAlias then killAlias(MedUI.showAlias) end
+-- MedUI.showAlias = tempAlias("^medui show$", [[MedUI.showUI()]])
+
+-- if MedUI.showAllAlias then killAlias(MedUI.showAllAlias) end
+-- MedUI.showAllAlias = tempAlias("^medui showall$", [[MedUI.showAll()]])
+
+-- if MedUI.helpAlias then killAlias(MedUI.helpAlias) end
+-- MedUI.helpAlias = tempAlias("^medui help$", [[MedUI.help()]])
 
 -- `medui theme <arg>` — arg is either a class name (warrior/cleric/mage/thief)
 -- or a hex color (#RRGGBB / RRGGBB), which selects the Custom theme.
@@ -1335,8 +1381,8 @@ function MedUI.setTheme(arg)
   end
 end
 
-if MedUI.themeAlias then killAlias(MedUI.themeAlias) end
-MedUI.themeAlias = tempAlias("^medui theme (\\S+)$", [[MedUI.setTheme(matches[2])]])
+--if MedUI.themeAlias then killAlias(MedUI.themeAlias) end
+--MedUI.themeAlias = tempAlias("^medui theme (\\S+)$", [[MedUI.setTheme(matches[2])]])
 
 -- Maps gmcp.Char.Info.class values to theme keys. Unknown classes are ignored
 -- (auto-detect leaves the current theme alone rather than guessing).
@@ -1384,5 +1430,9 @@ function MedUI.doConnectionSetup()
 
 end
 
+registerNamedEventHandler("MedUI", "MedUIResize", "sysWindowResizeEvent", "MedUI.eventHandler")
+registerNamedEventHandler("MedUI", "MedUILoad", "sysLoadEvent", "MedUI.eventHandler")
+registerNamedEventHandler("MedUI", "MedUIInstall", "sysInstallPackage", "MedUI.eventHandler")
+registerNamedEventHandler("MedUI", "MedUIUninstall", "sysUninstallPackage", "MedUI.eventHandler")
 registerNamedEventHandler("MedUI", "MedLoginHandler", "gmcp.Char.Info", "MedUI.doConnectionSetup")
 registerNamedEventHandler("MedUI", "MedClassThemeHandler", "gmcp.Char.Info", "MedUI.applyClassTheme")
