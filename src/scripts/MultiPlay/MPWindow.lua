@@ -417,8 +417,11 @@ function MPWindow.setupGaugeHeader()
 
     for _, col in ipairs(MPWindow.columnDefs) do
         local cellName = "mpheader_" .. col.key
+        -- h_policy=Fixed keeps HBox from stretching this cell to an equal share;
+        -- we want each header column to be the exact width of its data column.
         local cell = Geyser.Container:new({
             name = cellName,
+            h_policy = Geyser.Fixed,
             width = col.gaugeWidth, height = headerHeight,
         }, MPWindow.headerRow)
 
@@ -505,20 +508,22 @@ end
 -- Construct the single Geyser widget that represents `col` for player `player`
 -- inside the given row HBox. Returns the widget plus its initial display state
 -- so updatePlayerFrame can dedup later. Returns nil if the column is hidden.
+-- h_policy=Fixed keeps HBox from stretching every child to an equal share, so
+-- per-column widths defined in columnDefs are preserved (and match the header).
 local function buildColumnCell(col, row, frameName, player, frameIndex)
     if colHidden(col.key) then return nil end
     local cellName = frameName .. "_" .. col.key
     local width = col.gaugeWidth
 
     if col.cellKind == "name" then
-        local label = Geyser.Label:new({name = cellName, width = width, height = "100%"}, row)
+        local label = Geyser.Label:new({name = cellName, h_policy = Geyser.Fixed, width = width, height = "100%"}, row)
         label:setStyleSheet(col.style)
         label:echo(player.name, "white", "l")
         label:setFontSize(10)
         return label, {shownName = player.name}
 
     elseif col.cellKind == "hpGauge" then
-        local gauge = Geyser.Gauge:new({name = cellName, width = width, height = "100%"}, row)
+        local gauge = Geyser.Gauge:new({name = cellName, h_policy = Geyser.Fixed, width = width, height = "100%"}, row)
         gauge.back:setStyleSheet(backStyleSheet)
         local band = getGaugeBand(player.hp, player.maxHp)
         local info = gaugeBands[band]
@@ -537,7 +542,7 @@ local function buildColumnCell(col, row, frameName, player, frameIndex)
         return gauge, {shownHp = player.hp, shownMaxHp = player.maxHp, hpBand = band}
 
     elseif col.cellKind == "manaGauge" then
-        local gauge = Geyser.Gauge:new({name = cellName, width = width, height = "100%"}, row)
+        local gauge = Geyser.Gauge:new({name = cellName, h_policy = Geyser.Fixed, width = width, height = "100%"}, row)
         gauge.back:setStyleSheet(backStyleSheet)
         local band = getGaugeBand(player.mana, player.maxMana)
         local info = gaugeBands[band]
@@ -547,35 +552,35 @@ local function buildColumnCell(col, row, frameName, player, frameIndex)
         return gauge, {shownMana = player.mana, shownMaxMana = player.maxMana, manaBand = band}
 
     elseif col.cellKind == "mvLabel" then
-        local label = Geyser.Label:new({name = cellName, width = width, height = "100%"}, row)
+        local label = Geyser.Label:new({name = cellName, h_policy = Geyser.Fixed, width = width, height = "100%"}, row)
         label:setStyleSheet(col.style)
         label:echo(tostring(player.mv), getBandLabelColor(player.mv, player.maxMv), "c")
         label:setFontSize(9)
         return label, {shownMv = player.mv, shownMaxMv = player.maxMv}
 
     elseif col.cellKind == "brLabel" then
-        local label = Geyser.Label:new({name = cellName, width = width, height = "100%"}, row)
+        local label = Geyser.Label:new({name = cellName, h_policy = Geyser.Fixed, width = width, height = "100%"}, row)
         label:setStyleSheet(col.style)
         label:echo(tostring(player.br), getBandLabelColor(player.br, 100), "c")
         label:setFontSize(9)
         return label, {shownBr = player.br}
 
     elseif col.cellKind == "classLabel" then
-        local label = Geyser.Label:new({name = cellName, width = width, height = "100%"}, row)
+        local label = Geyser.Label:new({name = cellName, h_policy = Geyser.Fixed, width = width, height = "100%"}, row)
         label:setStyleSheet(col.style)
         label:echo(tostring(player.class), "cyan", "c")
         label:setFontSize(9)
         return label, {shownClass = player.class}
 
     elseif col.cellKind == "levelLabel" then
-        local label = Geyser.Label:new({name = cellName, width = width, height = "100%"}, row)
+        local label = Geyser.Label:new({name = cellName, h_policy = Geyser.Fixed, width = width, height = "100%"}, row)
         label:setStyleSheet(col.style)
         label:echo(tostring(player.level), "yellow", "c")
         label:setFontSize(9)
         return label, {shownLevel = player.level}
 
     elseif col.cellKind == "groupLabel" then
-        local label = Geyser.Label:new({name = cellName, width = width, height = "100%"}, row)
+        local label = Geyser.Label:new({name = cellName, h_policy = Geyser.Fixed, width = width, height = "100%"}, row)
         label:setStyleSheet(col.style)
         local groupName = MPWindow.getPlayerGroup(player.name)
         label:echo(groupName, "orange", "c")
@@ -833,7 +838,9 @@ local function emitTextHeader()
             end
             first = false
 
-            local labelColor = hidden and "#666666" or "white"
+            -- cecho/cechoLink parses named colors from color_table; <#hex> tags
+            -- aren't recognized here, so use names that match the gauge-mode look.
+            local labelColor = hidden and "DimGray" or "white"
             local label = def.label
             -- Pad/truncate so the header label fits in the column's data width.
             -- This keeps subsequent columns roughly aligned with the data rows.
@@ -846,10 +853,10 @@ local function emitTextHeader()
 
             local upActive = (sortKey == key and sortDir == "asc")
             local downActive = (sortKey == key and sortDir == "desc")
-            console:cechoLink(string.format("<%s>▲", upActive and "#a8ffa8" or "#666666"),
+            console:cechoLink(string.format("<%s>▲", upActive and "LightGreen" or "DimGray"),
                 function() MPWindow.setSort(key, "asc") end,
                 "Sort " .. def.label .. " ascending", true)
-            console:cechoLink(string.format("<%s>▼", downActive and "#a8ffa8" or "#666666"),
+            console:cechoLink(string.format("<%s>▼", downActive and "LightGreen" or "DimGray"),
                 function() MPWindow.setSort(key, "desc") end,
                 "Sort " .. def.label .. " descending", true)
         end
