@@ -17,7 +17,7 @@
                             "type": "startOfLine"
                      },
                      {
-                            "pattern": "^\\+--+\\+$",
+                            "pattern": "^\\+--+\\+\\s*$",
                             "type": "regex"
                      }
               ],
@@ -41,7 +41,7 @@
                                           "type": "startOfLine"
                                    },
                                    {
-                                          "pattern": "^(\\|.*\\|)$",
+                                          "pattern": "^(\\|.*\\|)\\s*$",
                                           "type": "regex"
                                    }
                             ],
@@ -69,11 +69,11 @@
                                           "type": "startOfLine"
                                    },
                                    {
-                                          "pattern": "^\\+--+\\+$",
+                                          "pattern": "^\\+--+\\+\\s*$",
                                           "type": "regex"
                                    },
                                    {
-                                          "pattern": "^\\+-+\\[(.*)\\]--+\\+$",
+                                          "pattern": "^\\+-+\\[(.*)\\]--+\\+\\s*$",
                                           "type": "regex"
                                    }
                             ],
