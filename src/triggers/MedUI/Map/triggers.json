@@ -1,13 +1,13 @@
 [
        {
-              "name": "MedieviaMapStart",
+              "name": "MedieviaMapBorder",
               "isActive": "yes",
               "isFolder": "no",
               "multiline": "no",
               "multilineDelta": "0",
               "matchall": "no",
               "filter": "no",
-              "fireLength": "50",
+              "fireLength": "0",
               "highlight": "no",
               "highlightFG": "#ff0000",
               "highlightBG": "#ffff00",
@@ -17,72 +17,46 @@
                             "type": "startOfLine"
                      },
                      {
-                            "pattern": "^\\+--+\\+\\s*$",
+                            "pattern": "└─",
+                            "type": "startOfLine"
+                     },
+                     {
+                            "pattern": "┤(.*)├",
+                            "type": "regex"
+                     },
+                     {
+                            "pattern": "+--",
+                            "type": "startOfLine"
+                     },
+                     {
+                            "pattern": "^\\+-+\\[(.*)\\]--+\\+",
                             "type": "regex"
                      }
               ],
-              "script": "",
-              "children": [
+              "script": ""
+       },
+       {
+              "name": "MedieviaMapMid",
+              "isActive": "yes",
+              "isFolder": "no",
+              "multiline": "no",
+              "multilineDelta": "0",
+              "matchall": "no",
+              "filter": "no",
+              "fireLength": "0",
+              "highlight": "no",
+              "highlightFG": "#ff0000",
+              "highlightBG": "#ffff00",
+              "patterns": [
                      {
-                            "name": "MedieviaTownMid",
-                            "isActive": "yes",
-                            "isFolder": "no",
-                            "multiline": "no",
-                            "multilineDelta": "0",
-                            "matchall": "no",
-                            "filter": "no",
-                            "fireLength": "0",
-                            "highlight": "no",
-                            "highlightFG": "#ff0000",
-                            "highlightBG": "#ffff00",
-                            "patterns": [
-                                   {
-                                          "pattern": "│",
-                                          "type": "startOfLine"
-                                   },
-                                   {
-                                          "pattern": "|",
-                                          "type": "startOfLine"
-                                   },
-                                   {
-                                          "pattern": "^(\\|.*\\|)\\s*$",
-                                          "type": "regex"
-                                   }
-                            ],
-                            "script": ""
+                            "pattern": "│",
+                            "type": "startOfLine"
                      },
                      {
-                            "name": "MedieviaMapEnd",
-                            "isActive": "yes",
-                            "isFolder": "no",
-                            "multiline": "no",
-                            "multilineDelta": "0",
-                            "matchall": "no",
-                            "filter": "no",
-                            "fireLength": "0",
-                            "highlight": "no",
-                            "highlightFG": "#ff0000",
-                            "highlightBG": "#ffff00",
-                            "patterns": [
-                                   {
-                                          "pattern": "┤(.*)├",
-                                          "type": "regex"
-                                   },
-                                   {
-                                          "pattern": "└─",
-                                          "type": "startOfLine"
-                                   },
-                                   {
-                                          "pattern": "^\\+--+\\+",
-                                          "type": "regex"
-                                   },
-                                   {
-                                          "pattern": "^\\+-+\\[(.*)\\]--+\\+",
-                                          "type": "regex"
-                                   }
-                            ],
-                            "script": ""
+                            "pattern": "|",
+                            "type": "startOfLine"
                      }
-              ]
+              ],
+              "script": ""
        }
 ]

@@ -494,20 +494,36 @@ MedUI.buffIconTable = {
   }
 
 
-function MedUI.MedMap.mapStart()
-  MedUI.MedMap.Console:clear()
-  selectCurrentLine()
-  local length = #ansi2string(getCurrentLine())
+-- Map border lines (top and bottom of the frame) look identical in ASCII, so
+-- we can't tell them apart by pattern alone. Flat triggers + an inMap flag
+-- replace the old chain trigger that wasn't reliably opening for ASCII parents.
+function MedUI.MedMap.mapBorder(roomName)
+  if not MedUI.MedMap.inMap then
+    MedUI.MedMap.inMap = true
+    MedUI.MedMap.Console:clear()
+    selectCurrentLine()
+    local length = #ansi2string(getCurrentLine())
 
-  if length < 80 then
-    MedUI.MedMap.Console:setFontSize((tonumber(MedUI.options.mapFontSize) + 9) or 18)
-  elseif length < 200 then
-    MedUI.MedMap.Console:setFontSize((tonumber(MedUI.options.mapFontSize) + 3) or 12)
+    if length < 80 then
+      MedUI.MedMap.Console:setFontSize((tonumber(MedUI.options.mapFontSize) + 9) or 18)
+    elseif length < 200 then
+      MedUI.MedMap.Console:setFontSize((tonumber(MedUI.options.mapFontSize) + 3) or 12)
+    else
+      MedUI.MedMap.Console:setFontSize(tonumber(MedUI.options.mapFontSize) or 9)
+    end
+    copy()
+    MedUI.MedMap.Console:appendBuffer()
   else
-    MedUI.MedMap.Console:setFontSize(tonumber(MedUI.options.mapFontSize) or 9)
+    selectCurrentLine()
+    copy()
+    MedUI.MedMap.Console:appendBuffer()
+
+    if roomName and not MedUI.options.keepInlineMap then
+      cecho("\n<yellow>"..roomName)
+    end
+
+    MedUI.MedMap.inMap = false
   end
-  copy()
-  MedUI.MedMap.Console:appendBuffer()
 
   if not MedUI.options.keepInlineMap then
     deleteLine()
@@ -515,29 +531,13 @@ function MedUI.MedMap.mapStart()
 end
 
 function MedUI.MedMap.mapMid()
+  if not MedUI.MedMap.inMap then return end
   selectCurrentLine()
   copy()
   MedUI.MedMap.Console:appendBuffer()
   if not MedUI.options.keepInlineMap then
     deleteLine()
   end
-end
-
-function MedUI.MedMap.mapEnd(roomName)
-  selectCurrentLine()
-  copy()
-  MedUI.MedMap.Console:appendBuffer()
-  if not MedUI.options.keepInlineMap then
-    deleteLine()
-  end
-
-  -- paste the parsed name into the main console as we still want to see the room name
-  if roomName and not MedUI.options.keepInlineMap then
-    cecho("\n<yellow>"..roomName)
-  end
-
-  setTriggerStayOpen("MedieviaMapStart", 0)
-
 end
 
 ---------------------------------------------------------------------------------
