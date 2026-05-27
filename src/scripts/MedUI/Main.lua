@@ -1349,6 +1349,21 @@ function MedUI.eventHandler(event, ...)
           MedBuffsNBars.Bottom = nil
         end
         if MPWindow then
+          -- The MultiPlay event chain (gmcp.Char.Vitals → MultiPlay.eventHandler →
+          -- raiseEvent("MultiPlayConsoleUpdate") → MPWindow.queueUpdate) keeps
+          -- firing on movement after uninstall; without stopping it here the
+          -- queued Update() lands on a nil console.
+          stopNamedEventHandler("MultiPlay", "WindowUpdate")
+          if MultiPlay and MultiPlay.eventHandlerIDs then
+            for _, id in ipairs(MultiPlay.eventHandlerIDs) do
+              killAnonymousEventHandler(id)
+            end
+            MultiPlay.eventHandlerIDs = {}
+          end
+          if MPWindow.pendingUpdateTimer then
+            killTimer(MPWindow.pendingUpdateTimer)
+            MPWindow.pendingUpdateTimer = nil
+          end
           MPWindow.window:delete()
           MPWindow.window = nil
           MPWindow.console = nil

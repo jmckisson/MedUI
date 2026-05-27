@@ -945,6 +945,10 @@ function MPWindow.Update()
         return
     end
 
+    -- After sysUninstallPackage nils MPWindow.console, late-firing events
+    -- (queued timer, in-flight gmcp.Char.Vitals) can still land here.
+    if not MPWindow.console then return end
+
     if MedUI.options.mpGaugeMode then
         MPWindow.console:hide()
         if MPWindow.gaugeContainer then
@@ -963,6 +967,7 @@ end
 
 --- Switch display mode
 function MPWindow.setDisplayMode(gaugeMode)
+    if not MPWindow.console then return end
     if gaugeMode then
         MPWindow.console:hide()
         MPWindow.setupGaugeContainer()
