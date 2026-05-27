@@ -16,7 +16,7 @@
        {
               "name": "TellOthers",
               "isActive": "yes",
-              "regex": "^\\-(.*)$",
+              "regex": "^\\-([^\\-].*)$",
               "script": "",
               "isFolder": "no"
        },
